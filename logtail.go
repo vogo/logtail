@@ -4,36 +4,30 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
-	"strings"
 
-	"github.com/vogo/vogo/vio/vioutil"
+	"github.com/vogo/vogo/vos"
 )
 
 var (
-	port     = flag.Int("port", 54321, "tail port")
-	path     = flag.String("path", "", "tail port")
-	logFiles []string
+	port    = flag.Int("port", 54321, "tail port")
+	command = flag.String("cmd", "", "tail command")
 
 	defaultLogtailWriter = &logtailWriter{}
 )
 
 func Start() {
 	flag.Parse()
+	vos.LoadUserEnv()
+
 	if *port == 0 {
 		*port = 54321
 	}
 
-	if *path == "" {
-		panic("usage: logtail -port=<port> -path=<log_file_path>;<log_file_path>;<log_file_path>")
-	}
-	logFiles = strings.Split(*path, ";")
-	for _, logFile := range logFiles {
-		if !vioutil.ExistFile(logFile) {
-			panic(fmt.Sprintf("%s not exists", logFile))
-		}
+	if *command == "" {
+		panic("usage: logtail -port=<port> -cmd=<cmd>")
 	}
 
-	startTailFiles(logFiles)
+	startTailCommand(*command)
 
 	handler := &httpHandler{
 		writer: defaultLogtailWriter,
