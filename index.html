@@ -2,6 +2,15 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <style>
+        pre {
+            margin: 0;
+            width: 100%;
+            white-space: pre-wrap;
+            white-space: -moz-pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
     <script>
         const maxLines = 10000;
         let lineCount = 0;
@@ -12,12 +21,13 @@
             let d = document.createElement("pre");
             d.innerText = message;
             output.appendChild(d);
-            
+
             lineCount++
             if (lineCount > maxLines) {
                 output.children.item(0).remove()
                 lineCount--;
             }
+            window.scrollTo(0, document.body.scrollHeight);
         };
 
         function restartTail() {
