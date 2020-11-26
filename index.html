@@ -3,6 +3,14 @@
 <head>
     <meta charset="utf-8">
     <style>
+        body {
+            font-size: 10px;
+        }
+
+        label {
+            color: red;
+        }
+
         pre {
             margin: 0;
             width: 100%;
@@ -16,6 +24,23 @@
         let lineCount = 0;
         let ws;
         let output;
+        let scrollingFlag = true;
+        let autoReconnectFlag = true;
+
+        function scrollingControl(btn) {
+            scrollingFlag = !scrollingFlag;
+            btn.innerText = (scrollingFlag ? "stop" : "start") + " scrolling";
+        }
+
+        function autoReconnectControl(btn) {
+            autoReconnectFlag = !autoReconnectFlag;
+            btn.innerText = (autoReconnectFlag ? "disable" : "enable") + " auto connect";
+        }
+
+        function error(message) {
+            let d = document.createElement("error_msg");
+            d.innerText = message;
+        }
 
         function print(message) {
             let d = document.createElement("pre");
@@ -27,13 +52,18 @@
                 output.children.item(0).remove()
                 lineCount--;
             }
-            window.scrollTo(0, document.body.scrollHeight);
-        };
+            if (scrollingFlag) {
+                window.scrollTo(0, document.body.scrollHeight);
+            }
+        }
 
         function restartTail() {
             ws = null;
-            if (window.confirm("connection closed, reconnect?")) {
-                startTail();
+            error("connection closed!");
+
+            if (autoReconnectFlag) {
+                error("connection closed, reconnect in 5s!");
+                window.setTimeout(startTail, 5 * 1000);
             }
         }
 
@@ -60,13 +90,26 @@
             }
         }
 
+        function heartbeat() {
+            if (ws != null) {
+                ws.send("ok")
+            }
+            window.setTimeout(heartbeat, 5000)
+        }
+
         window.addEventListener("load", function (evt) {
             output = document.getElementById("output");
-            startTail()
+            startTail();
+            window.setTimeout(heartbeat, 5000)
         });
     </script>
 </head>
 <body>
+<div style="background: #fff; width: 100%; position: fixed; float:right;">
+    <button style="float: right;" onclick="scrollingControl(this);">stop scrolling</button>
+    <button style="float: right;" onclick="autoReconnectControl(this);">disable auto connect</button>
+    <label id="error_msg"></label>
+</div>
 <div id="output"></div>
 </body>
 </html>

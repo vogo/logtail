@@ -17,7 +17,7 @@ func (ow *logtailWriter) AddWriter(w io.WriteCloser) {
 	ow.writers = append(ow.writers, w)
 }
 
-func (ow *logtailWriter) Write(p []byte) (n int, err error) {
+func (ow *logtailWriter) Write(p []byte) (int, error) {
 	ow.lock.Lock()
 	defer ow.lock.Unlock()
 
