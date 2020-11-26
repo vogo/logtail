@@ -1,10 +1,8 @@
-logtail is a web socket log tail tool.
+# logtail is a web socket log tailing tool.
 
-## usage 
+1. **install logtail**: `go get github.com/vogo/logtail/cmd/logtail`
 
-1. install logtail: `go get github.com/vogo/logtail/cmd/logtail`
-
-2. start logtail server `./logtail -port=<port> -cmd="<cmd>"`
+2. **start logtail server**: `./logtail -port=<port> -cmd="<cmd>"`
 
 examples:
 
@@ -16,4 +14,4 @@ examples:
 ./logtail -port=54322 -cmd="kubectl logs --tail 10 -f \$(kubectl get pods --selector=app=myapp -o jsonpath='{.items[*].metadata.name}')"
 ```
 
-3. browse `http://<ip>:<port>` to view tailing logs.
+3. **tailing logs**: browse `http://<server-ip>:<port>`.
