@@ -111,7 +111,7 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
     </script>
 </head>
 <body>
-<div style="background: #fff; width: 100%; position: fixed; float:right;">
+<div style="width: 99%; position: fixed;">
     <button style="float: right;" onclick="scrollingControl(this);">stop scrolling</button>
     <button style="float: right;" onclick="autoReconnectControl(this);">disable auto connect</button>
     <label id="error_msg"></label>

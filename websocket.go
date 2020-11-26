@@ -14,6 +14,7 @@ func (ww *wsWriter) Write(p []byte) (n int, err error) {
 	n = len(p)
 	if err = ww.conn.WriteMessage(1, p); err != nil {
 		logger.Error("failed to write message!", err)
+		_ = ww.Close()
 		return 0, err
 	}
 	return n, nil
