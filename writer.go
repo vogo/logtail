@@ -22,7 +22,7 @@ func (ow *logtailWriter) Write(p []byte) (n int, err error) {
 	defer ow.lock.Unlock()
 
 	if len(ow.writers) == 0 {
-		return
+		return len(p), nil
 	}
 
 	var fails []int
