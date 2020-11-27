@@ -13,10 +13,6 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
             font-size: 10px;
         }
 
-        label {
-            color: red;
-        }
-
         pre {
             margin: 0;
             width: 100%;
@@ -26,7 +22,7 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
         }
     </style>
     <script>
-        const maxLines = 10000;
+        let maxLines = 10000;
         let lineCount = 0;
         let ws;
         let output;
@@ -54,7 +50,7 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
             output.appendChild(d);
 
             lineCount++
-            if (lineCount > maxLines) {
+            while (lineCount > maxLines) {
                 output.children.item(0).remove()
                 lineCount--;
             }
@@ -87,7 +83,7 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
                 print(evt.data);
             }
             ws.onerror = function (evt) {
-                print("ERROR: " + evt.data);
+                error("ERROR: " + evt.data);
                 try {
                     ws.close()
                 } catch (e) {
@@ -111,10 +107,11 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
     </script>
 </head>
 <body>
-<div style="width: 99%; position: fixed;">
-    <button style="float: right;" onclick="scrollingControl(this);">stop scrolling</button>
-    <button style="float: right;" onclick="autoReconnectControl(this);">disable auto connect</button>
-    <label id="error_msg"></label>
+<div style="width: 99%; position: fixed; text-align: right;">
+    <label id="error_msg" style="color: red;"></label>
+    max lines:<input type="text" value="10000" onchange="maxLines=parseInt(this.value)">
+    <button onclick="scrollingControl(this);">stop scrolling</button>
+    <button onclick="autoReconnectControl(this);">disable auto connect</button>
 </div>
 <div id="output"></div>
 </body>

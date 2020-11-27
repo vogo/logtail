@@ -1,49 +1,39 @@
 package logtail
 
 import (
-	"io"
 	"sync"
 )
 
 type logtailWriter struct {
 	lock    sync.Mutex
-	writers []io.WriteCloser
+	writers map[int64]*websocketTransfer
 }
 
-func (ow *logtailWriter) AddWriter(w io.WriteCloser) {
-	ow.lock.Lock()
-	defer ow.lock.Unlock()
+func (ltw *logtailWriter) addTransfer(wt *websocketTransfer) {
+	ltw.lock.Lock()
+	defer ltw.lock.Unlock()
 
-	ow.writers = append(ow.writers, w)
+	ltw.writers[wt.index] = wt
 }
 
-func (ow *logtailWriter) Write(p []byte) (int, error) {
-	ow.lock.Lock()
-	defer ow.lock.Unlock()
+func (ltw *logtailWriter) removeTransfer(wt *websocketTransfer) {
+	ltw.lock.Lock()
+	defer ltw.lock.Unlock()
 
-	if len(ow.writers) == 0 {
-		return len(p), nil
+	delete(ltw.writers, wt.index)
+}
+
+func (ltw *logtailWriter) Write(bytes []byte) (int, error) {
+	ltw.lock.Lock()
+	defer ltw.lock.Unlock()
+
+	if len(ltw.writers) == 0 {
+		return len(bytes), nil
 	}
 
-	var fails []int
-	for idx, w := range ow.writers {
-		if _, err := w.Write(p); err != nil {
-			fails = append(fails, idx)
-			_ = w.Close()
-		}
+	for _, wt := range ltw.writers {
+		wt.transferChan <- bytes
 	}
 
-	if len(fails) > 0 {
-		var filterWriters []io.WriteCloser
-		from := 0
-		for _, i := range fails {
-			if i > from {
-				filterWriters = append(filterWriters, ow.writers[from:i]...)
-			}
-			from = i
-		}
-		ow.writers = filterWriters
-	}
-
-	return len(p), nil
+	return len(bytes), nil
 }
