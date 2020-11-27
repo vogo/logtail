@@ -40,7 +40,7 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
         }
 
         function error(message) {
-            let d = document.createElement("error_msg");
+            let d = document.getElementById("error_msg");
             d.innerText = message;
         }
 
