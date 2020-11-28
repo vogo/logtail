@@ -25,14 +25,14 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
         let ws;
         let output;
 
-        let scrollingFlag = true;
+        let scrollingFlag = false;
 
         function scrollingControl(btn) {
             scrollingFlag = !scrollingFlag;
             btn.innerText = (scrollingFlag ? "stop" : "start") + " scrolling";
         }
 
-        let autoReconnectFlag = true;
+        let autoReconnectFlag = false;
 
         function autoReconnectControl(btn) {
             autoReconnectFlag = !autoReconnectFlag;
