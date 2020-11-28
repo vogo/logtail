@@ -9,13 +9,11 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
 <head>
     <meta charset="utf-8">
     <style>
-        body {
-            font-size: 10px;
+        * {
+            margin: 0
         }
 
-        pre {
-            margin: 0;
-            width: 100%;
+        .textBreak pre {
             white-space: pre-wrap;
             white-space: -moz-pre-wrap;
             word-wrap: break-word;
@@ -26,17 +24,38 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
         let lineCount = 0;
         let ws;
         let output;
+
         let scrollingFlag = true;
-        let autoReconnectFlag = true;
 
         function scrollingControl(btn) {
             scrollingFlag = !scrollingFlag;
             btn.innerText = (scrollingFlag ? "stop" : "start") + " scrolling";
         }
 
+        let autoReconnectFlag = true;
+
         function autoReconnectControl(btn) {
             autoReconnectFlag = !autoReconnectFlag;
-            btn.innerText = (autoReconnectFlag ? "disable" : "enable") + " auto connect";
+            btn.innerText = (autoReconnectFlag ? "disable" : "enable") + " auto reconnect";
+        }
+
+        let breakWordFlag = false;
+
+        function breakWordControl(btn) {
+            breakWordFlag = !breakWordFlag;
+            if (breakWordFlag) {
+                output.setAttribute("class", "textBreak");
+                btn.innerText = "inline";
+            } else {
+                output.setAttribute("class", "");
+                btn.innerText = "break word";
+            }
+        }
+
+        function backgroundControl(btn) {
+            let values = btn.value.split(":")
+            document.body.style['background'] = values[0];
+            document.body.style['color'] = values[1];
         }
 
         function error(message) {
@@ -73,6 +92,7 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
             if (ws) {
                 return false;
             }
+            error("")
             ws = new WebSocket("ws://" + document.location.host + "/tail");
             ws.onopen = function (evt) {
             }
@@ -101,17 +121,34 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
 
         window.addEventListener("load", function (evt) {
             output = document.getElementById("output");
+            document.getElementById("fontSizeSel").onchange(null);
+            document.getElementById("backgroundSel").onchange(null);
+            document.getElementById("backgroundSel").onchange(null);
+            document.getElementById("breakWordBtn").click();
+            document.getElementById("scrollingBtn").click();
+            document.getElementById("autoReconnectBtn").click();
+
             startTail();
-            window.setTimeout(heartbeat, 5000)
+            window.setTimeout(heartbeat, 5000);
         });
     </script>
 </head>
 <body>
 <div style="width: 99%; position: fixed; text-align: right;">
     <label id="error_msg" style="color: red;"></label>
-    max lines:<input type="text" value="10000" onchange="maxLines=parseInt(this.value)">
-    <button onclick="scrollingControl(this);">stop scrolling</button>
-    <button onclick="autoReconnectControl(this);">disable auto connect</button>
+    max lines:<input type="text" style="width:50px;" value="10000" onchange="maxLines=parseInt(this.value)">
+    <select id="fontSizeSel" onchange="document.body.style['font-size']=this.value">
+        <option value="10px">small</option>
+        <option value="12px">middle</option>
+        <option value="14px">big</option>
+    </select>
+    <select id="backgroundSel" onchange="backgroundControl(this)">
+        <option value="#FFF:#000">white</option>
+        <option value="#0D2A35:#64777A">black</option>
+    </select>
+    <button id="breakWordBtn" onclick="breakWordControl(this);"></button>
+    <button id="scrollingBtn" onclick="scrollingControl(this);"></button>
+    <button id="autoReconnectBtn" onclick="autoReconnectControl(this);"></button>
 </div>
 <div id="output"></div>
 </body>
