@@ -1,6 +1,6 @@
 # logtail is a web socket log tailing tool.
 
-1. **install logtail**: `go get github.com/vogo/logtail/cmd/logtail`
+1. **install logtail**: `go get -u github.com/vogo/logtail/cmd/logtail`
 
 2. **start logtail server**: `logtail -port=<port> -cmd="<cmd>"`
 
