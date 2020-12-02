@@ -37,6 +37,9 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
         function autoReconnectControl(btn) {
             autoReconnectFlag = !autoReconnectFlag;
             btn.innerText = (autoReconnectFlag ? "disable" : "enable") + " auto reconnect";
+            if (autoReconnectFlag && ws == null) {
+                restartTail();
+            }
         }
 
         let breakWordFlag = false;
@@ -103,7 +106,7 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
                 print(evt.data);
             }
             ws.onerror = function (evt) {
-                error("ERROR: " + evt.data);
+                error(evt.data);
                 try {
                     ws.close()
                 } catch (e) {
@@ -119,7 +122,7 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
             window.setTimeout(heartbeat, 5000)
         }
 
-        window.addEventListener("load", function (evt) {
+        window.onload = function (evt) {
             output = document.getElementById("output");
             document.getElementById("fontSizeSel").onchange(null);
             document.getElementById("backgroundSel").onchange(null);
@@ -130,7 +133,12 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
 
             startTail();
             window.setTimeout(heartbeat, 5000);
-        });
+        };
+        window.onbeforeunload = function (evt) {
+            if (ws != null) {
+                ws.close()
+            }
+        }
     </script>
 </head>
 <body>
