@@ -132,7 +132,7 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
             document.getElementById("autoReconnectBtn").click();
 
             startTail();
-            window.setTimeout(heartbeat, 5000);
+            window.setTimeout(heartbeat, 1000);
         };
         window.onbeforeunload = function (evt) {
             if (ws != null) {

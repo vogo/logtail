@@ -16,7 +16,7 @@ var (
 
 	defaultLogtailWriter = &logtailWriter{
 		lock:    sync.Mutex{},
-		writers: make(map[int64]*websocketTransfer, 16),
+		writers: make(map[int64]*transfer, 16),
 	}
 )
 

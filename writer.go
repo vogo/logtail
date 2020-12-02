@@ -6,17 +6,17 @@ import (
 
 type logtailWriter struct {
 	lock    sync.Mutex
-	writers map[int64]*websocketTransfer
+	writers map[int64]*transfer
 }
 
-func (ltw *logtailWriter) addTransfer(wt *websocketTransfer) {
+func (ltw *logtailWriter) addTransfer(wt *transfer) {
 	ltw.lock.Lock()
 	defer ltw.lock.Unlock()
 
 	ltw.writers[wt.index] = wt
 }
 
-func (ltw *logtailWriter) removeTransfer(wt *websocketTransfer) {
+func (ltw *logtailWriter) removeTransfer(wt *transfer) {
 	ltw.lock.Lock()
 	defer ltw.lock.Unlock()
 
@@ -32,7 +32,7 @@ func (ltw *logtailWriter) Write(bytes []byte) (int, error) {
 	}
 
 	for _, wt := range ltw.writers {
-		wt.transferChan <- bytes
+		wt.transChan <- bytes
 	}
 
 	return len(bytes), nil
