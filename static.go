@@ -81,13 +81,18 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
             }
         }
 
+        let restartTimeout;
+
         function restartTail() {
             ws = null;
             error("connection closed!");
 
             if (autoReconnectFlag) {
                 error("connection closed, reconnect in 5s!");
-                window.setTimeout(startTail, 5 * 1000);
+                if (restartTimeout) {
+                    window.clearTimeout(restartTimeout);
+                }
+                restartTimeout = window.setTimeout(startTail, 5 * 1000);
             }
         }
 
