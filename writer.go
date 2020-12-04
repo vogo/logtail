@@ -4,35 +4,43 @@ import (
 	"sync"
 )
 
+var defaultLogtailWriter = &logtailWriter{
+	lock:    sync.Mutex{},
+	tunnels: make(map[int64]Tunnel, 16),
+}
+
 type logtailWriter struct {
 	lock    sync.Mutex
-	writers map[int64]*transfer
+	tunnels map[int64]Tunnel
 }
 
-func (ltw *logtailWriter) addTransfer(wt *transfer) {
+func (ltw *logtailWriter) addTunnel(index int64, t Tunnel) {
 	ltw.lock.Lock()
 	defer ltw.lock.Unlock()
 
-	ltw.writers[wt.index] = wt
+	ltw.tunnels[index] = t
 }
 
-func (ltw *logtailWriter) removeTransfer(wt *transfer) {
+func (ltw *logtailWriter) removeTunnel(index int64) {
 	ltw.lock.Lock()
 	defer ltw.lock.Unlock()
 
-	delete(ltw.writers, wt.index)
+	delete(ltw.tunnels, index)
 }
 
 func (ltw *logtailWriter) Write(bytes []byte) (int, error) {
 	ltw.lock.Lock()
 	defer ltw.lock.Unlock()
 
-	if len(ltw.writers) == 0 {
+	if len(ltw.tunnels) == 0 {
 		return len(bytes), nil
 	}
 
-	for _, wt := range ltw.writers {
-		wt.transChan <- bytes
+	for _, t := range ltw.tunnels {
+		select {
+		case t <- bytes:
+		default:
+		}
 	}
 
 	return len(bytes), nil

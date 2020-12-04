@@ -3,35 +3,40 @@ package logtail
 import (
 	"flag"
 	"fmt"
-	"net/http"
 	"os"
-	"sync"
 
 	"github.com/vogo/vogo/vos"
 )
 
 var (
-	port    = flag.Int("port", 54321, "tail port")
-	command = flag.String("cmd", "", "tail command")
-
-	defaultLogtailWriter = &logtailWriter{
-		lock:    sync.Mutex{},
-		writers: make(map[int64]*transfer, 16),
-	}
+	port          = flag.Int("port", 54321, "tail port")
+	command       = flag.String("cmd", "", "tail command")
+	matchContains = flag.String("match_contains", "", "a containing string")
+	alertUrl      = flag.String("alert_url", "", "alert ding url")
 )
 
 func Start() {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println(err)
+			flag.PrintDefaults()
+		}
+	}()
+
 	flag.Parse()
 	vos.LoadUserEnv()
 
 	if *command == "" {
-		fmt.Println("usage: logtail -port=<port> -cmd=<cmd>")
+		flag.PrintDefaults()
 		os.Exit(1)
+	}
+
+	if *matchContains != "" && *alertUrl != "" {
+		filter := NewFilter(NewContainsMatcher(*matchContains), NewDingAlerter(*alertUrl))
+		NewTransfer(filter).Start()
 	}
 
 	startTailCommand(*command)
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), &httpHandler{}); err != nil {
-		panic(err)
-	}
+	startHttpListener()
 }

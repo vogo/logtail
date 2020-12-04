@@ -92,7 +92,7 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
                 if (restartTimeout) {
                     window.clearTimeout(restartTimeout);
                 }
-                restartTimeout = window.setTimeout(startTail, 5 * 1000);
+                restartTimeout = window.setTimeout(startTail, 5000);
             }
         }
 
@@ -122,9 +122,13 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
 
         function heartbeat() {
             if (ws != null) {
-                ws.send("ok")
+                try {
+                    ws.send("ok")
+                } catch (e) {
+                    console.log("send error: " + e)
+                }
             }
-            window.setTimeout(heartbeat, 5000)
+            window.setTimeout(heartbeat, 8000)
         }
 
         window.onload = function (evt) {
