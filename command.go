@@ -12,8 +12,9 @@ func startTailCommand(cmdStr string) {
 		for {
 			logger.Info(cmdStr)
 			cmd := exec.Command("/bin/sh", "-c", cmdStr)
-			cmd.Stdout = defaultLogtailWriter
-			cmd.Stderr = defaultLogtailWriter
+			cmd.Stdout = defaultLogtailServer
+			cmd.Stderr = defaultLogtailServer
+
 			if err := cmd.Run(); err != nil {
 				logger.Errorf("failed to tail file, try after 10s! error: %+v", err)
 				time.Sleep(10 * time.Second)

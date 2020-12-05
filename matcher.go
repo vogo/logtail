@@ -7,7 +7,7 @@ type Matcher interface {
 type ContainsMatcher struct {
 	pattern string
 	plen    int
-	pnext   []int
+	kmp     []int
 }
 
 func NewContainsMatcher(pattern string) *ContainsMatcher {
@@ -20,17 +20,17 @@ func NewContainsMatcher(pattern string) *ContainsMatcher {
 	}
 
 	cm.plen = len(pattern)
-	cm.pnext = make([]int, cm.plen+1)
-	cm.pnext[0] = -1
+	cm.kmp = make([]int, cm.plen+1)
+	cm.kmp[0] = -1
 	for i := 1; i < cm.plen; i++ {
-		j := cm.pnext[i-1]
+		j := cm.kmp[i-1]
 		for j > -1 && cm.pattern[j+1] != cm.pattern[i] {
-			j = cm.pnext[j]
+			j = cm.kmp[j]
 		}
 		if cm.pattern[j+1] == cm.pattern[i] {
 			j++
 		}
-		cm.pnext[i] = j
+		cm.kmp[i] = j
 	}
 	return cm
 }
@@ -52,7 +52,7 @@ func (cm *ContainsMatcher) Match(bytes []byte) [][]byte {
 		}
 
 		for j > -1 && cm.pattern[j+1] != bytes[i] {
-			j = cm.pnext[j]
+			j = cm.kmp[j]
 		}
 		if cm.pattern[j+1] == bytes[i] {
 			j++
@@ -82,7 +82,7 @@ func (cm *ContainsMatcher) Match(bytes []byte) [][]byte {
 
 			start = i
 
-			j = cm.pnext[j]
+			j = cm.kmp[j]
 		}
 	}
 	return matches

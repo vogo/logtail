@@ -1,7 +1,6 @@
 package logtail
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -9,19 +8,19 @@ import (
 	"github.com/vogo/logger"
 )
 
-type websocketWriter struct {
+type WebsocketTransfer struct {
 	conn *websocket.Conn
 }
 
-func (ww *websocketWriter) Write(bytes []byte) (int, error) {
-	return len(bytes), ww.conn.WriteMessage(1, bytes)
+func (ww *WebsocketTransfer) Trans(bytes []byte) error {
+	return ww.conn.WriteMessage(1, bytes)
 }
 
-func startHeartbeat(t *Transfer, c *websocket.Conn) {
+func startWebsocketHeartbeat(t *Router, c *websocket.Conn) {
 	defer func() {
 		_ = recover()
 		t.Close()
-		logger.Warnf("ws connection %d heartbeat stopped", t.index)
+		logger.Warnf("ws connection %d heartbeat stopped", t.id)
 	}()
 
 	for {
@@ -31,7 +30,7 @@ func startHeartbeat(t *Transfer, c *websocket.Conn) {
 		default:
 			_ = c.SetReadDeadline(time.Now().Add(10 * time.Second))
 			if _, _, err := c.ReadMessage(); err != nil {
-				logger.Warnf("ws connection %d heartbeat error: %+v", t.index, err)
+				logger.Warnf("ws connection %d heartbeat error: %+v", t.id, err)
 				t.Close()
 				return
 			}
@@ -39,17 +38,7 @@ func startHeartbeat(t *Transfer, c *websocket.Conn) {
 	}
 }
 
-var upgrader = websocket.Upgrader{}
-
-type httpHandler struct {
-}
-
-func (l *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	if request.RequestURI != "/tail" {
-		_, _ = response.Write(indexHTMLContent)
-		return
-	}
-
+func startWebsocketTransfer(response http.ResponseWriter, request *http.Request, serverId string) {
 	c, err := upgrader.Upgrade(response, request, nil)
 	if err != nil {
 		logger.Error("web socket error:", err)
@@ -57,17 +46,13 @@ func (l *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 	}
 	defer c.Close()
 
-	t := NewTransfer(&websocketWriter{
-		conn: c,
-	})
-
-	t.Start()
-
-	startHeartbeat(t, c)
-}
-
-func startHttpListener() {
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), &httpHandler{}); err != nil {
-		panic(err)
+	server, ok := serverDB[serverId]
+	if !ok {
+		response.WriteHeader(http.StatusNotFound)
+		return
 	}
+	websocketTransfer := &WebsocketTransfer{conn: c}
+	router := NewRouter(nil, websocketTransfer)
+	server.AddRouter(router)
+	startWebsocketHeartbeat(router, c)
 }
