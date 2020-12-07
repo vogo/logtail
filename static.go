@@ -121,7 +121,7 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
         }
 
         function heartbeat() {
-            if (ws != null) {
+            if (ws != null && ws.readyState === 1) {
                 try {
                     ws.send("ok")
                 } catch (e) {

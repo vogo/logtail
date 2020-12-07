@@ -19,19 +19,19 @@ func (ww *WebsocketTransfer) Trans(bytes []byte) error {
 func startWebsocketHeartbeat(t *Router, c *websocket.Conn) {
 	defer func() {
 		_ = recover()
-		t.Close()
-		logger.Warnf("ws connection %d heartbeat stopped", t.id)
+		t.Stop()
+		logger.Infof("router %s websocket heartbeat stopped", t.id)
 	}()
 
 	for {
 		select {
-		case <-t.ch:
+		case <-t.stop:
 			return
 		default:
 			_ = c.SetReadDeadline(time.Now().Add(10 * time.Second))
 			if _, _, err := c.ReadMessage(); err != nil {
-				logger.Warnf("ws connection %d heartbeat error: %+v", t.id, err)
-				t.Close()
+				logger.Warnf("router %s websocket heartbeat error: %+v", t.id, err)
+				t.Stop()
 				return
 			}
 		}
@@ -52,7 +52,7 @@ func startWebsocketTransfer(response http.ResponseWriter, request *http.Request,
 		return
 	}
 	websocketTransfer := &WebsocketTransfer{conn: c}
-	router := NewRouter(nil, websocketTransfer)
-	server.AddRouter(router)
+	router := NewRouter(nil, []Transfer{websocketTransfer})
+	server.StartRouter(router)
 	startWebsocketHeartbeat(router, c)
 }

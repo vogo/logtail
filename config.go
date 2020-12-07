@@ -13,9 +13,9 @@ var (
 	file          = flag.String("file", "", "config file")
 	port          = flag.Int("port", DefaultServerPort, "tail port")
 	command       = flag.String("cmd", "", "tail command")
-	matchContains = flag.String("match_contains", "", "a containing string")
-	dingUrl       = flag.String("ding_alert_url", "", "dingding alert url")
-	webhookUrl    = flag.String("webhook_alert_url", "", "webhook alert url")
+	matchContains = flag.String("match-contains", "", "a containing string")
+	dingUrl       = flag.String("ding-url", "", "dingding url")
+	webhookUrl    = flag.String("webhook-url", "", "webhook url")
 )
 
 type Config struct {
@@ -30,11 +30,11 @@ type ServerConfig struct {
 }
 
 type RouterConfig struct {
-	Filters   []*FilterConfig   `json:"filters"`
+	Matchers  []*MatchConfig    `json:"matchers"`
 	Transfers []*TransferConfig `json:"transfers"`
 }
 
-type FilterConfig struct {
+type MatchConfig struct {
 	MatchContains string `json:"match_contains"`
 }
 
@@ -92,7 +92,7 @@ func readConfig() (*Config, error) {
 	serverConfig.Routers = append(serverConfig.Routers, routerConfig)
 
 	if *matchContains != "" {
-		routerConfig.Filters = append(routerConfig.Filters, &FilterConfig{
+		routerConfig.Matchers = append(routerConfig.Matchers, &MatchConfig{
 			MatchContains: *matchContains,
 		})
 	}
@@ -128,9 +128,9 @@ func validateServerConfig(server *ServerConfig) error {
 }
 
 func validateRouterConfig(router *RouterConfig) error {
-	if len(router.Filters) > 0 {
-		for _, filter := range router.Filters {
-			if err := validateFilterConfig(filter); err != nil {
+	if len(router.Matchers) > 0 {
+		for _, filter := range router.Matchers {
+			if err := validateMatchConfig(filter); err != nil {
 				return err
 			}
 		}
@@ -152,8 +152,8 @@ func validateTransferConfig(transfer *TransferConfig) error {
 	return nil
 }
 
-func validateFilterConfig(filter *FilterConfig) error {
-	if filter.MatchContains == "" {
+func validateMatchConfig(config *MatchConfig) error {
+	if config.MatchContains == "" {
 		return errors.New("match contains is nil")
 	}
 	return nil
