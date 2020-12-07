@@ -28,7 +28,7 @@ func NewRouter(matchers []Matcher, transfers []Transfer) *Router {
 	return t
 }
 
-func (r *Router) SetFilters(matchers []Matcher) {
+func (r *Router) SetMatchers(matchers []Matcher) {
 	r.matchers = matchers
 }
 

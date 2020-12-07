@@ -28,16 +28,23 @@ func startServer(config *ServerConfig) {
 }
 
 func buildRouter(config *RouterConfig) *Router {
+	return NewRouter(buildMatchers(config.Matchers), buildTransfers(config.Transfers))
+}
+
+func buildMatchers(matcherConfigs []*MatchConfig) []Matcher {
 	var matchers []Matcher
-	var transfers []Transfer
-	for _, matchConfig := range config.Matchers {
+	for _, matchConfig := range matcherConfigs {
 		matchers = append(matchers, buildMatcher(matchConfig))
 	}
-	for _, transferConfig := range config.Transfers {
+	return matchers
+}
+
+func buildTransfers(transferConfigs []*TransferConfig) []Transfer {
+	var transfers []Transfer
+	for _, transferConfig := range transferConfigs {
 		transfers = append(transfers, buildTransfer(transferConfig))
 	}
-	var router = NewRouter(matchers, transfers)
-	return router
+	return transfers
 }
 
 func buildTransfer(config *TransferConfig) Transfer {

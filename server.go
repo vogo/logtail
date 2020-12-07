@@ -106,7 +106,8 @@ func (s *Server) Start() {
 						logger.Errorf("failed to tail file, try after 10s! error: %+v", err)
 						time.Sleep(10 * time.Second)
 					}
-				}}
+				}
+			}
 		}
 	}()
 }
@@ -129,9 +130,13 @@ func (s *Server) Stop() error {
 		logger.Warnf("server %s kill command error: %+v", s.id, err)
 	}
 
-	for _, t := range s.routers {
-		t.Stop()
-	}
+	s.StopRouters()
 
 	return nil
+}
+
+func (s *Server) StopRouters() {
+	for _, router := range s.routers {
+		router.Stop()
+	}
 }

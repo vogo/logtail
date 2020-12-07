@@ -30,10 +30,12 @@ func (l *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 
 	if strings.HasPrefix(uri, UriIndexPrefix+"/") {
 		serverId := uri[len(UriIndexPrefix)+1:]
-		if _, ok := serverDB[serverId]; ok {
+		_, ok := serverDB[serverId]
+		if !ok {
 			response.WriteHeader(http.StatusNotFound)
 			return
 		}
+
 		routeToServerIndex(response, serverId)
 		return
 	}
@@ -55,11 +57,8 @@ func (l *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 	}
 
 	response.WriteHeader(http.StatusNotFound)
-	return
-
 }
 
 func routeToServerIndex(response http.ResponseWriter, id string) {
 	_, _ = response.Write(indexHTMLContent)
-	return
 }
