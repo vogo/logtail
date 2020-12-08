@@ -33,34 +33,34 @@ logtail -file=/Users/wongoo/logtail-config.json
 config file sample:
 ```json
 {
-	"port":54321,
-	"servers":[
-		{
-			"id": "app1",
-			"command": "tail -f /Users/wongoo/app/app1.log",
-			"routers": [
-				{
-					"matchers": [
-						{
-							"match_contains": "ERROR"
-						}
-					],
-					"transfers": [
-						{
-							"ding_url": "https://oapi.dingtalk.com/robot/send?access_token=<token>"
-						},
-						{
-							"webhook_url": "http://127.0.0.1:9000"
-						}
-					]
-				}
-			]
-		},
-		{
-			"id": "app2",
-			"command": "tail -f /Users/wongoo/app/app2.log"
-		}
-	]
+  "port": 54321,
+  "servers": [
+    {
+      "id": "app1",
+      "command": "tail -f /Users/wongoo/app/app1.log",
+      "routers": [
+        {
+          "matchers": [
+            {
+              "match_contains": "ERROR"
+            }
+          ],
+          "transfers": [
+            {
+              "ding_url": "https://oapi.dingtalk.com/robot/send?access_token=<token>"
+            },
+            {
+              "webhook_url": "http://127.0.0.1:9000"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "app2",
+      "command": "tail -f /Users/wongoo/app/app2.log"
+    }
+  ]
 }
 ```
 

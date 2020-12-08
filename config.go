@@ -5,6 +5,8 @@ import (
 	"errors"
 	"flag"
 	"io/ioutil"
+
+	"github.com/vogo/logger"
 )
 
 const DefaultServerPort = 54321
@@ -168,7 +170,7 @@ func validateTransferConfig(transfer *TransferConfig) error {
 
 func validateMatchConfig(config *MatcherConfig) error {
 	if config.MatchContains == "" {
-		return errors.New("match contains is nil")
+		logger.Debugf("match contains is nil")
 	}
 	return nil
 }

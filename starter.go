@@ -34,7 +34,10 @@ func buildRouter(config *RouterConfig) *Router {
 func buildMatchers(matcherConfigs []*MatcherConfig) []Matcher {
 	var matchers []Matcher
 	for _, matchConfig := range matcherConfigs {
-		matchers = append(matchers, buildMatcher(matchConfig))
+		matcher := buildMatcher(matchConfig)
+		if matcher != nil {
+			matchers = append(matchers, matcher)
+		}
 	}
 	return matchers
 }
@@ -55,5 +58,8 @@ func buildTransfer(config *TransferConfig) Transfer {
 }
 
 func buildMatcher(config *MatcherConfig) *ContainsMatcher {
+	if config.MatchContains == "" {
+		return nil
+	}
 	return NewContainsMatcher(config.MatchContains)
 }
