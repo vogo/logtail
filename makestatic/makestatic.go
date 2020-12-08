@@ -13,7 +13,7 @@ import (
 )
 
 var files = []string{
-	"static/index.html",
+	"index.html",
 }
 
 func main() {

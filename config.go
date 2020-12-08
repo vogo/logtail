@@ -20,7 +20,7 @@ var (
 
 type Config struct {
 	Port    int             `json:"port"`
-	Servers []*ServerConfig `json:"serverDB"`
+	Servers []*ServerConfig `json:"servers"`
 }
 
 type ServerConfig struct {

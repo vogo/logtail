@@ -116,7 +116,11 @@
                 return false;
             }
             error("")
-            ws = new WebSocket("ws://" + document.location.host + "/tail");
+            let serverId = document.location.pathname;
+            if (serverId.startsWith("/index")) {
+                serverId = serverId.substring(6)
+            }
+            ws = new WebSocket("ws://" + document.location.host + "/tail" + serverId);
             ws.onopen = function (evt) {
             }
             ws.onclose = function (evt) {

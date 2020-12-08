@@ -27,7 +27,7 @@ func startWebsocketTransfer(response http.ResponseWriter, request *http.Request,
 
 	server, ok := serverDB[serverId]
 	if !ok {
-		response.WriteHeader(http.StatusNotFound)
+		logger.Warnf("server id not found: %s", serverId)
 		return
 	}
 	websocketTransfer := &WebsocketTransfer{conn: c}

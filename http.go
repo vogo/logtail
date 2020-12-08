@@ -1,6 +1,8 @@
 package logtail
 
 import (
+	"bytes"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -24,7 +26,7 @@ func (l *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 	uri := request.RequestURI
 
 	if uri == "" || uri == "/" || uri == UriIndexPrefix {
-		routeToServerIndex(response, DefaultServerId)
+		responseServerList(response)
 		return
 	}
 
@@ -45,7 +47,7 @@ func (l *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 		tailServerId = DefaultServerId
 	} else if strings.HasPrefix(uri, UriTailPrefix+"/") {
 		tailServerId = uri[len(UriTailPrefix)+1:]
-		if _, ok := serverDB[tailServerId]; ok {
+		if _, ok := serverDB[tailServerId]; !ok {
 			response.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -56,7 +58,15 @@ func (l *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	response.WriteHeader(http.StatusNotFound)
+	responseServerList(response)
+}
+
+func responseServerList(response http.ResponseWriter) {
+	buf := bytes.NewBuffer(nil)
+	for k := range serverDB {
+		buf.WriteString(fmt.Sprintf("<a href=\"/index/%s\" target=_blank>%s</a> ", k, k))
+	}
+	_, _ = response.Write(buf.Bytes())
 }
 
 func routeToServerIndex(response http.ResponseWriter, id string) {

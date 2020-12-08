@@ -20,6 +20,7 @@ type Server struct {
 	lock        sync.Mutex
 	once        sync.Once
 	stop        chan struct{}
+	command     string
 	cmd         *exec.Cmd
 	routerCount int64
 	routers     map[int64]*Router
@@ -31,6 +32,7 @@ func NewServer(id string, command string) *Server {
 		lock:        sync.Mutex{},
 		once:        sync.Once{},
 		stop:        make(chan struct{}),
+		command:     command,
 		routers:     make(map[int64]*Router, 4),
 		routerCount: 0,
 	}
@@ -40,12 +42,6 @@ func NewServer(id string, command string) *Server {
 	}
 
 	serverDB[id] = server
-
-	logger.Infof("server %s command: %s", id, command)
-
-	server.cmd = exec.Command("/bin/sh", "-c", command)
-	server.cmd.Stdout = server
-	server.cmd.Stderr = server
 
 	return server
 }
@@ -98,12 +94,17 @@ func (s *Server) Start() {
 			case <-s.stop:
 				return
 			default:
+				logger.Infof("server %s command: %s", s.id, s.command)
+				s.cmd = exec.Command("/bin/sh", "-c", s.command)
+				s.cmd.Stdout = s
+				s.cmd.Stderr = s
+
 				if err := s.cmd.Run(); err != nil {
 					select {
 					case <-s.stop:
 						return
 					default:
-						logger.Errorf("failed to tail file, try after 10s! error: %+v", err)
+						logger.Errorf("failed to exec command, retry after 10s! error: %+v, command: %s", err, s.command)
 						time.Sleep(10 * time.Second)
 					}
 				}
@@ -126,8 +127,11 @@ func (s *Server) Stop() error {
 		close(s.stop)
 	})
 
-	if err := s.cmd.Process.Kill(); err != nil {
-		logger.Warnf("server %s kill command error: %+v", s.id, err)
+	if s.cmd != nil {
+		if err := s.cmd.Process.Kill(); err != nil {
+			logger.Warnf("server %s kill command error: %+v", s.id, err)
+		}
+		s.cmd = nil
 	}
 
 	s.StopRouters()
