@@ -34,11 +34,9 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
             matcherTimeout = setTimeout(function () {
                 if (ws != null && ws.readyState === 1) {
                     try {
-                        let containsRequest = {
-                            "matchers": [{
-                                "match_contains": btn.value
-                            }]
-                        }
+                        let containsRequest = [{
+                            "match_contains": btn.value
+                        }]
                         let json = JSON.stringify(containsRequest)
                         ws.send("1" + json)
                     } catch (e) {
@@ -174,7 +172,7 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
     </script>
 </head>
 <body>
-<div style="width: 99%; position: fixed; text-align: right;">
+<div style="width: 99%; position: fixed; text-align: right;background: aliceblue;">
     <label id="error_msg" style="color: red;"></label>
     contains: <input type="text" style="width:50px;" onchange="matcherConfig(this)">
     max lines:<input type="text" style="width:50px;" value="10000" onchange="maxLines=parseInt(this.value)">
@@ -191,6 +189,6 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
     <button id="scrollingBtn" onclick="scrollingControl(this);"></button>
     <button id="autoReconnectBtn" onclick="autoReconnectControl(this);"></button>
 </div>
-<div id="output"></div>
+<div id="output" style="padding-top: 30px;"></div>
 </body>
 </html>`)

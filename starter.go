@@ -31,7 +31,7 @@ func buildRouter(config *RouterConfig) *Router {
 	return NewRouter(buildMatchers(config.Matchers), buildTransfers(config.Transfers))
 }
 
-func buildMatchers(matcherConfigs []*MatchConfig) []Matcher {
+func buildMatchers(matcherConfigs []*MatcherConfig) []Matcher {
 	var matchers []Matcher
 	for _, matchConfig := range matcherConfigs {
 		matchers = append(matchers, buildMatcher(matchConfig))
@@ -54,6 +54,6 @@ func buildTransfer(config *TransferConfig) Transfer {
 	return NewWebhookTransfer(config.WebhookURL)
 }
 
-func buildMatcher(config *MatchConfig) *ContainsMatcher {
+func buildMatcher(config *MatcherConfig) *ContainsMatcher {
 	return NewContainsMatcher(config.MatchContains)
 }

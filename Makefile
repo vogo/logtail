@@ -10,7 +10,7 @@ check:
 test:
 		go test
 
-static:
+static: static/index.html
 	go run makestatic/makestatic.go
 
 build: format check test static

@@ -40,7 +40,7 @@ func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
 			}
 
 			if len(data) > 0 && data[0] == MessageTypeConfigMatcher {
-				if err := handleRouterConfig(router, transfer, data[1:]); err != nil {
+				if err := handleRouterConfig(router, data[1:]); err != nil {
 					logger.Warnf("router %s websocket router config error: %+v", router.id, err)
 				}
 			}
@@ -67,19 +67,16 @@ func startWebsocketTransfer(response http.ResponseWriter, request *http.Request,
 	startWebsocketHeartbeat(router, websocketTransfer)
 }
 
-func handleRouterConfig(router *Router, transfer *WebsocketTransfer, data []byte) error {
-	var routeConfig RouterConfig
-	if err := json.Unmarshal(data, &routeConfig); err != nil {
+func handleRouterConfig(router *Router, data []byte) error {
+	var matcherConfigs []*MatcherConfig
+	if err := json.Unmarshal(data, &matcherConfigs); err != nil {
 		return err
 	}
-	if err := validateRouterConfig(&routeConfig); err != nil {
+	if err := validateMatchers(matcherConfigs); err != nil {
 		return err
 	}
 
-	router.SetMatchers(buildMatchers(routeConfig.Matchers))
-	transfers := buildTransfers(routeConfig.Transfers)
-	transfers = append(transfers, transfer)
-	router.SetTransfer(transfers)
+	router.SetMatchers(buildMatchers(matcherConfigs))
 
 	return nil
 }

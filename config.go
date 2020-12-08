@@ -30,11 +30,11 @@ type ServerConfig struct {
 }
 
 type RouterConfig struct {
-	Matchers  []*MatchConfig    `json:"matchers"`
+	Matchers  []*MatcherConfig  `json:"matchers"`
 	Transfers []*TransferConfig `json:"transfers"`
 }
 
-type MatchConfig struct {
+type MatcherConfig struct {
 	MatchContains string `json:"match_contains"`
 }
 
@@ -92,7 +92,7 @@ func readConfig() (*Config, error) {
 	serverConfig.Routers = append(serverConfig.Routers, routerConfig)
 
 	if *matchContains != "" {
-		routerConfig.Matchers = append(routerConfig.Matchers, &MatchConfig{
+		routerConfig.Matchers = append(routerConfig.Matchers, &MatcherConfig{
 			MatchContains: *matchContains,
 		})
 	}
@@ -128,15 +128,29 @@ func validateServerConfig(server *ServerConfig) error {
 }
 
 func validateRouterConfig(router *RouterConfig) error {
-	if len(router.Matchers) > 0 {
-		for _, filter := range router.Matchers {
+	if err := validateMatchers(router.Matchers); err != nil {
+		return err
+	}
+	if err := validateTransfers(router.Transfers); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateMatchers(matchers []*MatcherConfig) error {
+	if len(matchers) > 0 {
+		for _, filter := range matchers {
 			if err := validateMatchConfig(filter); err != nil {
 				return err
 			}
 		}
 	}
-	if len(router.Transfers) > 0 {
-		for _, transfer := range router.Transfers {
+	return nil
+}
+
+func validateTransfers(transfers []*TransferConfig) error {
+	if len(transfers) > 0 {
+		for _, transfer := range transfers {
 			if err := validateTransferConfig(transfer); err != nil {
 				return err
 			}
@@ -152,7 +166,7 @@ func validateTransferConfig(transfer *TransferConfig) error {
 	return nil
 }
 
-func validateMatchConfig(config *MatchConfig) error {
+func validateMatchConfig(config *MatcherConfig) error {
 	if config.MatchContains == "" {
 		return errors.New("match contains is nil")
 	}
