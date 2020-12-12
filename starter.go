@@ -52,7 +52,7 @@ func buildTransfers(transferConfigs []*TransferConfig) []Transfer {
 
 func buildTransfer(config *TransferConfig) Transfer {
 	if config.DingURL != "" {
-		return NewWebhookTransfer(config.DingURL)
+		return NewDingTransfer(config.DingURL)
 	}
 	return NewWebhookTransfer(config.WebhookURL)
 }
