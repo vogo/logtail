@@ -18,7 +18,7 @@ type Router struct {
 
 func NewRouter(matchers []Matcher, transfers []Transfer) *Router {
 	t := &Router{
-		channel:   make(chan []byte, 16),
+		channel:   make(chan *Message, 16),
 		lock:      sync.Mutex{},
 		once:      sync.Once{},
 		stop:      make(chan struct{}),
@@ -36,30 +36,30 @@ func (r *Router) SetTransfer(transfers []Transfer) {
 	r.transfers = transfers
 }
 
-func (r *Router) Route(bytes []byte) {
+func (r *Router) Route(serverId string, bytes []byte) {
 	routeMatchers := r.matchers
 	if len(routeMatchers) > 0 {
-		if err := r.MatchAndTrans(bytes, routeMatchers); err != nil {
+		if err := r.MatchAndTrans(serverId, routeMatchers, bytes); err != nil {
 			logger.Warnf("router %s write error: %+v", r.id, err)
 			r.Stop()
 		}
 		return
 	}
 
-	if err := r.Trans(bytes); err != nil {
+	if err := r.Trans(serverId, bytes); err != nil {
 		logger.Warnf("router %s write error: %+v", r.id, err)
 		r.Stop()
 	}
 }
 
-func (r *Router) MatchAndTrans(bytes []byte, matchers []Matcher) error {
+func (r *Router) MatchAndTrans(serverId string, matchers []Matcher, bytes []byte) error {
 	matches := matchers[0].Match(bytes)
 	if len(matches) == 0 {
 		return nil
 	}
 	if len(matchers) == 1 {
 		for _, data := range matches {
-			if err := r.Trans(data); err != nil {
+			if err := r.Trans(serverId, data); err != nil {
 				return err
 			}
 		}
@@ -67,20 +67,20 @@ func (r *Router) MatchAndTrans(bytes []byte, matchers []Matcher) error {
 	}
 
 	for _, data := range matches {
-		if err := r.MatchAndTrans(data, matchers[1:]); err != nil {
+		if err := r.MatchAndTrans(serverId, matchers[1:], data); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *Router) Trans(bytes []byte) error {
+func (r *Router) Trans(serverId string, bytes []byte) error {
 	transfers := r.transfers
 	if len(transfers) == 0 {
 		return nil
 	}
 	for _, t := range transfers {
-		if err := t.Trans(bytes); err != nil {
+		if err := t.Trans(serverId, bytes); err != nil {
 			return err
 		}
 	}
@@ -109,12 +109,12 @@ func (r *Router) Start() {
 		select {
 		case <-r.stop:
 			return
-		case bytes := <-r.channel:
-			if bytes == nil {
+		case message := <-r.channel:
+			if message == nil {
 				r.Stop()
 				return
 			}
-			r.Route(bytes)
+			r.Route(message.ServerId, message.Data)
 		}
 	}
 }

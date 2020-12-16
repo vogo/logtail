@@ -17,11 +17,11 @@ type DingTransfer struct {
 	url string
 }
 
-func (d *DingTransfer) Trans(data []byte) error {
+func (d *DingTransfer) Trans(serverId string, data []byte) error {
 	msg := &DingMessage{
 		MsgType: "text",
 		Text: DingText{
-			Content: fmt.Sprintf("logtail: %s", data),
+			Content: fmt.Sprintf("[logtail-%s]: %s", serverId, data),
 		},
 	}
 

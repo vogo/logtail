@@ -1,3 +1,8 @@
 package logtail
 
-type Channel chan []byte
+type Message struct {
+	ServerId string
+	Data     []byte
+}
+
+type Channel chan *Message

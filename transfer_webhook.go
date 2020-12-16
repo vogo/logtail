@@ -13,7 +13,7 @@ type WebhookTransfer struct {
 	url string
 }
 
-func (d *WebhookTransfer) Trans(data []byte) error {
+func (d *WebhookTransfer) Trans(serverId string, data []byte) error {
 	return httpTrans(d.url, data)
 }
 

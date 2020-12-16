@@ -13,8 +13,8 @@ type WebsocketTransfer struct {
 	conn *websocket.Conn
 }
 
-func (ww *WebsocketTransfer) Trans(bytes []byte) error {
-	return ww.conn.WriteMessage(1, bytes)
+func (ww *WebsocketTransfer) Trans(serverId string, data []byte) error {
+	return ww.conn.WriteMessage(1, data)
 }
 
 func startWebsocketTransfer(response http.ResponseWriter, request *http.Request, serverId string) {

@@ -50,13 +50,18 @@ func (s *Server) Write(bytes []byte) (int, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	message := &Message{
+		ServerId: s.id,
+		Data:     bytes,
+	}
+
 	if len(s.routers) == 0 {
 		return len(bytes), nil
 	}
 
 	for _, t := range s.routers {
 		select {
-		case t.channel <- bytes:
+		case t.channel <- message:
 		default:
 		}
 	}

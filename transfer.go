@@ -1,5 +1,5 @@
 package logtail
 
 type Transfer interface {
-	Trans(data []byte) error
+	Trans(serverId string, data []byte) error
 }
