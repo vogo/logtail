@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+const TransferTypeDing = "ding"
+
 type DingText struct {
 	Content string `json:"content"`
 }

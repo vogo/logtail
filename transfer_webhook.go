@@ -9,6 +9,8 @@ import (
 	"github.com/vogo/logger"
 )
 
+const TransferTypeWebhook = "webhook"
+
 type WebhookTransfer struct {
 	url string
 }

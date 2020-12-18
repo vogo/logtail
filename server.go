@@ -56,10 +56,22 @@ func (s *Server) Write(bytes []byte) (int, error) {
 	}
 
 	if len(s.routers) == 0 {
-		return len(bytes), nil
+		for _, t := range defaultRouters {
+			select {
+			case t.channel <- message:
+			default:
+			}
+		}
+	} else {
+		for _, t := range s.routers {
+			select {
+			case t.channel <- message:
+			default:
+			}
+		}
 	}
 
-	for _, t := range s.routers {
+	for _, t := range globalRouters {
 		select {
 		case t.channel <- message:
 		default:
@@ -78,7 +90,9 @@ func (s *Server) StartRouter(router *Router) {
 		return
 	default:
 		index := atomic.AddInt64(&s.routerCount, 1)
-		router.id = fmt.Sprintf("%s-%d", s.id, index)
+		if router.id == "" {
+			router.id = fmt.Sprintf("%s-%d", s.id, index)
+		}
 
 		s.routers[index] = router
 

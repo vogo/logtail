@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"io/ioutil"
 
 	"github.com/vogo/logger"
@@ -21,8 +22,10 @@ var (
 )
 
 type Config struct {
-	Port    int             `json:"port"`
-	Servers []*ServerConfig `json:"servers"`
+	Port           int             `json:"port"`
+	Servers        []*ServerConfig `json:"servers"`
+	DefaultRouters []*RouterConfig `json:"default_routers"`
+	GlobalRouters  []*RouterConfig `json:"global_routers"`
 }
 
 type ServerConfig struct {
@@ -32,6 +35,7 @@ type ServerConfig struct {
 }
 
 type RouterConfig struct {
+	ID        string            `json:"id"`
 	Matchers  []*MatcherConfig  `json:"matchers"`
 	Transfers []*TransferConfig `json:"transfers"`
 }
@@ -41,8 +45,8 @@ type MatcherConfig struct {
 }
 
 type TransferConfig struct {
-	DingURL    string `json:"ding_url"`
-	WebhookURL string `json:"webhook_url"`
+	Type string `json:"type"`
+	URL  string `json:"url"`
 }
 
 func parseConfig() (*Config, error) {
@@ -100,12 +104,14 @@ func readConfig() (*Config, error) {
 	}
 	if *dingUrl != "" {
 		routerConfig.Transfers = append(routerConfig.Transfers, &TransferConfig{
-			DingURL: *dingUrl,
+			Type: TransferTypeDing,
+			URL:  *dingUrl,
 		})
 	}
 	if *webhookUrl != "" {
 		routerConfig.Transfers = append(routerConfig.Transfers, &TransferConfig{
-			WebhookURL: *webhookUrl,
+			Type: TransferTypeWebhook,
+			URL:  *webhookUrl,
 		})
 	}
 
@@ -162,9 +168,20 @@ func validateTransfers(transfers []*TransferConfig) error {
 }
 
 func validateTransferConfig(transfer *TransferConfig) error {
-	if transfer.DingURL == "" && transfer.WebhookURL == "" {
-		return errors.New("transfer url config is nil")
+	if transfer.Type == "" {
+		return errors.New("transfer type is nil")
 	}
+
+	if transfer.Type != TransferTypeWebhook && transfer.Type != TransferTypeDing && transfer.Type != TransferTypeConsole {
+		return fmt.Errorf("transfer type %s is invalid", transfer.Type)
+	}
+
+	if transfer.Type == TransferTypeWebhook || transfer.Type == TransferTypeDing {
+		if transfer.URL == "" {
+			return errors.New("transfer url is nil")
+		}
+	}
+
 	return nil
 }
 

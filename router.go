@@ -6,6 +6,9 @@ import (
 	"github.com/vogo/logger"
 )
 
+var defaultRouters []*Router
+var globalRouters []*Router
+
 type Router struct {
 	id        string
 	channel   Channel
@@ -16,8 +19,9 @@ type Router struct {
 	transfers []Transfer
 }
 
-func NewRouter(matchers []Matcher, transfers []Transfer) *Router {
+func NewRouter(id string, matchers []Matcher, transfers []Transfer) *Router {
 	t := &Router{
+		id:        id,
 		channel:   make(chan *Message, 16),
 		lock:      sync.Mutex{},
 		once:      sync.Once{},

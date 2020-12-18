@@ -7,13 +7,17 @@
 - support websocket tailing
 - support log matching filter
 
-## 2. Usage
+## 2. Architecture
 
-### 2.1. install logtail
+![](https://github.com/vogo/vogo.github.io/raw/master/logtail/logtail-architecture.png)
+
+## 3. Usage
+
+### 3.1. install logtail
 
 `go get -u github.com/vogo/logtail/cmd/logtail`
 
-### 2.2. start logtail server
+### 3.2. start logtail server
 
 usage: `logtail -port=<port> -cmd="<cmd>"`
 
@@ -34,6 +38,22 @@ config file sample:
 ```json
 {
   "port": 54321,
+  "global_routers": [
+    {
+      "matchers": [],
+      "transfers": [
+        {"type": "console"}
+      ]
+    }
+  ],
+  "default_routers": [
+    {
+      "matchers": [],
+      "transfers": [
+        {"type": "console"}
+      ]
+    }
+  ],
   "servers": [
     {
       "id": "app1",
@@ -41,15 +61,15 @@ config file sample:
       "routers": [
         {
           "matchers": [
-            {
-              "match_contains": "ERROR"
-            }
+            {"match_contains": "ERROR"}
           ],
           "transfers": [
             {
+              "type": "ding",
               "ding_url": "https://oapi.dingtalk.com/robot/send?access_token=<token>"
             },
             {
+              "type": "webhook",
               "webhook_url": "http://127.0.0.1:9000"
             }
           ]
@@ -64,11 +84,6 @@ config file sample:
 }
 ```
 
-### 2.3. tailing logs
+### 3.3. tailing logs
 
 browse `http://<server-ip>:<port>` to list all tailing logs.
-
-
-## 3. Architecture
-
-![](https://github.com/vogo/vogo.github.io/raw/master/logtail/logtail-architecture.png)

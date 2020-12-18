@@ -12,7 +12,7 @@ func Start() {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println(err)
-			flag.PrintDefaults()
+			os.Exit(1)
 		}
 	}()
 

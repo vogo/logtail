@@ -6,12 +6,34 @@ import (
 )
 
 func startLogtail(config *Config) {
+	restartRouters(&defaultRouters, config.DefaultRouters)
+	restartRouters(&globalRouters, config.DefaultRouters)
+
 	for _, serverConfig := range config.Servers {
 		startServer(serverConfig)
 	}
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), &httpHandler{}); err != nil {
 		panic(err)
+	}
+}
+
+func restartRouters(routers *[]*Router, routerConfigs []*RouterConfig) {
+	if len(*routers) > 0 {
+		for _, r := range *routers {
+			r.Stop()
+		}
+		*routers = nil
+	}
+
+	if len(routerConfigs) > 0 {
+		for _, routerConfig := range routerConfigs {
+			r := buildRouter(routerConfig)
+			*routers = append(*routers, r)
+			go func() {
+				r.Start()
+			}()
+		}
 	}
 }
 
@@ -28,7 +50,7 @@ func startServer(config *ServerConfig) {
 }
 
 func buildRouter(config *RouterConfig) *Router {
-	return NewRouter(buildMatchers(config.Matchers), buildTransfers(config.Transfers))
+	return NewRouter(config.ID, buildMatchers(config.Matchers), buildTransfers(config.Transfers))
 }
 
 func buildMatchers(matcherConfigs []*MatcherConfig) []Matcher {
@@ -51,10 +73,15 @@ func buildTransfers(transferConfigs []*TransferConfig) []Transfer {
 }
 
 func buildTransfer(config *TransferConfig) Transfer {
-	if config.DingURL != "" {
-		return NewDingTransfer(config.DingURL)
+	if config.Type == TransferTypeWebhook {
+		NewWebhookTransfer(config.URL)
 	}
-	return NewWebhookTransfer(config.WebhookURL)
+
+	if config.Type == TransferTypeDing {
+		return NewDingTransfer(config.URL)
+	}
+
+	return &ConsoleTransfer{}
 }
 
 func buildMatcher(config *MatcherConfig) *ContainsMatcher {

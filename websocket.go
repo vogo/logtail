@@ -31,7 +31,7 @@ func startWebsocketTransfer(response http.ResponseWriter, request *http.Request,
 		return
 	}
 	websocketTransfer := &WebsocketTransfer{conn: c}
-	router := NewRouter(nil, []Transfer{websocketTransfer})
+	router := NewRouter("", nil, []Transfer{websocketTransfer})
 	server.StartRouter(router)
 	startWebsocketHeartbeat(router, websocketTransfer)
 }
