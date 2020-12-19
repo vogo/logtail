@@ -122,3 +122,12 @@ func (r *Router) Start() {
 		}
 	}
 }
+
+func (r *Router) receive(message *Message) {
+	select {
+	case <-r.stop:
+		return
+	case r.channel <- message:
+	default:
+	}
+}

@@ -56,26 +56,17 @@ func (s *Server) Write(bytes []byte) (int, error) {
 	}
 
 	if len(s.routers) == 0 {
-		for _, t := range defaultRouters {
-			select {
-			case t.channel <- message:
-			default:
-			}
+		for _, r := range defaultRouters {
+			r.receive(message)
 		}
 	} else {
-		for _, t := range s.routers {
-			select {
-			case t.channel <- message:
-			default:
-			}
+		for _, r := range s.routers {
+			r.receive(message)
 		}
 	}
 
-	for _, t := range globalRouters {
-		select {
-		case t.channel <- message:
-		default:
-		}
+	for _, r := range globalRouters {
+		r.receive(message)
 	}
 
 	return len(bytes), nil
