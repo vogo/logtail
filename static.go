@@ -147,6 +147,14 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
         }
     }
 
+    function isConnError(err) {
+        if (err.toString().indexOf("Could not decode a text frame") > 0) {
+            return false;
+        }
+
+        return true;
+    }
+
     function startTail() {
         if (ws) {
             return false;
@@ -164,11 +172,13 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
         }
         ws.onerror = function (evt) {
             error(evt.data);
-            try {
-                ws.close()
-            } catch (e) {
+            if (isConnError(evt.data)) {
+                try {
+                    ws.close()
+                } catch (e) {
+                }
+                restartTail();
             }
-            restartTail();
         }
     }
 
