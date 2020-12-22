@@ -7,7 +7,7 @@ import (
 
 func startLogtail(config *Config) {
 	restartRouters(&defaultRouters, config.DefaultRouters)
-	restartRouters(&globalRouters, config.DefaultRouters)
+	restartRouters(&globalRouters, config.GlobalRouters)
 
 	for _, serverConfig := range config.Servers {
 		startServer(serverConfig)

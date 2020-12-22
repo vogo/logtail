@@ -50,7 +50,7 @@ func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
 		case <-router.stop:
 			return
 		default:
-			_ = transfer.conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+			_ = transfer.conn.SetReadDeadline(time.Now().Add(15 * time.Second))
 			_, data, err := transfer.conn.ReadMessage()
 			if err != nil {
 				logger.Warnf("router %s websocket heartbeat error: %+v", router.id, err)
