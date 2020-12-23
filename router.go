@@ -124,6 +124,10 @@ func (r *Router) Start() {
 }
 
 func (r *Router) receive(message *Message) {
+	defer func() {
+		_ = recover()
+	}()
+
 	select {
 	case <-r.stop:
 		return
