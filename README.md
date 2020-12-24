@@ -15,7 +15,7 @@
 
 ### 3.1. install logtail
 
-`go get -u github.com/vogo/logtail/cmd/logtail`
+`go get -u github.com/vogo/logtail/cmd/logtail@master`
 
 ### 3.2. start logtail server
 
