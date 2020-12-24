@@ -13,12 +13,12 @@ import (
 const DefaultServerPort = 54321
 
 var (
-	file          = flag.String("file", "", "config file")
-	port          = flag.Int("port", DefaultServerPort, "tail port")
-	command       = flag.String("cmd", "", "tail command")
-	matchContains = flag.String("match-contains", "", "a containing string")
-	dingUrl       = flag.String("ding-url", "", "dingding url")
-	webhookUrl    = flag.String("webhook-url", "", "webhook url")
+	ErrNoServerConfig   = errors.New("no server config")
+	ErrServerIDNil      = errors.New("server id is nil")
+	ErrServerCommandNil = errors.New("server command is nil")
+	ErrTransURLNil      = errors.New("transfer url is nil")
+	ErrTransTypeNil     = errors.New("transfer type is nil")
+	ErrTransTypeInvalid = errors.New("invalid transfer type")
 )
 
 type Config struct {
@@ -49,29 +49,52 @@ type TransferConfig struct {
 	URL  string `json:"url"`
 }
 
-func parseConfig() (*Config, error) {
-	config, err := readConfig()
+func parseConfig() (cfg *Config, parseErr error) {
+	defer func() {
+		if err := recover(); err != nil {
+			parseErr = err.(error)
+		}
+	}()
+
+	var (
+		file          = flag.String("file", "", "config file")
+		port          = flag.Int("port", DefaultServerPort, "tail port")
+		command       = flag.String("cmd", "", "tail command")
+		matchContains = flag.String("match-contains", "", "a containing string")
+		dingURL       = flag.String("ding-url", "", "dingding url")
+		webhookURL    = flag.String("webhook-url", "", "webhook url")
+	)
+
+	flag.Parse()
+
+	config, err := readConfig(*file, *port, *command, *matchContains, *dingURL, *webhookURL)
+
 	if err != nil {
 		return nil, err
 	}
+
 	if config.Port == 0 {
 		config.Port = DefaultServerPort
 	}
+
 	if len(config.Servers) == 0 {
-		return nil, errors.New("no server config")
+		return nil, ErrNoServerConfig
 	}
+
 	for _, server := range config.Servers {
 		if err := validateServerConfig(server); err != nil {
 			return nil, err
 		}
 	}
+
 	return config, nil
 }
 
-func readConfig() (*Config, error) {
+func readConfig(file string, port int, command, matchContains, dingURL, webhookURL string) (*Config, error) {
 	config := &Config{}
-	if *file != "" {
-		data, err := ioutil.ReadFile(*file)
+
+	if file != "" {
+		data, err := ioutil.ReadFile(file)
 		if err != nil {
 			return nil, err
 		}
@@ -79,39 +102,42 @@ func readConfig() (*Config, error) {
 		if err := json.Unmarshal(data, config); err != nil {
 			return nil, err
 		}
+
 		return config, nil
 	}
 
-	config.Port = *port
+	config.Port = port
 	serverConfig := &ServerConfig{
-		ID: DefaultServerId,
+		ID: DefaultServerID,
 	}
 
 	config.Servers = append(config.Servers, serverConfig)
-	serverConfig.Command = *command
+	serverConfig.Command = command
 
-	if *dingUrl == "" && *webhookUrl == "" && *matchContains == "" {
+	if dingURL == "" && webhookURL == "" && matchContains == "" {
 		return config, nil
 	}
 
 	routerConfig := &RouterConfig{}
 	serverConfig.Routers = append(serverConfig.Routers, routerConfig)
 
-	if *matchContains != "" {
+	if matchContains != "" {
 		routerConfig.Matchers = append(routerConfig.Matchers, &MatcherConfig{
-			MatchContains: *matchContains,
+			MatchContains: matchContains,
 		})
 	}
-	if *dingUrl != "" {
+
+	if dingURL != "" {
 		routerConfig.Transfers = append(routerConfig.Transfers, &TransferConfig{
 			Type: TransferTypeDing,
-			URL:  *dingUrl,
+			URL:  dingURL,
 		})
 	}
-	if *webhookUrl != "" {
+
+	if webhookURL != "" {
 		routerConfig.Transfers = append(routerConfig.Transfers, &TransferConfig{
 			Type: TransferTypeWebhook,
-			URL:  *webhookUrl,
+			URL:  webhookURL,
 		})
 	}
 
@@ -120,11 +146,13 @@ func readConfig() (*Config, error) {
 
 func validateServerConfig(server *ServerConfig) error {
 	if server.ID == "" {
-		return errors.New("server id is nil")
+		return ErrServerIDNil
 	}
+
 	if server.Command == "" {
-		return errors.New("server command is nil")
+		return ErrServerCommandNil
 	}
+
 	if len(server.Routers) > 0 {
 		for _, router := range server.Routers {
 			if err := validateRouterConfig(router); err != nil {
@@ -132,6 +160,7 @@ func validateServerConfig(server *ServerConfig) error {
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -139,9 +168,11 @@ func validateRouterConfig(router *RouterConfig) error {
 	if err := validateMatchers(router.Matchers); err != nil {
 		return err
 	}
+
 	if err := validateTransfers(router.Transfers); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -153,6 +184,7 @@ func validateMatchers(matchers []*MatcherConfig) error {
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -164,21 +196,22 @@ func validateTransfers(transfers []*TransferConfig) error {
 			}
 		}
 	}
+
 	return nil
 }
 
 func validateTransferConfig(transfer *TransferConfig) error {
 	if transfer.Type == "" {
-		return errors.New("transfer type is nil")
+		return ErrTransTypeNil
 	}
 
 	if transfer.Type != TransferTypeWebhook && transfer.Type != TransferTypeDing && transfer.Type != TransferTypeConsole {
-		return fmt.Errorf("transfer type %s is invalid", transfer.Type)
+		return fmt.Errorf("%w: %s", ErrTransTypeInvalid, transfer.Type)
 	}
 
 	if transfer.Type == TransferTypeWebhook || transfer.Type == TransferTypeDing {
 		if transfer.URL == "" {
-			return errors.New("transfer url is nil")
+			return ErrTransURLNil
 		}
 	}
 
@@ -189,5 +222,6 @@ func validateMatchConfig(config *MatcherConfig) error {
 	if config.MatchContains == "" {
 		logger.Debugf("match contains is nil")
 	}
+
 	return nil
 }

@@ -1,0 +1,45 @@
+linters-settings:
+  govet:
+    check-shadowing: true
+  golint:
+    min-confidence: 0
+  gocyclo:
+    min-complexity: 12
+  maligned:
+    suggest-new: true
+  dupl:
+    threshold: 100
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  misspell:
+    locale: US
+  lll:
+    line-length: 140
+  goimports:
+    local-prefixes: github.com/golangci/golangci-lint
+  gocritic:
+    enabled-tags:
+      - performance
+      - style
+      - experimental
+    disabled-checks:
+      - wrapperFunc
+
+linters:
+  enable-all: true
+  disable:
+
+run:
+  skip-files:
+    - global.go
+  skip-dirs:
+
+issues:
+  exclude-rules:
+    - text: "Subprocess launched with function call as argument or cmd arguments"
+      linters:
+        - gosec
+    - text: "Potential HTTP request made with variable url"
+      linters:
+        - gosec

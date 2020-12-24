@@ -11,7 +11,7 @@ type ContainsMatcher struct {
 }
 
 func NewContainsMatcher(pattern string) *ContainsMatcher {
-	if len(pattern) == 0 {
+	if pattern == "" {
 		panic("pattern nil")
 	}
 
@@ -22,60 +22,65 @@ func NewContainsMatcher(pattern string) *ContainsMatcher {
 	cm.plen = len(pattern)
 	cm.kmp = make([]int, cm.plen+1)
 	cm.kmp[0] = -1
+
 	for i := 1; i < cm.plen; i++ {
 		j := cm.kmp[i-1]
 		for j > -1 && cm.pattern[j+1] != cm.pattern[i] {
 			j = cm.kmp[j]
 		}
+
 		if cm.pattern[j+1] == cm.pattern[i] {
 			j++
 		}
+
 		cm.kmp[i] = j
 	}
+
 	return cm
 }
 
 func (cm *ContainsMatcher) Match(bytes []byte) [][]byte {
 	var matches [][]byte
+
 	length := len(bytes)
+
 	if length == 0 {
 		return matches
 	}
 
 	j := -1
 	start := 0
+
 	for i := 0; i < length; i++ {
-		if bytes[i] == '\n' || bytes[i] == '\r' {
+		if isNewLineTag(bytes[i]) {
 			j = -1
 			start = i + 1
+
 			continue
 		}
 
 		for j > -1 && cm.pattern[j+1] != bytes[i] {
 			j = cm.kmp[j]
 		}
+
 		if cm.pattern[j+1] == bytes[i] {
 			j++
 		}
 
 		if j+1 == cm.plen {
-			for ; i < length && bytes[i] != '\n' && bytes[i] != '\r'; i++ {
-			}
+			i = indexLineEnd(bytes, length, i)
+
 			end := i
 
+			i = ignoreNewLines(bytes, length, i)
+
 			// append following lines
-			for i < length {
-				for ; i < length && (bytes[i] == '\n' || bytes[i] == '\r'); i++ {
-				}
+			for i < length && (bytes[i] == ' ' || bytes[i] == '\t') {
+				i = indexLineEnd(bytes, length, i)
 
-				if i < length && (bytes[i] == ' ' || bytes[i] == '\t') {
-					for ; i < length && bytes[i] != '\n' && bytes[i] != '\r'; i++ {
-					}
-					end = i
-					continue
-				}
+				end = i
 
-				break
+				i = ignoreNewLines(bytes, length, i)
 			}
 
 			matches = append(matches, bytes[start:end])
@@ -85,5 +90,22 @@ func (cm *ContainsMatcher) Match(bytes []byte) [][]byte {
 			j = cm.kmp[j]
 		}
 	}
+
 	return matches
+}
+
+func isNewLineTag(b byte) bool {
+	return b == '\n' || b == '\r'
+}
+
+func indexLineEnd(bytes []byte, length, i int) int {
+	for ; i < length && !isNewLineTag(bytes[i]); i++ {
+	}
+	return i
+}
+
+func ignoreNewLines(bytes []byte, length, i int) int {
+	for ; i < length && isNewLineTag(bytes[i]); i++ {
+	}
+	return i
 }

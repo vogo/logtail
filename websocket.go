@@ -9,27 +9,30 @@ import (
 	"github.com/vogo/logger"
 )
 
+const WebsocketHeartbeatReadTimeout = 15 * time.Second
+
 type WebsocketTransfer struct {
 	conn *websocket.Conn
 }
 
-func (ww *WebsocketTransfer) Trans(serverId string, data []byte) error {
+func (ww *WebsocketTransfer) Trans(_ string, data []byte) error {
 	return ww.conn.WriteMessage(1, data)
 }
 
-func startWebsocketTransfer(response http.ResponseWriter, request *http.Request, serverId string) {
-	c, err := upgrader.Upgrade(response, request, nil)
+func startWebsocketTransfer(response http.ResponseWriter, request *http.Request, serverID string) {
+	c, err := websocketUpgrader.Upgrade(response, request, nil)
 	if err != nil {
 		logger.Error("web socket error:", err)
 		return
 	}
 	defer c.Close()
 
-	server, ok := serverDB[serverId]
+	server, ok := serverDB[serverID]
 	if !ok {
-		logger.Warnf("server id not found: %s", serverId)
+		logger.Warnf("server id not found: %s", serverID)
 		return
 	}
+
 	websocketTransfer := &WebsocketTransfer{conn: c}
 	router := NewRouter("", nil, []Transfer{websocketTransfer})
 	server.StartRouter(router)
@@ -41,6 +44,7 @@ const MessageTypeMatcherConfig = '1'
 func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
 	defer func() {
 		_ = recover()
+
 		router.Stop()
 		logger.Infof("router %s websocket heartbeat stopped", router.id)
 	}()
@@ -50,11 +54,13 @@ func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
 		case <-router.stop:
 			return
 		default:
-			_ = transfer.conn.SetReadDeadline(time.Now().Add(15 * time.Second))
+			_ = transfer.conn.SetReadDeadline(time.Now().Add(WebsocketHeartbeatReadTimeout))
 			_, data, err := transfer.conn.ReadMessage()
+
 			if err != nil {
 				logger.Warnf("router %s websocket heartbeat error: %+v", router.id, err)
 				router.Stop()
+
 				return
 			}
 
@@ -72,6 +78,7 @@ func handleMatcherConfigUpdate(router *Router, data []byte) error {
 	if err := json.Unmarshal(data, &matcherConfigs); err != nil {
 		return err
 	}
+
 	if err := validateMatchers(matcherConfigs); err != nil {
 		return err
 	}

@@ -1,7 +1,9 @@
 package logtail
 
+const DefaultChannelBufferSize = 16
+
 type Message struct {
-	ServerId string
+	ServerID string
 	Data     []byte
 }
 

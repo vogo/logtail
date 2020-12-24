@@ -23,6 +23,7 @@ func restartRouters(routers *[]*Router, routerConfigs []*RouterConfig) {
 		for _, r := range *routers {
 			r.Stop()
 		}
+
 		*routers = nil
 	}
 
@@ -30,6 +31,7 @@ func restartRouters(routers *[]*Router, routerConfigs []*RouterConfig) {
 		for _, routerConfig := range routerConfigs {
 			r := buildRouter(routerConfig)
 			*routers = append(*routers, r)
+
 			go func() {
 				r.Start()
 			}()
@@ -55,20 +57,24 @@ func buildRouter(config *RouterConfig) *Router {
 
 func buildMatchers(matcherConfigs []*MatcherConfig) []Matcher {
 	var matchers []Matcher
+
 	for _, matchConfig := range matcherConfigs {
 		matcher := buildMatcher(matchConfig)
 		if matcher != nil {
 			matchers = append(matchers, matcher)
 		}
 	}
+
 	return matchers
 }
 
 func buildTransfers(transferConfigs []*TransferConfig) []Transfer {
-	var transfers []Transfer
-	for _, transferConfig := range transferConfigs {
-		transfers = append(transfers, buildTransfer(transferConfig))
+	transfers := make([]Transfer, len(transferConfigs))
+
+	for i, transferConfig := range transferConfigs {
+		transfers[i] = buildTransfer(transferConfig)
 	}
+
 	return transfers
 }
 
@@ -88,5 +94,6 @@ func buildMatcher(config *MatcherConfig) *ContainsMatcher {
 	if config.MatchContains == "" {
 		return nil
 	}
+
 	return NewContainsMatcher(config.MatchContains)
 }

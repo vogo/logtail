@@ -10,10 +10,8 @@ import (
 	"github.com/vogo/logger"
 )
 
-const DefaultServerId = "default"
-
-var serverDBLock = sync.Mutex{}
-var serverDB = make(map[string]*Server, 4)
+const DefaultServerID = "default"
+const CommandFailRetryInterval = 10 * time.Second
 
 type Server struct {
 	id          string
@@ -26,7 +24,7 @@ type Server struct {
 	routers     map[int64]*Router
 }
 
-func NewServer(id string, command string) *Server {
+func NewServer(id, command string) *Server {
 	server := &Server{
 		id:          id,
 		lock:        sync.Mutex{},
@@ -36,8 +34,10 @@ func NewServer(id string, command string) *Server {
 		routers:     make(map[int64]*Router, 4),
 		routerCount: 0,
 	}
+
 	if existsServer, ok := serverDB[id]; ok {
 		_ = existsServer.Stop()
+
 		delete(serverDB, id)
 	}
 
@@ -51,7 +51,7 @@ func (s *Server) Write(bytes []byte) (int, error) {
 	defer s.lock.Unlock()
 
 	message := &Message{
-		ServerId: s.id,
+		ServerID: s.id,
 		Data:     bytes,
 	}
 
@@ -81,6 +81,7 @@ func (s *Server) StartRouter(router *Router) {
 		return
 	default:
 		index := atomic.AddInt64(&s.routerCount, 1)
+
 		if router.id == "" {
 			router.id = fmt.Sprintf("%s-%d", s.id, index)
 		}
@@ -115,7 +116,7 @@ func (s *Server) Start() {
 						return
 					default:
 						logger.Errorf("failed to exec command, retry after 10s! error: %+v, command: %s", err, s.command)
-						time.Sleep(10 * time.Second)
+						time.Sleep(CommandFailRetryInterval)
 					}
 				}
 			}
@@ -141,6 +142,7 @@ func (s *Server) Stop() error {
 		if err := s.cmd.Process.Kill(); err != nil {
 			logger.Warnf("server %s kill command error: %+v", s.id, err)
 		}
+
 		s.cmd = nil
 	}
 
