@@ -87,3 +87,21 @@ config file sample:
 ### 3.3. tailing logs
 
 browse `http://<server-ip>:<port>` to list all tailing logs.
+
+
+## 4. command examples
+
+```bash
+# tail log file
+tail -f /usr/local/myapp/myapp.log
+
+# k8s: find and tail logs for the single pod of myapp
+kubectl logs --tail 10 -f $(kubectl get pods --selector=app=myapp -o jsonpath='{.items[*].metadata.name}')
+
+# k8s: find and tail logs for the myapp deployment (multiple pods)
+kubectl logs --tail 10 -f deployment/$(kubectl get deployments --selector=project-name=myapp -o jsonpath='{.items[*].metadata.name}')
+
+# k8s: find and tail logs for the latest version of the myapp deployment
+s=$(kubectl get deployments --selector=project-name=myapp -o jsonpath='{.items[*].metadata.name}');s=${s##* };kubectl logs --tail 10 -f deployment/$s
+
+```
