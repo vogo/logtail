@@ -23,6 +23,7 @@ var (
 
 type Config struct {
 	Port           int             `json:"port"`
+	DefaultFormat  *Format         `json:"default_format"`
 	Servers        []*ServerConfig `json:"servers"`
 	DefaultRouters []*RouterConfig `json:"default_routers"`
 	GlobalRouters  []*RouterConfig `json:"global_routers"`
@@ -31,6 +32,7 @@ type Config struct {
 type ServerConfig struct {
 	ID      string          `json:"id"`
 	Command string          `json:"command"`
+	Format  *Format         `json:"format"`
 	Routers []*RouterConfig `json:"routers"`
 }
 

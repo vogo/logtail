@@ -38,10 +38,10 @@ func (r *Router) SetTransfer(transfers []Transfer) {
 	r.transfers = transfers
 }
 
-func (r *Router) Route(serverID string, bytes []byte) {
+func (r *Router) Route(server *Server, bytes []byte) {
 	routeMatchers := r.matchers
 	if len(routeMatchers) > 0 {
-		if err := r.MatchAndTrans(serverID, routeMatchers, bytes); err != nil {
+		if err := r.MatchAndTrans(server, routeMatchers, bytes); err != nil {
 			logger.Warnf("router %s write error: %+v", r.id, err)
 			r.Stop()
 		}
@@ -49,14 +49,14 @@ func (r *Router) Route(serverID string, bytes []byte) {
 		return
 	}
 
-	if err := r.Trans(serverID, bytes); err != nil {
+	if err := r.Trans(server.id, bytes); err != nil {
 		logger.Warnf("router %s write error: %+v", r.id, err)
 		r.Stop()
 	}
 }
 
-func (r *Router) MatchAndTrans(serverID string, matchers []Matcher, bytes []byte) error {
-	matches := matchers[0].Match(bytes)
+func (r *Router) MatchAndTrans(server *Server, matchers []Matcher, bytes []byte) error {
+	matches := matchers[0].Match(server.format, bytes)
 
 	if len(matches) == 0 {
 		return nil
@@ -64,7 +64,7 @@ func (r *Router) MatchAndTrans(serverID string, matchers []Matcher, bytes []byte
 
 	if len(matchers) == 1 {
 		for _, data := range matches {
-			if err := r.Trans(serverID, data); err != nil {
+			if err := r.Trans(server.id, data); err != nil {
 				return err
 			}
 		}
@@ -73,7 +73,7 @@ func (r *Router) MatchAndTrans(serverID string, matchers []Matcher, bytes []byte
 	}
 
 	for _, data := range matches {
-		if err := r.MatchAndTrans(serverID, matchers[1:], data); err != nil {
+		if err := r.MatchAndTrans(server, matchers[1:], data); err != nil {
 			return err
 		}
 	}
@@ -125,7 +125,7 @@ func (r *Router) Start() {
 				return
 			}
 
-			r.Route(message.ServerID, message.Data)
+			r.Route(message.Server, message.Data)
 		}
 	}
 }

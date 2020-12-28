@@ -6,6 +6,8 @@ import (
 )
 
 func startLogtail(config *Config) {
+	defaultFormat = config.DefaultFormat
+
 	restartRouters(&defaultRouters, config.DefaultRouters)
 	restartRouters(&globalRouters, config.GlobalRouters)
 
@@ -43,7 +45,7 @@ func startServer(config *ServerConfig) {
 	serverDBLock.Lock()
 	defer serverDBLock.Unlock()
 
-	server := NewServer(config.ID, config.Command)
+	server := NewServer(config)
 	server.Start()
 
 	for _, routerConfig := range config.Routers {

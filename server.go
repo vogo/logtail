@@ -18,30 +18,32 @@ type Server struct {
 	lock        sync.Mutex
 	once        sync.Once
 	stop        chan struct{}
+	format      *Format
 	command     string
 	cmd         *exec.Cmd
 	routerCount int64
 	routers     map[int64]*Router
 }
 
-func NewServer(id, command string) *Server {
+func NewServer(cfg *ServerConfig) *Server {
 	server := &Server{
-		id:          id,
+		id:          cfg.ID,
 		lock:        sync.Mutex{},
 		once:        sync.Once{},
 		stop:        make(chan struct{}),
-		command:     command,
+		command:     cfg.Command,
+		format:      cfg.Format,
 		routers:     make(map[int64]*Router, 4),
 		routerCount: 0,
 	}
 
-	if existsServer, ok := serverDB[id]; ok {
+	if existsServer, ok := serverDB[server.id]; ok {
 		_ = existsServer.Stop()
 
-		delete(serverDB, id)
+		delete(serverDB, server.id)
 	}
 
-	serverDB[id] = server
+	serverDB[server.id] = server
 
 	return server
 }
@@ -51,8 +53,8 @@ func (s *Server) Write(bytes []byte) (int, error) {
 	defer s.lock.Unlock()
 
 	message := &Message{
-		ServerID: s.id,
-		Data:     bytes,
+		Server: s,
+		Data:   bytes,
 	}
 
 	if len(s.routers) == 0 {

@@ -19,7 +19,7 @@ func TestMatch(t *testing.T) {
 
 	// match: ERROR
 	m := logtail.NewContainsMatcher("ERROR")
-	matches := m.Match([]byte(s))
+	matches := m.Match(nil, []byte(s))
 
 	assert.Equal(t, 2, len(matches))
 
@@ -34,7 +34,7 @@ func TestMatch(t *testing.T) {
 
 	// match: hello world
 	m = logtail.NewContainsMatcher("hello world")
-	matches = m.Match([]byte(s))
+	matches = m.Match(nil, []byte(s))
 
 	assert.Equal(t, 2, len(matches))
 

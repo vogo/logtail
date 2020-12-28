@@ -1,7 +1,7 @@
 package logtail
 
 type Matcher interface {
-	Match(bytes []byte) [][]byte
+	Match(format *Format, bytes []byte) [][]byte
 }
 
 type ContainsMatcher struct {
@@ -39,7 +39,7 @@ func NewContainsMatcher(pattern string) *ContainsMatcher {
 	return cm
 }
 
-func (cm *ContainsMatcher) Match(bytes []byte) [][]byte {
+func (cm *ContainsMatcher) Match(format *Format, bytes []byte) [][]byte {
 	var matches [][]byte
 
 	length := len(bytes)
@@ -52,7 +52,7 @@ func (cm *ContainsMatcher) Match(bytes []byte) [][]byte {
 	start := 0
 
 	for i := 0; i < length; i++ {
-		if isNewLineTag(bytes[i]) {
+		if isLineEnd(bytes[i]) {
 			j = -1
 			start = i + 1
 
@@ -72,15 +72,15 @@ func (cm *ContainsMatcher) Match(bytes []byte) [][]byte {
 
 			end := i
 
-			i = ignoreNewLines(bytes, length, i)
+			i = ignoreLineEnd(bytes, length, i)
 
 			// append following lines
-			for i < length && (bytes[i] == ' ' || bytes[i] == '\t') {
+			for i < length && isFollowingLine(format, bytes[i:]) {
 				i = indexLineEnd(bytes, length, i)
 
 				end = i
 
-				i = ignoreNewLines(bytes, length, i)
+				i = ignoreLineEnd(bytes, length, i)
 			}
 
 			matches = append(matches, bytes[start:end])
@@ -94,18 +94,30 @@ func (cm *ContainsMatcher) Match(bytes []byte) [][]byte {
 	return matches
 }
 
-func isNewLineTag(b byte) bool {
+func isFollowingLine(format *Format, bytes []byte) bool {
+	if format == nil {
+		format = defaultFormat
+	}
+
+	if format != nil {
+		return !format.PrefixMatch(bytes)
+	}
+
+	return bytes[0] == ' ' || bytes[0] == '\t'
+}
+
+func isLineEnd(b byte) bool {
 	return b == '\n' || b == '\r'
 }
 
 func indexLineEnd(bytes []byte, length, i int) int {
-	for ; i < length && !isNewLineTag(bytes[i]); i++ {
+	for ; i < length && !isLineEnd(bytes[i]); i++ {
 	}
 	return i
 }
 
-func ignoreNewLines(bytes []byte, length, i int) int {
-	for ; i < length && isNewLineTag(bytes[i]); i++ {
+func ignoreLineEnd(bytes []byte, length, i int) int {
+	for ; i < length && isLineEnd(bytes[i]); i++ {
 	}
 	return i
 }
