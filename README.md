@@ -38,6 +38,9 @@ config file sample:
 ```json
 {
   "port": 54321,
+  "default_format":{
+    "prefix": "!!!!-!!-!!"
+  },
   "global_routers": [
     {
       "matchers": [],
@@ -88,8 +91,38 @@ config file sample:
 
 browse `http://<server-ip>:<port>` to list all tailing logs.
 
+## 4. log format
 
-## 4. command examples
+You can config log format globally, or config it for a server.
+
+The config `prefix` of the format is the wildcard of the prefix of a new log record, 
+`logtail` will check whether a new line is the start of a new log record, or one of the following lines.
+
+The wildcard does NOT support '*' for none or many chars, it supports the following tag:
+- '?' as one byte char;
+- '~' as one alphabet char;
+- '!' as one number char;
+- other chars must exact match.
+
+example:
+```bash
+{
+    "default_format":{
+      "prefix": "!!!!-!!-!!"  # matches 2020-12-12
+    },
+    "servers": [
+        {
+          "id": "app1",
+          "command": "tail -f /Users/wongoo/app/app1.log",
+          "format":{
+            "prefix": "!!!!-!!-!!"
+          }
+        }
+    ]
+}
+```
+
+## 5. command examples
 
 ```bash
 # tail log file
