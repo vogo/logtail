@@ -4,7 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/vogo/logger"
 	"github.com/vogo/vogo/vos"
 )
 
@@ -17,5 +20,16 @@ func Start() {
 	}
 
 	vos.LoadUserEnv()
-	startLogtail(config)
+
+	go startLogtail(config)
+
+	handleSignal()
+}
+
+func handleSignal() {
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	sig := <-signalChan
+	logger.Infof("signal: %v", sig)
+	stopServers()
 }

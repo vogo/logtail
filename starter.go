@@ -3,6 +3,8 @@ package logtail
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/vogo/logger"
 )
 
 func startLogtail(config *Config) {
@@ -17,6 +19,14 @@ func startLogtail(config *Config) {
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), &httpHandler{}); err != nil {
 		panic(err)
+	}
+}
+
+func stopServers() {
+	for _, s := range serverDB {
+		if err := s.Stop(); err != nil {
+			logger.Errorf("server %s stop error: %+v", s.id, err)
+		}
 	}
 }
 

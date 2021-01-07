@@ -108,14 +108,14 @@ example:
 ```bash
 {
     "default_format":{
-      "prefix": "!!!!-!!-!!"  # matches 2020-12-12
+      "prefix": "!!!!-!!-!!"  # global format config, matches 2020-12-12
     },
     "servers": [
         {
           "id": "app1",
           "command": "tail -f /Users/wongoo/app/app1.log",
           "format":{
-            "prefix": "!!!!-!!-!!"
+            "prefix": "!!!!-!!-!!" # server format config, matches 2020-12-12
           }
         }
     ]
@@ -134,7 +134,9 @@ kubectl logs --tail 10 -f $(kubectl get pods --selector=app=myapp -o jsonpath='{
 # k8s: find and tail logs for the myapp deployment (multiple pods)
 kubectl logs --tail 10 -f deployment/$(kubectl get deployments --selector=project-name=myapp -o jsonpath='{.items[*].metadata.name}')
 
-# k8s: find and tail logs for the latest version of the myapp deployment
+# k8s: find and tail logs for the latest version of the myapp deployment (single pod)
 s=$(kubectl get deployments --selector=project-name=myapp -o jsonpath='{.items[*].metadata.name}');s=${s##* };kubectl logs --tail 10 -f deployment/$s
 
+# k8s: find and tail logs for the latest version of the myapp deployment (multiple pods)
+app=$(kubectl get deployments --selector=project-name=myapp -o jsonpath='{.items[*].metadata.name}');app=${app##* };pods=$(kubectl get pods --selector=app=$app -o jsonpath='{.items[*].metadata.name}');cmd='';for pod in $pods; do cmd=$cmd"kubectl logs --tail 2 -f pod/$pod & "; done;cmd=${cmd::-3}; /bin/sh -c "$cmd"
 ```

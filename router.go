@@ -98,7 +98,7 @@ func (r *Router) Trans(serverID string, bytes []byte) error {
 
 func (r *Router) Stop() {
 	r.once.Do(func() {
-		logger.Infof("router %s closing", r.id)
+		logger.Infof("router %s stopping", r.id)
 		close(r.stop)
 		close(r.channel)
 	})

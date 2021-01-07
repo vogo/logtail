@@ -109,6 +109,9 @@ func (s *Server) Start() {
 			default:
 				logger.Infof("server %s command: %s", s.id, s.command)
 				s.cmd = exec.Command("/bin/sh", "-c", s.command)
+
+				setCmdSysProcAttr(s.cmd)
+
 				s.cmd.Stdout = s
 				s.cmd.Stderr = s
 
@@ -136,12 +139,15 @@ func (s *Server) Stop() error {
 		}
 	}()
 
+	logger.Infof("server %s stopping", s.id)
 	s.once.Do(func() {
 		close(s.stop)
 	})
 
 	if s.cmd != nil {
-		if err := s.cmd.Process.Kill(); err != nil {
+		logger.Infof("server %s command stopping: %s", s.id, s.command)
+
+		if err := killCmd(s.cmd); err != nil {
 			logger.Warnf("server %s kill command error: %+v", s.id, err)
 		}
 
