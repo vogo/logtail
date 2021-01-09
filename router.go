@@ -39,41 +39,27 @@ func (r *Router) SetTransfer(transfers []Transfer) {
 }
 
 func (r *Router) Route(server *Server, bytes []byte) {
-	routeMatchers := r.matchers
-	if len(routeMatchers) > 0 {
-		if err := r.MatchAndTrans(server, routeMatchers, bytes); err != nil {
-			logger.Warnf("router %s write error: %+v", r.id, err)
-			r.Stop()
-		}
-
-		return
-	}
-
-	if err := r.Trans(server.id, bytes); err != nil {
-		logger.Warnf("router %s write error: %+v", r.id, err)
+	if err := r.MatchAndTrans(server, r.matchers, bytes); err != nil {
+		logger.Warnf("router %s route error: %+v", r.id, err)
 		r.Stop()
 	}
 }
 
 func (r *Router) MatchAndTrans(server *Server, matchers []Matcher, bytes []byte) error {
+	if len(matchers) == 0 {
+		return r.Trans(server.id, bytes)
+	}
+
 	matches := matchers[0].Match(server.format, bytes)
 
 	if len(matches) == 0 {
 		return nil
 	}
 
-	if len(matchers) == 1 {
-		for _, data := range matches {
-			if err := r.Trans(server.id, data); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
+	matchers = matchers[1:]
 
 	for _, data := range matches {
-		if err := r.MatchAndTrans(server, matchers[1:], data); err != nil {
+		if err := r.MatchAndTrans(server, matchers, data); err != nil {
 			return err
 		}
 	}
