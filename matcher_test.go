@@ -19,7 +19,7 @@ func TestMatch(t *testing.T) {
 
 	// match: ERROR
 	m := logtail.NewContainsMatcher("ERROR")
-	matches := m.Match(nil, []byte(s))
+	matches := m.Match(&logtail.Format{Prefix: "!!!!-!!-!!"}, []byte(s))
 
 	assert.Equal(t, 2, len(matches))
 

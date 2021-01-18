@@ -1,5 +1,11 @@
 package logtail
 
+import (
+	"encoding/base64"
+
+	"github.com/vogo/logger"
+)
+
 type Matcher interface {
 	Match(format *Format, bytes []byte) [][]byte
 }
@@ -39,8 +45,13 @@ func NewContainsMatcher(pattern string) *ContainsMatcher {
 	return cm
 }
 
-func (cm *ContainsMatcher) Match(format *Format, bytes []byte) [][]byte {
-	var matches [][]byte
+func (cm *ContainsMatcher) Match(format *Format, bytes []byte) (matches [][]byte) {
+	defer func() {
+		if err := recover(); err != nil {
+			logger.Errorf("contains match error: %+v! pattern: %s, format: %s, bytes: %s",
+				err, cm.pattern, format, base64.StdEncoding.EncodeToString(bytes))
+		}
+	}()
 
 	length := len(bytes)
 

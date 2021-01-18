@@ -1,5 +1,7 @@
 package logtail
 
+import "fmt"
+
 // Format the log format.
 type Format struct {
 	Prefix string `json:"prefix"` // the wildcard of the line prefix of a log record
@@ -10,6 +12,11 @@ func (f *Format) PrefixMatch(data []byte) bool {
 	return wildcardMatch(f.Prefix, data)
 }
 
+// String format string info.
+func (f *Format) String() string {
+	return fmt.Sprintf("format{prefix:%s}", f.Prefix)
+}
+
 // wildcardMatch -  finds whether the bytes matches/satisfies the pattern wildcard.
 // supports:
 // - '?' as one byte char
@@ -17,10 +24,6 @@ func (f *Format) PrefixMatch(data []byte) bool {
 // - '!' as one number char
 // NOT support '*' for none or many char.
 func wildcardMatch(pattern string, data []byte) bool {
-	if pattern == "" {
-		return true
-	}
-
 	var p, b byte
 
 	for i, j := 0, 0; i < len(pattern); i++ {
@@ -47,6 +50,10 @@ func wildcardMatch(pattern string, data []byte) bool {
 		}
 
 		j++
+
+		if j >= len(data) {
+			return false
+		}
 	}
 
 	return true
