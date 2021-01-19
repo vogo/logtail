@@ -9,7 +9,7 @@ type Format struct {
 
 // PrefixMatch whether the given data has a prefix of a new record.
 func (f *Format) PrefixMatch(data []byte) bool {
-	return wildcardMatch(f.Prefix, data)
+	return WildcardMatch(f.Prefix, data)
 }
 
 // String format string info.
@@ -17,16 +17,20 @@ func (f *Format) String() string {
 	return fmt.Sprintf("format{prefix:%s}", f.Prefix)
 }
 
-// wildcardMatch -  finds whether the bytes matches/satisfies the pattern wildcard.
+// WildcardMatch -  finds whether the bytes matches/satisfies the pattern wildcard.
 // supports:
 // - '?' as one byte char
 // - '~' as one alphabet char
 // - '!' as one number char
 // NOT support '*' for none or many char.
-func wildcardMatch(pattern string, data []byte) bool {
+func WildcardMatch(pattern string, data []byte) bool {
 	var p, b byte
 
 	for i, j := 0, 0; i < len(pattern); i++ {
+		if j >= len(data) {
+			return false
+		}
+
 		p = pattern[i]
 		b = data[j]
 
@@ -50,10 +54,6 @@ func wildcardMatch(pattern string, data []byte) bool {
 		}
 
 		j++
-
-		if j >= len(data) {
-			return false
-		}
 	}
 
 	return true
