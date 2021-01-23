@@ -1,13 +1,13 @@
 package logtail
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/vogo/logger"
+	"github.com/vogo/vogo/vio"
 )
 
 const TransferTypeWebhook = "webhook"
@@ -18,16 +18,16 @@ type WebhookTransfer struct {
 	url string
 }
 
-func (d *WebhookTransfer) Trans(_ string, data []byte) error {
-	return httpTrans(d.url, data)
+func (d *WebhookTransfer) Trans(_ string, data ...[]byte) error {
+	return httpTrans(d.url, data...)
 }
 
 func NewWebhookTransfer(url string) Transfer {
 	return &WebhookTransfer{url: url}
 }
 
-func httpTrans(url string, data []byte) error {
-	res, err := http.Post(url, "application/json", bytes.NewReader(data))
+func httpTrans(url string, data ...[]byte) error {
+	res, err := http.Post(url, "application/json", vio.NewBytesReader(data...))
 	if err != nil {
 		return err
 	}

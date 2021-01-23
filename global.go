@@ -6,6 +6,12 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+var dingTextMessageDataPrefix = []byte(`{"msgtype":"text","text":{"content":"[logtail-`)
+var dingTextMessageDataSuffix = []byte(`"}}`)
+var messageTitleContentSplit = []byte("]: ")
+var quotationBytes = []byte(`"`)
+var escapeQuotationBytes = []byte(`\"`)
+
 var defaultRouters []*Router
 var globalRouters []*Router
 

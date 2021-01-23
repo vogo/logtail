@@ -1,38 +1,29 @@
 package logtail
 
-import (
-	"encoding/json"
-	"fmt"
-)
+import "bytes"
 
 const TransferTypeDing = "ding"
-
-type DingText struct {
-	Content string `json:"content"`
-}
-type DingMessage struct {
-	MsgType string   `json:"msgtype"`
-	Text    DingText `json:"text"`
-}
 
 type DingTransfer struct {
 	url string
 }
 
-func (d *DingTransfer) Trans(serverID string, data []byte) error {
-	msg := &DingMessage{
-		MsgType: "text",
-		Text: DingText{
-			Content: fmt.Sprintf("[logtail-%s]: %s", serverID, data),
-		},
+const dingMessageDataFixBytesNum = 4
+
+func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
+	size := dingMessageDataFixBytesNum + len(data)
+	list := make([][]byte, size)
+	list[0] = dingTextMessageDataPrefix
+	list[1] = []byte(serverID)
+	list[2] = messageTitleContentSplit
+
+	for i, d := range data {
+		list[i+3] = bytes.Replace(d, quotationBytes, escapeQuotationBytes, -1)
 	}
 
-	jsonBytes, err := json.Marshal(msg)
-	if err != nil {
-		return err
-	}
+	list[size-1] = dingTextMessageDataSuffix
 
-	return httpTrans(d.url, jsonBytes)
+	return httpTrans(d.url, list...)
 }
 
 func NewDingTransfer(url string) Transfer {

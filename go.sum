@@ -11,8 +11,8 @@ github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJy
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/vogo/logger v1.3.0 h1:dofEemPRR1eGcVsUPmFWQnQ72EiH9EXzLFZU8EN/EVQ=
 github.com/vogo/logger v1.3.0/go.mod h1:JNvSUGbxH+Et7KQrPr8Zmg9BWb4piD0yEooLiUVz+y8=
-github.com/vogo/vogo v0.0.0-20200428001824-e37eb1a4bde6 h1:0/BTUSt6cPzkwuMK8ZCGjMuEuo4q8Ouk960UQIVzvK4=
-github.com/vogo/vogo v0.0.0-20200428001824-e37eb1a4bde6/go.mod h1:KtJ7mSWRPf9zt9Kui06oJ2x5BPVIuNinCy1od5u0ixg=
+github.com/vogo/vogo v0.0.0-20210123113352-5c0b9fc41f4d h1:M0+dbElFOh7Zcn35T/x9+iwfelhJ95veLicWuV6rRcg=
+github.com/vogo/vogo v0.0.0-20210123113352-5c0b9fc41f4d/go.mod h1:KtJ7mSWRPf9zt9Kui06oJ2x5BPVIuNinCy1od5u0ixg=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/natefinch/lumberjack.v2 v2.0.0 h1:1Lc07Kr7qY4U2YPouBjpCLxpiyxIVoxqXgkXLknAOE8=
