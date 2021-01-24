@@ -14,7 +14,7 @@ func startLogtail(config *Config) {
 	restartRouters(&globalRouters, config.GlobalRouters)
 
 	for _, serverConfig := range config.Servers {
-		startServer(serverConfig)
+		startServer(config, serverConfig)
 	}
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), &httpHandler{}); err != nil {
@@ -25,7 +25,7 @@ func startLogtail(config *Config) {
 func stopServers() {
 	for _, s := range serverDB {
 		if err := s.Stop(); err != nil {
-			logger.Errorf("server %s stop error: %+v", s.id, err)
+			logger.Errorf("server %s close error: %+v", s.id, err)
 		}
 	}
 }
@@ -33,7 +33,7 @@ func stopServers() {
 func restartRouters(routers *[]*Router, routerConfigs []*RouterConfig) {
 	if len(*routers) > 0 {
 		for _, r := range *routers {
-			r.Stop()
+			r.stop()
 		}
 
 		*routers = nil
@@ -45,26 +45,21 @@ func restartRouters(routers *[]*Router, routerConfigs []*RouterConfig) {
 			*routers = append(*routers, r)
 
 			go func() {
-				r.Start()
+				r.start()
 			}()
 		}
 	}
 }
 
-func startServer(config *ServerConfig) {
+func startServer(c *Config, config *ServerConfig) {
 	serverDBLock.Lock()
 	defer serverDBLock.Unlock()
 
-	server := NewServer(config)
-	server.Start()
-
-	for _, routerConfig := range config.Routers {
-		server.StartRouter(buildRouter(routerConfig))
-	}
+	NewServer(c, config)
 }
 
 func buildRouter(config *RouterConfig) *Router {
-	return NewRouter(config.ID, buildMatchers(config.Matchers), buildTransfers(config.Transfers))
+	return newRouter(config.ID, buildMatchers(config.Matchers), buildTransfers(config.Transfers))
 }
 
 func buildMatchers(matcherConfigs []*MatcherConfig) []Matcher {

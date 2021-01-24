@@ -25,14 +25,19 @@ type Server struct {
 	routers     map[int64]*Router
 }
 
-func NewServer(cfg *ServerConfig) *Server {
+func NewServer(config *Config, serverConfig *ServerConfig) *Server {
+	format := serverConfig.Format
+	if format == nil {
+		format = config.DefaultFormat
+	}
+
 	server := &Server{
-		id:          cfg.ID,
+		id:          serverConfig.ID,
 		lock:        sync.Mutex{},
 		once:        sync.Once{},
 		stop:        make(chan struct{}),
-		command:     cfg.Command,
-		format:      cfg.Format,
+		command:     serverConfig.Command,
+		format:      format,
 		routers:     make(map[int64]*Router, 4),
 		routerCount: 0,
 	}
@@ -45,6 +50,22 @@ func NewServer(cfg *ServerConfig) *Server {
 
 	serverDB[server.id] = server
 
+	if len(serverConfig.Routers) > 0 {
+		for _, routerConfig := range serverConfig.Routers {
+			server.addRouter(buildRouter(routerConfig))
+		}
+	} else {
+		for _, routerConfig := range config.DefaultRouters {
+			server.addRouter(buildRouter(routerConfig))
+		}
+	}
+
+	for _, routerConfig := range config.GlobalRouters {
+		server.addRouter(buildRouter(routerConfig))
+	}
+
+	server.start()
+
 	return server
 }
 
@@ -52,31 +73,18 @@ func (s *Server) Write(bytes []byte) (int, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	message := &Message{
-		Server: s,
-		Data:   bytes,
-	}
-
-	if len(s.routers) == 0 {
-		for _, r := range defaultRouters {
-			r.receive(message)
-		}
-	} else {
-		for _, r := range s.routers {
-			r.receive(message)
-		}
-	}
-
-	for _, r := range globalRouters {
-		r.receive(message)
+	for _, r := range s.routers {
+		r.receive(bytes)
 	}
 
 	return len(bytes), nil
 }
 
-func (s *Server) StartRouter(router *Router) {
+func (s *Server) addRouter(router *Router) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
+	router.server = s
 
 	select {
 	case <-s.stop:
@@ -92,12 +100,16 @@ func (s *Server) StartRouter(router *Router) {
 
 		go func() {
 			defer delete(s.routers, index)
-			router.Start()
+			router.start()
 		}()
 	}
 }
 
-func (s *Server) Start() {
+func (s *Server) start() {
+	if s.command == "" {
+		return
+	}
+
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -135,7 +147,7 @@ func (s *Server) Stop() error {
 
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Warnf("server %s stop error: %+v", s.id, err)
+			logger.Warnf("server %s close error: %+v", s.id, err)
 		}
 	}()
 
@@ -161,6 +173,6 @@ func (s *Server) Stop() error {
 
 func (s *Server) StopRouters() {
 	for _, router := range s.routers {
-		router.Stop()
+		router.stop()
 	}
 }

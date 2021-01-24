@@ -66,3 +66,55 @@ func isNumberChar(b byte) bool {
 func isAlphabetChar(b byte) bool {
 	return (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z')
 }
+
+func indexToNextLineStart(format *Format, message []byte) []byte {
+	l := len(message)
+	i := 0
+
+	for i < l {
+		i = indexLineEnd(message, l, i)
+		i = ignoreLineEnd(message, l, i)
+
+		if format == nil || format.PrefixMatch(message[i:]) {
+			return message[i:]
+		}
+	}
+
+	return nil
+}
+
+func indexToLineStart(format *Format, data []byte) []byte {
+	if format == nil || format.PrefixMatch(data) {
+		return data
+	}
+
+	return indexToNextLineStart(format, data)
+}
+
+func isFollowingLine(format *Format, bytes []byte) bool {
+	if format == nil {
+		format = defaultFormat
+	}
+
+	if format != nil {
+		return !format.PrefixMatch(bytes)
+	}
+
+	return bytes[0] == ' ' || bytes[0] == '\t'
+}
+
+func isLineEnd(b byte) bool {
+	return b == '\n' || b == '\r'
+}
+
+func indexLineEnd(bytes []byte, length, i int) int {
+	for ; i < length && !isLineEnd(bytes[i]); i++ {
+	}
+	return i
+}
+
+func ignoreLineEnd(bytes []byte, length, i int) int {
+	for ; i < length && isLineEnd(bytes[i]); i++ {
+	}
+	return i
+}

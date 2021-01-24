@@ -8,10 +8,10 @@ type DingTransfer struct {
 	url string
 }
 
-const dingMessageDataFixBytesNum = 4
+const dingMessageDataFixedBytesNum = 4
 
 func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
-	size := dingMessageDataFixBytesNum + len(data)
+	size := dingMessageDataFixedBytesNum + len(data)
 	list := make([][]byte, size)
 	list[0] = dingTextMessageDataPrefix
 	list[1] = []byte(serverID)

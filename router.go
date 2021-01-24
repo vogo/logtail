@@ -2,27 +2,31 @@ package logtail
 
 import (
 	"sync"
+	"time"
 
 	"github.com/vogo/logger"
 )
+
+const DurationNextBytesTimeout = time.Millisecond * 4
 
 type Router struct {
 	id        string
 	channel   Channel
 	lock      sync.Mutex
 	once      sync.Once
-	stop      chan struct{}
+	close     chan struct{}
+	server    *Server
 	matchers  []Matcher
 	transfers []Transfer
 }
 
-func NewRouter(id string, matchers []Matcher, transfers []Transfer) *Router {
+func newRouter(id string, matchers []Matcher, transfers []Transfer) *Router {
 	t := &Router{
 		id:        id,
-		channel:   make(chan *Message, DefaultChannelBufferSize),
+		channel:   make(chan []byte, DefaultChannelBufferSize),
 		lock:      sync.Mutex{},
 		once:      sync.Once{},
-		stop:      make(chan struct{}),
+		close:     make(chan struct{}),
 		matchers:  matchers,
 		transfers: transfers,
 	}
@@ -34,47 +38,119 @@ func (r *Router) SetMatchers(matchers []Matcher) {
 	r.matchers = matchers
 }
 
-func (r *Router) SetTransfer(transfers []Transfer) {
-	r.transfers = transfers
-}
-
-func (r *Router) Route(server *Server, bytes []byte) {
-	if err := r.MatchAndTrans(server, r.matchers, bytes); err != nil {
-		logger.Warnf("router %s route error: %+v", r.id, err)
-		r.Stop()
-	}
-}
-
-func (r *Router) MatchAndTrans(server *Server, matchers []Matcher, bytes []byte) error {
-	if len(matchers) == 0 {
-		return r.Trans(server.id, bytes)
+func (r *Router) Route(bytes []byte) error {
+	if len(r.matchers) == 0 {
+		return r.Trans(bytes)
 	}
 
-	matches := matchers[0].Match(server.format, bytes)
+	bytes = indexToLineStart(r.server.format, bytes)
 
-	if len(matches) == 0 {
-		return nil
-	}
+	var (
+		list  [][]byte
+		match []byte
+		end   int
+	)
 
-	matchers = matchers[1:]
+	i := 0
+	l := len(bytes)
+	followFlag := false
 
-	for _, data := range matches {
-		if err := r.MatchAndTrans(server, matchers, data); err != nil {
-			return err
+	for i < l {
+		if followFlag {
+			// append following lines
+			i, end = indexFollowingLines(r.server.format, bytes, l, i, 0)
+			if i > 0 {
+				list = append(list, bytes[:end])
+
+				if i >= l {
+					bytes = r.nextBytes()
+					if len(bytes) > 0 {
+						i = 0
+						l = len(bytes)
+						followFlag = true
+
+						continue
+					}
+				}
+			}
+
+			if err := r.Trans(list...); err != nil {
+				return err
+			}
+
+			list = nil
+			followFlag = false
+
+			continue
+		}
+
+		match, i = r.Match(bytes, l, i)
+
+		if len(match) > 0 {
+			list = append(list, match)
+
+			if i >= l {
+				bytes = r.nextBytes()
+				if len(bytes) > 0 {
+					i = 0
+					l = len(bytes)
+					followFlag = true
+
+					continue
+				}
+			}
+
+			if err := r.Trans(list...); err != nil {
+				return err
+			}
+
+			list = nil
+			followFlag = false
 		}
 	}
 
 	return nil
 }
 
-func (r *Router) Trans(serverID string, bytes []byte) error {
+func (r *Router) Match(bytes []byte, l, i int) (matchBytes []byte, index int) {
+	start := i
+	i = indexLineEnd(bytes, l, i)
+
+	if !r.matches(bytes[start:i]) {
+		i = ignoreLineEnd(bytes, l, i)
+		return nil, i
+	}
+
+	end := i
+
+	i = ignoreLineEnd(bytes, l, i)
+
+	// append following lines
+	i, end = indexFollowingLines(r.server.format, bytes, l, i, end)
+
+	return bytes[start:end], i
+}
+
+func indexFollowingLines(format *Format, bytes []byte, l, i, end int) (index, newEnd int) {
+	for i < l && isFollowingLine(format, bytes[i:]) {
+		i = indexLineEnd(bytes, l, i)
+
+		end = i
+
+		i = ignoreLineEnd(bytes, l, i)
+	}
+
+	return i, end
+}
+
+func (r *Router) Trans(bytes ...[]byte) error {
 	transfers := r.transfers
 	if len(transfers) == 0 {
 		return nil
 	}
 
 	for _, t := range transfers {
-		if err := t.Trans(serverID, bytes); err != nil {
+		if err := t.Trans(r.server.id, bytes...); err != nil {
 			return err
 		}
 	}
@@ -82,15 +158,15 @@ func (r *Router) Trans(serverID string, bytes []byte) error {
 	return nil
 }
 
-func (r *Router) Stop() {
+func (r *Router) stop() {
 	r.once.Do(func() {
 		logger.Infof("router %s stopping", r.id)
-		close(r.stop)
+		close(r.close)
 		close(r.channel)
 	})
 }
 
-func (r *Router) Start() {
+func (r *Router) start() {
 	defer func() {
 		if err := recover(); err != nil {
 			logger.Errorf("router %s error: %+v", r.id, err)
@@ -103,28 +179,57 @@ func (r *Router) Start() {
 
 	for {
 		select {
-		case <-r.stop:
+		case <-r.close:
 			return
-		case message := <-r.channel:
-			if message == nil {
-				r.Stop()
+		case bytes := <-r.channel:
+			if bytes == nil {
+				r.stop()
 				return
 			}
 
-			r.Route(message.Server, message.Data)
+			if err := r.Route(bytes); err != nil {
+				logger.Warnf("router %s route error: %+v", r.id, err)
+				r.stop()
+			}
 		}
 	}
 }
 
-func (r *Router) receive(message *Message) {
+func (r *Router) nextBytes() []byte {
+	select {
+	case <-r.close:
+		return nil
+	case <-time.After(DurationNextBytesTimeout):
+		return nil
+	case bytes := <-r.channel:
+		if bytes == nil {
+			r.stop()
+			return nil
+		}
+
+		return bytes
+	}
+}
+
+func (r *Router) receive(message []byte) {
 	defer func() {
 		_ = recover()
 	}()
 
 	select {
-	case <-r.stop:
+	case <-r.close:
 		return
 	case r.channel <- message:
 	default:
 	}
+}
+
+func (r *Router) matches(bytes []byte) bool {
+	for _, m := range r.matchers {
+		if !m.Match(bytes) {
+			return false
+		}
+	}
+
+	return true
 }
