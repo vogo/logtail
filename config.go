@@ -30,10 +30,12 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	ID      string          `json:"id"`
-	Command string          `json:"command"`
-	Format  *Format         `json:"format"`
-	Routers []*RouterConfig `json:"routers"`
+	ID         string          `json:"id"`
+	Command    string          `json:"command"`     // single command
+	Commands   string          `json:"commands"`    // multiple commands split by new line
+	CommandGen string          `json:"command_gen"` // command to generate multiple commands split by new line
+	Format     *Format         `json:"format"`
+	Routers    []*RouterConfig `json:"routers"`
 }
 
 type RouterConfig struct {

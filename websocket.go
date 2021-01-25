@@ -42,7 +42,7 @@ func startWebsocketTransfer(response http.ResponseWriter, request *http.Request,
 
 	websocketTransfer := &WebsocketTransfer{conn: c}
 	router := newRouter("", nil, []Transfer{websocketTransfer})
-	server.addRouter(router)
+	server.defaultWorker.addRouter(router)
 	startWebsocketHeartbeat(router, websocketTransfer)
 }
 
