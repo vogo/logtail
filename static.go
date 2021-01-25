@@ -80,7 +80,7 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
 
     function scrollingControl(btn) {
         scrollingFlag = !scrollingFlag;
-        btn.innerText = (scrollingFlag ? "close" : "start") + " scrolling";
+        btn.innerText = (scrollingFlag ? "stop" : "start") + " scrolling";
     }
 
     let autoReconnectFlag = false;

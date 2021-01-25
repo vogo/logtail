@@ -48,56 +48,19 @@ func (r *Router) Route(bytes []byte) error {
 	var (
 		list  [][]byte
 		match []byte
-		end   int
 	)
 
-	i := 0
-	l := len(bytes)
-	followFlag := false
+	idx := 0
+	length := len(bytes)
 
-	for i < l {
-		if followFlag {
-			// append following lines
-			indexFollowingLines(r.server.format, bytes, &l, &i, &end)
-			if i > 0 {
-				list = append(list, bytes[:end])
-
-				if i >= l {
-					bytes = r.nextBytes()
-					if len(bytes) > 0 {
-						i = 0
-						l = len(bytes)
-						followFlag = true
-
-						continue
-					}
-				}
-			}
-
-			if err := r.Trans(list...); err != nil {
-				return err
-			}
-
-			list = nil
-			followFlag = false
-
-			continue
-		}
-
-		match = r.Match(bytes, &l, &i)
+	for idx < length {
+		match = r.Match(bytes, &length, &idx)
 
 		if len(match) > 0 {
 			list = append(list, match)
 
-			if i >= l {
-				bytes = r.nextBytes()
-				if len(bytes) > 0 {
-					i = 0
-					l = len(bytes)
-					followFlag = true
-
-					continue
-				}
+			for length > 0 && idx >= length {
+				r.readMoreFollowingLines(&list, &bytes, &length, &idx)
 			}
 
 			if err := r.Trans(list...); err != nil {
@@ -105,11 +68,26 @@ func (r *Router) Route(bytes []byte) error {
 			}
 
 			list = nil
-			followFlag = false
 		}
 	}
 
 	return nil
+}
+
+func (r *Router) readMoreFollowingLines(list *[][]byte, bytes *[]byte, length, idx *int) {
+	*bytes = r.nextBytes()
+	*idx = 0
+	*length = len(*bytes)
+
+	if *length > 0 {
+		var end int
+		// append following lines
+		indexFollowingLines(r.server.format, *bytes, length, idx, &end)
+
+		if end > 0 {
+			*list = append(*list, (*bytes)[:end])
+		}
+	}
 }
 
 func (r *Router) Match(bytes []byte, length, index *int) []byte {
