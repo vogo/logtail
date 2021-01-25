@@ -1,25 +1,20 @@
 package logtail
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/vogo/logger"
 )
 
-func startLogtail(config *Config) {
+// StopLogtail start config servers.
+func StartLogtail(config *Config) {
 	defaultFormat = config.DefaultFormat
 
 	for _, serverConfig := range config.Servers {
 		startServer(config, serverConfig)
 	}
-
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), &httpHandler{}); err != nil {
-		panic(err)
-	}
 }
 
-func stopServers() {
+// StopLogtail stop servers.
+func StopLogtail() {
 	for _, s := range serverDB {
 		if err := s.Stop(); err != nil {
 			logger.Errorf("server %s close error: %+v", s.id, err)

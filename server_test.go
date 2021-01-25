@@ -106,15 +106,13 @@ func TestServerCommands(t *testing.T) {
 		},
 	}
 
-	server := logtail.NewServer(config, config.Servers[0])
+	logtail.StartLogtail(config)
 
 	<-time.After(time.Second * 2)
 
-	_ = server.Stop()
-
 	config.Servers[0].CommandGen = commandGen
 
-	logtail.NewServer(config, config.Servers[0])
+	logtail.StartLogtail(config)
 
 	<-time.After(time.Second * 2)
 }
