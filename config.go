@@ -153,7 +153,7 @@ func validateServerConfig(server *ServerConfig) error {
 		return ErrServerIDNil
 	}
 
-	if server.Command == "" {
+	if server.Command == "" && server.Commands == "" && server.CommandGen == "" {
 		return ErrServerCommandNil
 	}
 
