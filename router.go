@@ -58,7 +58,7 @@ func (r *Router) Route(bytes []byte) error {
 	for i < l {
 		if followFlag {
 			// append following lines
-			i, end = indexFollowingLines(r.server.format, bytes, l, i, 0)
+			indexFollowingLines(r.server.format, bytes, &l, &i, &end)
 			if i > 0 {
 				list = append(list, bytes[:end])
 
@@ -84,7 +84,7 @@ func (r *Router) Route(bytes []byte) error {
 			continue
 		}
 
-		match, i = r.Match(bytes, l, i)
+		match = r.Match(bytes, &l, &i)
 
 		if len(match) > 0 {
 			list = append(list, match)
@@ -112,35 +112,33 @@ func (r *Router) Route(bytes []byte) error {
 	return nil
 }
 
-func (r *Router) Match(bytes []byte, l, i int) (matchBytes []byte, index int) {
-	start := i
-	i = indexLineEnd(bytes, l, i)
+func (r *Router) Match(bytes []byte, length, index *int) []byte {
+	start := *index
+	indexLineEnd(bytes, length, index)
 
-	if !r.matches(bytes[start:i]) {
-		i = ignoreLineEnd(bytes, l, i)
-		return nil, i
+	if !r.matches(bytes[start:*index]) {
+		ignoreLineEnd(bytes, length, index)
+		return nil
 	}
 
-	end := i
+	end := *index
 
-	i = ignoreLineEnd(bytes, l, i)
+	ignoreLineEnd(bytes, length, index)
 
 	// append following lines
-	i, end = indexFollowingLines(r.server.format, bytes, l, i, end)
+	indexFollowingLines(r.server.format, bytes, length, index, &end)
 
-	return bytes[start:end], i
+	return bytes[start:end]
 }
 
-func indexFollowingLines(format *Format, bytes []byte, l, i, end int) (index, newEnd int) {
-	for i < l && isFollowingLine(format, bytes[i:]) {
-		i = indexLineEnd(bytes, l, i)
+func indexFollowingLines(format *Format, bytes []byte, length, index, end *int) {
+	for *index < *length && isFollowingLine(format, bytes[*index:]) {
+		indexLineEnd(bytes, length, index)
 
-		end = i
+		*end = *index
 
-		i = ignoreLineEnd(bytes, l, i)
+		ignoreLineEnd(bytes, length, index)
 	}
-
-	return i, end
 }
 
 func (r *Router) Trans(bytes ...[]byte) error {
