@@ -10,9 +10,6 @@ import (
 func startLogtail(config *Config) {
 	defaultFormat = config.DefaultFormat
 
-	restartRouters(&defaultRouters, config.DefaultRouters)
-	restartRouters(&globalRouters, config.GlobalRouters)
-
 	for _, serverConfig := range config.Servers {
 		startServer(config, serverConfig)
 	}
@@ -26,27 +23,6 @@ func stopServers() {
 	for _, s := range serverDB {
 		if err := s.Stop(); err != nil {
 			logger.Errorf("server %s close error: %+v", s.id, err)
-		}
-	}
-}
-
-func restartRouters(routers *[]*Router, routerConfigs []*RouterConfig) {
-	if len(*routers) > 0 {
-		for _, r := range *routers {
-			r.stop()
-		}
-
-		*routers = nil
-	}
-
-	if len(routerConfigs) > 0 {
-		for _, routerConfig := range routerConfigs {
-			r := buildRouter(routerConfig)
-			*routers = append(*routers, r)
-
-			go func() {
-				r.start()
-			}()
 		}
 	}
 }
