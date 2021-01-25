@@ -38,7 +38,7 @@ func (w *worker) writeToRouter(bytes []byte) (int, error) {
 }
 
 func (w *worker) addRouter(router *Router) {
-	router.server = w.server
+	router.worker = w
 
 	select {
 	case <-w.server.stop:
@@ -70,7 +70,7 @@ func (w *worker) start() {
 			case <-w.server.stop:
 				return
 			default:
-				logger.Infof("server %s command: %s", w.id, w.command)
+				logger.Infof("worker [%s] command: %s", w.id, w.command)
 				w.cmd = exec.Command("/bin/sh", "-c", w.command)
 
 				setCmdSysProcAttr(w.cmd)
@@ -88,7 +88,7 @@ func (w *worker) start() {
 					case <-w.server.stop:
 						return
 					default:
-						logger.Errorf("failed to exec command, retry after 10s! error: %+v, command: %s", err, w.command)
+						logger.Errorf("worker [%s] failed to exec command, retry after 10s! error: %+v, command: %s", w.id, err, w.command)
 						time.Sleep(CommandFailRetryInterval)
 					}
 				}
@@ -100,15 +100,15 @@ func (w *worker) start() {
 func (w *worker) stop() {
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Warnf("server worker %s close error: %+v", w.id, err)
+			logger.Warnf("worker [%s] close error: %+v", w.id, err)
 		}
 	}()
 
 	if w.cmd != nil {
-		logger.Infof("server %s command stopping: %s", w.id, w.command)
+		logger.Infof("worker [%s] command stopping: %s", w.id, w.command)
 
 		if err := killCmd(w.cmd); err != nil {
-			logger.Warnf("server %s kill command error: %+v", w.id, err)
+			logger.Warnf("worker [%s] kill command error: %+v", w.id, err)
 		}
 
 		w.cmd = nil

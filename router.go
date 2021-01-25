@@ -15,7 +15,7 @@ type Router struct {
 	lock      sync.Mutex
 	once      sync.Once
 	close     chan struct{}
-	server    *Server
+	worker    *worker
 	matchers  []Matcher
 	transfers []Transfer
 }
@@ -43,7 +43,7 @@ func (r *Router) Route(bytes []byte) error {
 		return r.Trans(bytes)
 	}
 
-	bytes = indexToLineStart(r.server.format, bytes)
+	bytes = indexToLineStart(r.worker.server.format, bytes)
 
 	var (
 		list  [][]byte
@@ -82,7 +82,7 @@ func (r *Router) readMoreFollowingLines(list *[][]byte, bytes *[]byte, length, i
 	if *length > 0 {
 		var end int
 		// append following lines
-		indexFollowingLines(r.server.format, *bytes, length, idx, &end)
+		indexFollowingLines(r.worker.server.format, *bytes, length, idx, &end)
 
 		if end > 0 {
 			*list = append(*list, (*bytes)[:end])
@@ -104,7 +104,7 @@ func (r *Router) Match(bytes []byte, length, index *int) []byte {
 	ignoreLineEnd(bytes, length, index)
 
 	// append following lines
-	indexFollowingLines(r.server.format, bytes, length, index, &end)
+	indexFollowingLines(r.worker.server.format, bytes, length, index, &end)
 
 	return bytes[start:end]
 }
@@ -126,7 +126,7 @@ func (r *Router) Trans(bytes ...[]byte) error {
 	}
 
 	for _, t := range transfers {
-		if err := t.Trans(r.server.id, bytes...); err != nil {
+		if err := t.Trans(r.worker.server.id, bytes...); err != nil {
 			return err
 		}
 	}
@@ -136,7 +136,7 @@ func (r *Router) Trans(bytes ...[]byte) error {
 
 func (r *Router) stop() {
 	r.once.Do(func() {
-		logger.Infof("router %s stopping", r.id)
+		logger.Infof("worker [%s] router [%s] stopping", r.worker.id, r.id)
 		close(r.close)
 		close(r.channel)
 	})
@@ -145,13 +145,13 @@ func (r *Router) stop() {
 func (r *Router) start() {
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Errorf("router %s error: %+v", r.id, err)
+			logger.Errorf("worker [%s] router [%s] error: %+v", r.worker.id, r.id, err)
 		}
 
-		logger.Infof("router %s stopped", r.id)
+		logger.Infof("worker [%s] router [%s] stopped", r.worker.id, r.id)
 	}()
 
-	logger.Infof("router %s start", r.id)
+	logger.Infof("worker [%s] router [%s] start", r.worker.id, r.id)
 
 	for {
 		select {
@@ -164,7 +164,7 @@ func (r *Router) start() {
 			}
 
 			if err := r.Route(bytes); err != nil {
-				logger.Warnf("router %s route error: %+v", r.id, err)
+				logger.Warnf("worker [%s] router [%s] route error: %+v", r.worker.id, r.id, err)
 				r.stop()
 			}
 		}
