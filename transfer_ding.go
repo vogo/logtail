@@ -14,7 +14,7 @@ type DingTransfer struct {
 }
 
 const dingMessageDataFixedBytesNum = 4
-const dingMessageDataMaxLength = 512
+const dingMessageDataMaxLength = 1024
 
 // transfer next message after the interval, ignore messages in the interval.
 const dingMessageTransferInterval = time.Second * 5

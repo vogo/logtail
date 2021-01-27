@@ -150,7 +150,9 @@ func (s *Server) startWorker(routerConfigs []*RouterConfig, command string, send
 		s.workers = append(s.workers, w)
 
 		for _, routerConfig := range routerConfigs {
-			w.addRouter(buildRouter(routerConfig))
+			r := buildRouter(routerConfig)
+			r.id = id + "-" + r.id
+			w.addRouter(r)
 		}
 	}
 
