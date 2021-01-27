@@ -46,6 +46,9 @@ func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 		b = bytes.Replace(b, quotationBytes, escapeQuotationBytes, -1)
 		if len(b) > messageRemainCapacity {
 			b = b[:messageRemainCapacity]
+			for len(b) > 0 && b[len(b)-1]&0xC0 == 0x80 {
+				b = b[:len(b)-1]
+			}
 		}
 
 		list[i+3] = b
