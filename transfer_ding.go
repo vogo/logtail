@@ -36,9 +36,10 @@ func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 	list[1] = []byte(serverID)
 	list[2] = messageTitleContentSplit
 
+	idx := 3
 	messageRemainCapacity := dingMessageDataMaxLength
 
-	for i, b := range data {
+	for _, b := range data {
 		if messageRemainCapacity <= 0 {
 			break
 		}
@@ -51,13 +52,15 @@ func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 			}
 		}
 
-		list[i+3] = b
+		list[idx] = b
+		idx++
+
 		messageRemainCapacity -= len(b)
 	}
 
-	list[size-1] = dingTextMessageDataSuffix
+	list[idx] = dingTextMessageDataSuffix
 
-	return httpTrans(d.url, list...)
+	return httpTrans(d.url, list[:idx+1]...)
 }
 
 func NewDingTransfer(url string) Transfer {
