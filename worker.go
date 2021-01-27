@@ -1,6 +1,7 @@
 package logtail
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
 	"sync/atomic"
@@ -9,14 +10,16 @@ import (
 	"github.com/vogo/logger"
 )
 
+var ErrWorkerCommandStopped = errors.New("worker command stopped")
+
 type worker struct {
-	id            string
-	server        *Server
-	sendErrorFlag bool
-	command       string
-	cmd           *exec.Cmd
-	routerCount   int64
-	routers       map[int64]*Router
+	id          string
+	server      *Server
+	dynamic     bool      // command generated dynamically
+	command     string    // command lines
+	cmd         *exec.Cmd // command object
+	routerCount int64
+	routers     map[int64]*Router
 }
 
 func (w *worker) Write(bytes []byte) (int, error) {
@@ -65,6 +68,10 @@ func (w *worker) start() {
 	}
 
 	go func() {
+		defer func() {
+			logger.Infof("worker [%s] stopped", w.id)
+		}()
+
 		for {
 			select {
 			case <-w.server.stop:
@@ -79,8 +86,11 @@ func (w *worker) start() {
 				w.cmd.Stderr = w
 
 				if err := w.cmd.Run(); err != nil {
-					if w.sendErrorFlag {
-						w.server.workerChan <- err
+					logger.Errorf("worker [%s] command error: %+v, command: %s", w.id, err, w.command)
+
+					// if the command is generated dynamic, should not restart by self, send error instead.
+					if w.dynamic {
+						w.server.sendWorkerError(err)
 						return
 					}
 
@@ -88,9 +98,15 @@ func (w *worker) start() {
 					case <-w.server.stop:
 						return
 					default:
-						logger.Errorf("worker [%s] failed to exec command, retry after 10s! error: %+v, command: %s", w.id, err, w.command)
+						logger.Errorf("worker [%s] failed, retry after 10s! command: %s", w.id, w.command)
 						time.Sleep(CommandFailRetryInterval)
 					}
+				}
+
+				// if the command is generated dynamic, should not restart by self, send error instead.
+				if w.dynamic {
+					w.server.workerError <- ErrWorkerCommandStopped
+					return
 				}
 			}
 		}

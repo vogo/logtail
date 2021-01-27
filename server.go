@@ -20,7 +20,7 @@ type Server struct {
 	once          sync.Once
 	stop          chan struct{}
 	format        *Format
-	workerChan    chan error
+	workerError   chan error
 	defaultWorker *worker
 	workers       []*worker
 }
@@ -33,12 +33,11 @@ func NewServer(config *Config, serverConfig *ServerConfig) *Server {
 	}
 
 	server := &Server{
-		id:         serverConfig.ID,
-		lock:       sync.Mutex{},
-		once:       sync.Once{},
-		stop:       make(chan struct{}),
-		workerChan: make(chan error),
-		format:     format,
+		id:     serverConfig.ID,
+		lock:   sync.Mutex{},
+		once:   sync.Once{},
+		stop:   make(chan struct{}),
+		format: format,
 	}
 
 	if existsServer, ok := serverDB[server.id]; ok {
@@ -137,12 +136,12 @@ func (s *Server) startWorker(routerConfigs []*RouterConfig, command string, send
 	}
 
 	w := &worker{
-		id:            id,
-		server:        s,
-		command:       command,
-		sendErrorFlag: sendErrorFlag,
-		routers:       make(map[int64]*Router, 4),
-		routerCount:   0,
+		id:          id,
+		server:      s,
+		command:     command,
+		dynamic:     sendErrorFlag,
+		routers:     make(map[int64]*Router, 4),
+		routerCount: 0,
 	}
 
 	// not add the worker into the workers list of server if no router configs.
@@ -174,31 +173,42 @@ func (s *Server) startWorkerGen(gen string, configs []*RouterConfig) {
 				return
 			default:
 				commands, err = vos.ExecShell(gen)
-				if err == nil {
+				if err != nil {
+					logger.Errorf("server [%s] command error: %+v, command: %s", s.id, err, gen)
+				} else {
+					// create a new chan everytime
+					s.workerError = make(chan error)
+
 					cmds := bytes.Split(commands, []byte{'\n'})
 					for _, cmd := range cmds {
 						s.startWorker(configs, string(cmd), true)
 					}
 
 					// wait any error from one of worker
-					err = <-s.workerChan
-				}
+					err = <-s.workerError
+					logger.Errorf("server [%s] receive worker error: %+v", s.id, err)
+					close(s.workerError)
 
-				// stop all workers when meet error.
-				for _, w := range s.workers {
-					w.stop()
+					s.stopWorkers()
 				}
-
-				s.workers = nil
 
 				select {
 				case <-s.stop:
 					return
 				default:
-					logger.Errorf("failed to exec command, retry after 10s! error: %+v, command: %s", err, gen)
+					logger.Errorf("server [%s] failed, retry after 10s!", s.id)
 					time.Sleep(CommandFailRetryInterval)
 				}
 			}
 		}
 	}()
+}
+
+func (s *Server) sendWorkerError(err error) {
+	defer func() {
+		// ignore chan closed error
+		_ = recover()
+	}()
+
+	s.workerError <- err
 }
