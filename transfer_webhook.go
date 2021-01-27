@@ -28,6 +28,7 @@ func NewWebhookTransfer(url string) Transfer {
 
 func httpTrans(url string, data ...[]byte) error {
 	res, err := http.Post(url, "application/json", vio.NewBytesReader(data...))
+
 	if err != nil {
 		return err
 	}

@@ -136,7 +136,7 @@ func (r *Router) Trans(bytes ...[]byte) error {
 
 func (r *Router) stop() {
 	r.once.Do(func() {
-		logger.Infof("worker [%s] router [%s] stopping", r.worker.id, r.id)
+		logger.Infof("router [%s] stopping", r.id)
 		close(r.close)
 		close(r.channel)
 	})
@@ -145,26 +145,26 @@ func (r *Router) stop() {
 func (r *Router) start() {
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Errorf("worker [%s] router [%s] error: %+v", r.worker.id, r.id, err)
+			logger.Errorf("router [%s] error: %+v", r.id, err)
 		}
 
-		logger.Infof("worker [%s] router [%s] stopped", r.worker.id, r.id)
+		logger.Infof("router [%s] stopped", r.id)
 	}()
 
-	logger.Infof("worker [%s] router [%s] start", r.worker.id, r.id)
+	logger.Infof("router [%s] start", r.id)
 
 	for {
 		select {
 		case <-r.close:
 			return
-		case bytes := <-r.channel:
-			if bytes == nil {
+		case data := <-r.channel:
+			if data == nil {
 				r.stop()
 				return
 			}
 
-			if err := r.Route(bytes); err != nil {
-				logger.Warnf("worker [%s] router [%s] route error: %+v", r.worker.id, r.id, err)
+			if err := r.Route(data); err != nil {
+				logger.Warnf("router [%s] route error: %+v", r.id, err)
 				r.stop()
 			}
 		}

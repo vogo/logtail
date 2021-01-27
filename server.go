@@ -131,8 +131,13 @@ func (s *Server) stopWorkers() {
 }
 
 func (s *Server) startWorker(routerConfigs []*RouterConfig, command string, sendErrorFlag bool) *worker {
+	id := fmt.Sprintf("%s-%d", s.id, len(s.workers))
+	if command == "" {
+		id = fmt.Sprintf("%s-default", s.id)
+	}
+
 	w := &worker{
-		id:            fmt.Sprintf("%s-%d", s.id, len(s.workers)),
+		id:            id,
 		server:        s,
 		command:       command,
 		sendErrorFlag: sendErrorFlag,

@@ -53,7 +53,7 @@ func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
 		_ = recover()
 
 		router.stop()
-		logger.Infof("router %s websocket heartbeat stopped", router.id)
+		logger.Infof("router [%s] websocket heartbeat stopped", router.id)
 	}()
 
 	for {
@@ -65,7 +65,7 @@ func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
 			_, data, err := transfer.conn.ReadMessage()
 
 			if err != nil {
-				logger.Warnf("router %s websocket heartbeat error: %+v", router.id, err)
+				logger.Warnf("router [%s] websocket heartbeat error: %+v", router.id, err)
 				router.stop()
 
 				return
@@ -73,7 +73,7 @@ func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
 
 			if len(data) > 0 && data[0] == MessageTypeMatcherConfig {
 				if err := handleMatcherConfigUpdate(router, data[1:]); err != nil {
-					logger.Warnf("router %s websocket matcher config error: %+v", router.id, err)
+					logger.Warnf("router [%s] websocket matcher config error: %+v", router.id, err)
 				}
 			}
 		}
