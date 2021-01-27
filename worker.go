@@ -105,7 +105,7 @@ func (w *worker) start() {
 
 				// if the command is generated dynamic, should not restart by self, send error instead.
 				if w.dynamic {
-					w.server.workerError <- ErrWorkerCommandStopped
+					w.server.workerError <- fmt.Errorf("%w: worker [%s]", ErrWorkerCommandStopped, w.id)
 					return
 				}
 			}
