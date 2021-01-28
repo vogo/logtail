@@ -23,14 +23,18 @@ type worker struct {
 	routers     map[int64]*Router
 }
 
-func (w *worker) Write(bytes []byte) (int, error) {
+func (w *worker) Write(data []byte) (int, error) {
+	// copy data to avoid being update by source
+	d := make([]byte, len(data))
+	copy(d, data)
+
 	for _, r := range w.routers {
-		r.receive(bytes)
+		r.receive(d)
 	}
 
-	_, _ = w.server.Write(bytes)
+	_, _ = w.server.Write(d)
 
-	return len(bytes), nil
+	return len(d), nil
 }
 
 func (w *worker) writeToRouter(bytes []byte) (int, error) {
