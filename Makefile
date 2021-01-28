@@ -20,6 +20,11 @@ build: format check test static
 	cd dist && GOOS=darwin go build ../cmd/logtail/logtail.go && zip logtail-$(version)-mac.zip logtail && rm -f logtail
 	cd dist && GOOS=windows go build ../cmd/logtail/logtail.go && zip logtail-$(version)-windows.zip logtail.exe && rm -f logtail.exe
 
+build-tools:
+	cd dist && GOOS=linux go build ../cmd/logrecorder/logrecorder.go
+	cd dist && GOOS=linux go build ../cmd/logrepeater/logrepeater.go
+	cd dist && GOOS=linux go build ../cmd/dingmock/dingmock.go
+
 install: format check test static
 	go install cmd/logtail/logtail.go
 

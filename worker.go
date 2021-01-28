@@ -3,6 +3,7 @@ package logtail
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"sync/atomic"
 	"time"
@@ -83,7 +84,7 @@ func (w *worker) start() {
 				setCmdSysProcAttr(w.cmd)
 
 				w.cmd.Stdout = w
-				w.cmd.Stderr = w
+				w.cmd.Stderr = os.Stderr
 
 				if err := w.cmd.Run(); err != nil {
 					logger.Errorf("worker [%s] command error: %+v, command: %s", w.id, err, w.command)
