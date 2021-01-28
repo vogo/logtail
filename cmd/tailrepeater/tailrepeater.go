@@ -13,7 +13,7 @@ func main() {
 				ID: "test-router",
 				Matchers: []*logtail.MatcherConfig{
 					{
-						MatchContains: "ERROR",
+						Contains: []string{"ERROR"},
 					},
 				},
 				Transfers: []*logtail.TransferConfig{

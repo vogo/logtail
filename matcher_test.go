@@ -10,8 +10,8 @@ import (
 func TestMatch(t *testing.T) {
 	data := []byte(`2020-12-25 14:54:38.523  ERROR exception occurs`)
 
-	assert.True(t, logtail.NewContainsMatcher("ERROR").Match(data))
-	assert.True(t, logtail.NewContainsMatcher("exception").Match(data))
+	assert.True(t, logtail.NewContainsMatcher("ERROR", true).Match(data))
+	assert.True(t, logtail.NewContainsMatcher("exception", true).Match(data))
 
-	assert.False(t, logtail.NewContainsMatcher("WARN").Match(data))
+	assert.False(t, logtail.NewContainsMatcher("WARN", true).Match(data))
 }

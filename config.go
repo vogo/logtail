@@ -45,7 +45,8 @@ type RouterConfig struct {
 }
 
 type MatcherConfig struct {
-	MatchContains string `json:"match_contains"`
+	Contains    []string `json:"contains"`
+	NotContains []string `json:"not_contains"`
 }
 
 type TransferConfig struct {
@@ -127,7 +128,7 @@ func readConfig(file string, port int, command, matchContains, dingURL, webhookU
 
 	if matchContains != "" {
 		routerConfig.Matchers = append(routerConfig.Matchers, &MatcherConfig{
-			MatchContains: matchContains,
+			Contains: []string{matchContains},
 		})
 	}
 
@@ -223,7 +224,7 @@ func validateTransferConfig(transfer *TransferConfig) error {
 }
 
 func validateMatchConfig(config *MatcherConfig) error {
-	if config.MatchContains == "" {
+	if len(config.Contains) == 0 && len(config.NotContains) == 0 {
 		logger.Debugf("match contains is nil")
 	}
 

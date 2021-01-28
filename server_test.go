@@ -20,7 +20,8 @@ func TestServer(t *testing.T) {
 				ID: "test-router",
 				Matchers: []*logtail.MatcherConfig{
 					{
-						MatchContains: "ERROR",
+						Contains:    []string{"ERROR", "test"},
+						NotContains: []string{"NORMAL"},
 					},
 				},
 				Transfers: []*logtail.TransferConfig{
@@ -58,6 +59,9 @@ func TestServer(t *testing.T) {
 	_ = server.Fire([]byte(`follow5
 follow9`))
 
+	_ = server.Fire([]byte(`2020-11-11 ERROR 6 no TEST should not match`))
+	_ = server.Fire([]byte(`2020-11-11 ERROR test7 contains NORMAL so should not match`))
+
 	<-time.After(time.Second)
 }
 
@@ -88,7 +92,7 @@ func TestServerCommands(t *testing.T) {
 				ID: "test-router",
 				Matchers: []*logtail.MatcherConfig{
 					{
-						MatchContains: "ERROR",
+						Contains: []string{"ERROR"},
 					},
 				},
 				Transfers: []*logtail.TransferConfig{

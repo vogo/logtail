@@ -37,9 +37,9 @@ func buildMatchers(matcherConfigs []*MatcherConfig) []Matcher {
 	var matchers []Matcher
 
 	for _, matchConfig := range matcherConfigs {
-		matcher := buildMatcher(matchConfig)
-		if matcher != nil {
-			matchers = append(matchers, matcher)
+		m := buildMatcher(matchConfig)
+		if len(m) > 0 {
+			matchers = append(matchers, m...)
 		}
 	}
 
@@ -68,10 +68,18 @@ func buildTransfer(config *TransferConfig) Transfer {
 	return &ConsoleTransfer{}
 }
 
-func buildMatcher(config *MatcherConfig) *ContainsMatcher {
-	if config.MatchContains == "" {
-		return nil
+func buildMatcher(config *MatcherConfig) []Matcher {
+	matchers := make([]Matcher, len(config.Contains)+len(config.NotContains))
+
+	for i, contains := range config.Contains {
+		matchers[i] = NewContainsMatcher(contains, true)
 	}
 
-	return NewContainsMatcher(config.MatchContains)
+	containsLen := len(config.Contains)
+
+	for i, contains := range config.NotContains {
+		matchers[i+containsLen] = NewContainsMatcher(contains, false)
+	}
+
+	return matchers
 }

@@ -1,18 +1,20 @@
 package logtail
 
 type ContainsMatcher struct {
-	pattern string
-	plen    int
-	kmp     []int
+	contains bool
+	pattern  string
+	plen     int
+	kmp      []int
 }
 
-func NewContainsMatcher(pattern string) *ContainsMatcher {
+func NewContainsMatcher(pattern string, contains bool) *ContainsMatcher {
 	if pattern == "" {
 		panic("pattern nil")
 	}
 
 	cm := &ContainsMatcher{
-		pattern: pattern,
+		contains: contains,
+		pattern:  pattern,
 	}
 
 	cm.plen = len(pattern)
@@ -54,9 +56,9 @@ func (cm *ContainsMatcher) Match(bytes []byte) bool {
 		}
 
 		if j+1 == cm.plen {
-			return true
+			return cm.contains
 		}
 	}
 
-	return false
+	return !cm.contains
 }
