@@ -187,7 +187,7 @@ func (r *Router) nextBytes() []byte {
 	}
 }
 
-func (r *Router) receive(message []byte) {
+func (r *Router) receive(data []byte) {
 	defer func() {
 		_ = recover()
 	}()
@@ -195,7 +195,7 @@ func (r *Router) receive(message []byte) {
 	select {
 	case <-r.close:
 		return
-	case r.channel <- message:
+	case r.channel <- data:
 	default:
 	}
 }

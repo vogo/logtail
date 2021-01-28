@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"sync/atomic"
 	"time"
+
+	"github.com/vogo/logger"
 )
 
 const TransferTypeDing = "ding"
@@ -62,7 +64,11 @@ func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 
 	list[idx] = dingTextMessageDataSuffix
 
-	return httpTrans(d.url, list[:idx+1]...)
+	if err := httpTrans(d.url, list[:idx+1]...); err != nil {
+		logger.Errorf("ding error: %v", err)
+	}
+
+	return nil
 }
 
 func NewDingTransfer(url string) Transfer {
