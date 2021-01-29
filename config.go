@@ -19,6 +19,7 @@ var (
 	ErrTransURLNil      = errors.New("transfer url is nil")
 	ErrTransTypeNil     = errors.New("transfer type is nil")
 	ErrTransTypeInvalid = errors.New("invalid transfer type")
+	ErrTransDirNil      = errors.New("transfer dir is nil")
 )
 
 type Config struct {
@@ -52,6 +53,7 @@ type MatcherConfig struct {
 type TransferConfig struct {
 	Type string `json:"type"`
 	URL  string `json:"url"`
+	Dir  string `json:"dir"`
 }
 
 func parseConfig() (cfg *Config, parseErr error) {
@@ -210,13 +212,22 @@ func validateTransferConfig(transfer *TransferConfig) error {
 		return ErrTransTypeNil
 	}
 
-	if transfer.Type != TransferTypeWebhook && transfer.Type != TransferTypeDing && transfer.Type != TransferTypeConsole {
+	if transfer.Type != TransferTypeWebhook &&
+		transfer.Type != TransferTypeDing &&
+		transfer.Type != TransferTypeConsole &&
+		transfer.Type != TransferTypeFile {
 		return fmt.Errorf("%w: %s", ErrTransTypeInvalid, transfer.Type)
 	}
 
 	if transfer.Type == TransferTypeWebhook || transfer.Type == TransferTypeDing {
 		if transfer.URL == "" {
 			return ErrTransURLNil
+		}
+	}
+
+	if transfer.Type == TransferTypeFile {
+		if transfer.Dir == "" {
+			return ErrTransDirNil
 		}
 	}
 

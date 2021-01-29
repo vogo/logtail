@@ -2,6 +2,7 @@ package logtail
 
 import (
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -12,9 +13,6 @@ var messageTitleContentSplit = []byte("]: ")
 var quotationBytes = []byte(`"`)
 var escapeQuotationBytes = []byte(`\"`)
 
-var defaultRouters []*Router
-var globalRouters []*Router
-
 var websocketUpgrader = websocket.Upgrader{}
 
 var serverDBLock = sync.Mutex{}
@@ -22,4 +20,4 @@ var serverDB = make(map[string]*Server, 4)
 
 var defaultFormat *Format
 
-var shutdownChan = make(chan error, 1)
+var routerReadTicker = time.NewTicker(time.Millisecond * 50)

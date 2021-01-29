@@ -10,16 +10,18 @@ import (
 
 const TransferTypeDing = "ding"
 
-type DingTransfer struct {
-	url          string
-	transferring int32 // whether transferring message
-}
-
 const dingMessageDataFixedBytesNum = 4
 const dingMessageDataMaxLength = 1024
 
 // transfer next message after the interval, ignore messages in the interval.
 const dingMessageTransferInterval = time.Second * 5
+
+type DingTransfer struct {
+	url          string
+	transferring int32 // whether transferring message
+}
+
+func (d *DingTransfer) start(*Router) error { return nil }
 
 func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 	if !atomic.CompareAndSwapInt32(&d.transferring, 0, 1) {

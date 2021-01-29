@@ -2,12 +2,9 @@ package logtail
 
 import (
 	"sync"
-	"time"
 
 	"github.com/vogo/logger"
 )
-
-const DurationNextBytesTimeout = time.Millisecond * 4
 
 type Router struct {
 	id        string
@@ -153,6 +150,12 @@ func (r *Router) start() {
 
 	logger.Infof("router [%s] start", r.id)
 
+	for _, t := range r.transfers {
+		if err := t.start(r); err != nil {
+			panic(err)
+		}
+	}
+
 	for {
 		select {
 		case <-r.close:
@@ -172,19 +175,23 @@ func (r *Router) start() {
 }
 
 func (r *Router) nextBytes() []byte {
-	select {
-	case <-r.close:
-		return nil
-	case <-time.After(DurationNextBytesTimeout):
-		return nil
-	case bytes := <-r.channel:
-		if bytes == nil {
-			r.stop()
+	for i := 0; i < 2; i++ {
+		select {
+		case <-r.close:
 			return nil
-		}
+		case <-routerReadTicker.C:
+			continue
+		case bytes := <-r.channel:
+			if bytes == nil {
+				r.stop()
+				return nil
+			}
 
-		return bytes
+			return bytes
+		}
 	}
+
+	return nil
 }
 
 func (r *Router) receive(data []byte) {

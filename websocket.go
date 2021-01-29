@@ -15,6 +15,8 @@ type WebsocketTransfer struct {
 	conn *websocket.Conn
 }
 
+func (ww *WebsocketTransfer) start(*Router) error { return nil }
+
 func (ww *WebsocketTransfer) Trans(_ string, data ...[]byte) (err error) {
 	for _, d := range data {
 		err = ww.conn.WriteMessage(1, d)

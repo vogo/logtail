@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/vogo/logger"
 	"github.com/vogo/vogo/vos"
@@ -43,4 +44,7 @@ func handleSignal() {
 	sig := <-signalChan
 	logger.Infof("signal: %v", sig)
 	StopLogtail()
+
+	// wait all goroutines stopping
+	<-time.After(time.Second)
 }

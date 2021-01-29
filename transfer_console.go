@@ -17,3 +17,5 @@ func (d *ConsoleTransfer) Trans(serverID string, data ...[]byte) error {
 
 	return nil
 }
+
+func (d *ConsoleTransfer) start(*Router) error { return nil }

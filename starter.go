@@ -65,6 +65,10 @@ func buildTransfer(config *TransferConfig) Transfer {
 		return NewDingTransfer(config.URL)
 	}
 
+	if config.Type == TransferTypeFile {
+		return NewFileTransfer(config.Dir)
+	}
+
 	return &ConsoleTransfer{}
 }
 
