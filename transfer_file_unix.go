@@ -65,15 +65,19 @@ func (ft *FileTransfer) submitFile() error {
 	defer func() {
 		ft.memoryMap = nil
 		ft.file = nil
+		ft.name = ""
+		ft.writeSize = 0
 	}()
 
 	if ft.file != nil {
 		logger.Infof("submit file %s", ft.name)
 
 		_ = syscall.Munmap(ft.memoryMap)
+		_ = ft.file.Truncate(int64(ft.writeSize))
 
-		if err := ft.file.Truncate(int64(ft.writeSize)); err != nil {
-			return err
+		if ft.writeSize == 0 {
+			ft.file.Close()
+			return os.Remove(ft.name)
 		}
 
 		return ft.file.Close()
