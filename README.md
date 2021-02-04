@@ -1,11 +1,11 @@
-# logtail is a web socket log tailing tool.
+# logtail is a log tailing utility.
 
 ## 1. Features
 - tailing command output
-- support multiple command tailing
-- support webhook notice (include dingtalk)
+- support (dynamically) multiple commands tailing
 - support websocket tailing
 - support log matching filter
+- support transfer log to console/file/webhook (include dingtalk)
 
 ## 2. Architecture
 
@@ -74,6 +74,10 @@ config file sample:
             {
               "type": "webhook",
               "webhook_url": "http://127.0.0.1:9000"
+            },
+            {
+              "type": "file",
+              "dir": "/opt/logs/"
             }
           ]
         }
@@ -82,6 +86,30 @@ config file sample:
     {
       "id": "app2",
       "command": "tail -f /Users/wongoo/app/app2.log"
+    }
+  ]
+}
+```
+
+Tailing multiple commands (split by new line char `\n`):
+```json
+{
+  "servers": [
+    {
+      "id": "app1",
+      "commands": "tail -f /Users/wongoo/app/app1.log\ntail -f /Users/wongoo/app/app2.log\ntail -f /Users/wongoo/app/app3.log"
+    }
+  ]
+}
+```
+
+Tailing multiple commands which are generated dynamically:
+```json
+{
+  "servers": [
+    {
+      "id": "app1",
+      "command_gen": "cmd='';for d in $(ls /logs/k8s_logs/service/*.log); do cmd=$cmd'tail -f '$d$'\n'; done;cmd=${cmd::-1}; echo \"$cmd\"",
     }
   ]
 }
@@ -138,5 +166,5 @@ kubectl logs --tail 10 -f deployment/$(kubectl get deployments --selector=projec
 s=$(kubectl get deployments --selector=project-name=myapp -o jsonpath='{.items[*].metadata.name}');s=${s##* };kubectl logs --tail 10 -f deployment/$s
 
 # k8s: find and tail logs for the latest version of the myapp deployment (multiple pods)
-app=$(kubectl get deployments --selector=project-name=myapp -o jsonpath='{.items[*].metadata.name}');app=${app##* };pods=$(kubectl get pods --selector=app=$app -o jsonpath='{.items[*].metadata.name}');cmd='';for pod in $pods; do cmd=$cmd"kubectl logs --tail 2 -f pod/$pod & "; done;cmd=${cmd::-3}; /bin/sh -c "$cmd"
+app=$(kubectl get deployments --selector=project-name=myapp -o jsonpath='{.items[*].metadata.name}');app=${app##* };pods=$(kubectl get pods --selector=app=$app -o jsonpath='{.items[*].metadata.name}');cmd='';for pod in $pods; do cmd=$cmd'kubectl logs --tail 2 -f pod/'$pod$'\n'; done;cmd=${cmd::-1}; echo "$cmd"
 ```
