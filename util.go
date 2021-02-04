@@ -57,3 +57,47 @@ func ignoreLineEnd(bytes []byte, length, index *int) {
 	for ; *index < *length && isLineEnd(bytes[*index]); *index++ {
 	}
 }
+
+const DoubleSize = 2
+
+func EscapeLimitJSONBytes(b []byte, capacity int) []byte {
+	num := capacity
+	if len(b) < num {
+		num = len(b)
+	}
+
+	t := make([]byte, num*DoubleSize)
+
+	index := 0
+	from := 0
+
+	for i := 0; i < num; i++ {
+		for ; i < num && b[i] != '\n' && b[i] != '\t' && b[i] != '"'; i++ {
+		}
+
+		copy(t[index:], b[from:i])
+		index += i - from
+		from = i + 1
+
+		if i < num {
+			t[index] = '\\'
+			index++
+
+			switch b[i] {
+			case '\n':
+				t[index] = 'n'
+			case '\t':
+				t[index] = 't'
+			case '"':
+				t[index] = '"'
+			}
+			index++
+		}
+	}
+
+	for i := index - 1; i >= 0 && t[i]&0xC0 == 0x80; i-- {
+		index = i - 1
+	}
+
+	return t[:index]
+}

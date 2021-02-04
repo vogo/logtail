@@ -13,14 +13,14 @@ import (
 )
 
 type FileTransfer struct {
-	router    *Router
-	dir       string
-	prefix    string
-	name      string
-	buffer    chan [][]byte
-	writeSize int
-	memoryMap []byte
-	file      *os.File
+	router       *Router
+	dir          string
+	prefix       string
+	name         string
+	buffer       chan [][]byte
+	writeSize    int
+	memoryBuffer []byte
+	file         *os.File
 }
 
 func NewFileTransfer(dir string) Transfer {
@@ -51,7 +51,7 @@ func (ft *FileTransfer) resetFile() error {
 		return err
 	}
 
-	ft.memoryMap, err = syscall.Mmap(int(ft.file.Fd()), 0, TransferFileSize, syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
+	ft.memoryBuffer, err = syscall.Mmap(int(ft.file.Fd()), 0, TransferFileSize, syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (ft *FileTransfer) resetFile() error {
 
 func (ft *FileTransfer) submitFile() error {
 	defer func() {
-		ft.memoryMap = nil
+		ft.memoryBuffer = nil
 		ft.file = nil
 		ft.name = ""
 		ft.writeSize = 0
@@ -72,7 +72,7 @@ func (ft *FileTransfer) submitFile() error {
 	if ft.file != nil {
 		logger.Infof("submit file %s", ft.name)
 
-		_ = syscall.Munmap(ft.memoryMap)
+		_ = syscall.Munmap(ft.memoryBuffer)
 		_ = ft.file.Truncate(int64(ft.writeSize))
 
 		if ft.writeSize == 0 {
@@ -87,7 +87,7 @@ func (ft *FileTransfer) submitFile() error {
 }
 
 func (ft *FileTransfer) start(r *Router) error {
-	ft.prefix = r.worker.id
+	ft.prefix = r.name
 	ft.router = r
 
 	if err := ft.resetFile(); err != nil {
@@ -98,8 +98,8 @@ func (ft *FileTransfer) start(r *Router) error {
 		ft.buffer = make(chan [][]byte, DefaultChannelBufferSize)
 
 		defer func() {
-			close(ft.buffer)
 			_ = ft.submitFile()
+			close(ft.buffer)
 		}()
 
 		for {
@@ -155,9 +155,9 @@ func (ft *FileTransfer) write(data [][]byte) {
 	}
 
 	for _, b := range data {
-		copy(ft.memoryMap[ft.writeSize:], b)
+		copy(ft.memoryBuffer[ft.writeSize:], b)
 		ft.writeSize += len(b)
-		ft.memoryMap[ft.writeSize] = '\n'
+		ft.memoryBuffer[ft.writeSize] = '\n'
 		ft.writeSize++
 	}
 }

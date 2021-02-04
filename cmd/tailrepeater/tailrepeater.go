@@ -10,7 +10,6 @@ func main() {
 		DefaultFormat: &logtail.Format{Prefix: "!!!!-!!-!!"},
 		DefaultRouters: []*logtail.RouterConfig{
 			{
-				ID: "test-router",
 				Matchers: []*logtail.MatcherConfig{
 					{
 						Contains: []string{"ERROR"},
@@ -29,15 +28,16 @@ func main() {
 		},
 		Servers: []*logtail.ServerConfig{
 			{
-				ID: "server-1",
+				ID: "server-test",
 			},
 		},
 	}
 
 	server := logtail.NewServer(config, config.Servers[0])
+	server.Start()
 
 	c := make(chan []byte)
-	go repeater.Repeat("/tmp/logtail/logs/test.log", c)
+	go repeater.Repeat("/Users/gelnyang/temp/logtail/test.log", c)
 
 	for {
 		b := <-c

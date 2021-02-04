@@ -35,7 +35,7 @@ func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	err = json.Unmarshal(data, msg)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "json unmarshal error: %v, data: %s\n", err, data)
 		return
 	}
 

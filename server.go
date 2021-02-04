@@ -2,9 +2,9 @@ package logtail
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/vogo/logger"
@@ -21,8 +21,11 @@ type Server struct {
 	stop          chan struct{}
 	format        *Format
 	workerError   chan error
-	defaultWorker *worker
+	mergingWorker *worker
 	workers       []*worker
+	workerStarter func()
+	routersCount  int64
+	routers       map[int64]*Router
 }
 
 // NewServer start a new server.
@@ -33,11 +36,12 @@ func NewServer(config *Config, serverConfig *ServerConfig) *Server {
 	}
 
 	server := &Server{
-		id:     serverConfig.ID,
-		lock:   sync.Mutex{},
-		once:   sync.Once{},
-		stop:   make(chan struct{}),
-		format: format,
+		id:      serverConfig.ID,
+		lock:    sync.Mutex{},
+		once:    sync.Once{},
+		stop:    make(chan struct{}),
+		format:  format,
+		routers: make(map[int64]*Router, 4),
 	}
 
 	if existsServer, ok := serverDB[server.id]; ok {
@@ -48,32 +52,12 @@ func NewServer(config *Config, serverConfig *ServerConfig) *Server {
 
 	serverDB[server.id] = server
 
-	server.start(config, serverConfig)
+	server.initial(config, serverConfig)
 
 	return server
 }
 
-// Write bytes data to default workers, which will be send to web socket clients.
-func (s *Server) Write(data []byte) (int, error) {
-	return s.defaultWorker.writeToRouter(data)
-}
-
-// Fire custom generate bytes data to workers.
-func (s *Server) Fire(data []byte) error {
-	if _, err := s.defaultWorker.writeToRouter(data); err != nil {
-		return err
-	}
-
-	for _, w := range s.workers {
-		if _, err := w.writeToRouter(data); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (s *Server) start(config *Config, serverConfig *ServerConfig) {
+func (s *Server) initial(config *Config, serverConfig *ServerConfig) {
 	var routerConfigs []*RouterConfig
 	if len(serverConfig.Routers) > 0 {
 		routerConfigs = append(routerConfigs, serverConfig.Routers...)
@@ -83,19 +67,59 @@ func (s *Server) start(config *Config, serverConfig *ServerConfig) {
 
 	routerConfigs = append(routerConfigs, config.GlobalRouters...)
 
-	s.defaultWorker = s.startWorker(nil, "", false)
+	// not add the worker into the workers list of server if no router configs.
+	routerCount := len(routerConfigs)
+	if routerCount > 0 {
+		for _, routerConfig := range routerConfigs {
+			r := buildRouter(s, routerConfig)
+			if routerCount == 1 {
+				r.name = s.id
+			}
 
-	switch {
-	case serverConfig.CommandGen != "":
-		s.startWorkerGen(serverConfig.CommandGen, routerConfigs)
-	case serverConfig.Commands != "":
-		commands := strings.Split(serverConfig.Commands, "\n")
-		for _, cmd := range commands {
-			s.startWorker(routerConfigs, cmd, false)
+			s.routers[r.id] = r
 		}
-	default:
-		s.startWorker(routerConfigs, serverConfig.Command, false)
 	}
+
+	s.workerStarter = func() {
+		s.mergingWorker = newWorker(s, "", false)
+		s.mergingWorker.start()
+
+		switch {
+		case serverConfig.CommandGen != "":
+			s.startDynamicWorkers(serverConfig.CommandGen)
+		case serverConfig.Commands != "":
+			commands := strings.Split(serverConfig.Commands, "\n")
+
+			for _, cmd := range commands {
+				s.workers = append(s.workers, startWorker(s, cmd, false))
+			}
+		default:
+			s.workers = append(s.workers, startWorker(s, serverConfig.Command, false))
+		}
+	}
+}
+
+func (s *Server) nextRouterID() int64 {
+	return atomic.AddInt64(&s.routersCount, 1)
+}
+
+// Write bytes data to default workers, which will be send to web socket clients.
+func (s *Server) Write(data []byte) (int, error) {
+	return s.mergingWorker.writeToFilters(data)
+}
+
+// Fire custom generate bytes data to the first worker of the server.
+func (s *Server) Fire(data []byte) error {
+	_, err := s.workers[0].Write(data)
+	return err
+}
+
+func (s *Server) Start() {
+	for _, r := range s.routers {
+		_ = r.Start()
+	}
+
+	s.workerStarter()
 }
 
 // Stop stop server.
@@ -116,7 +140,11 @@ func (s *Server) Stop() error {
 
 	s.stopWorkers()
 
-	s.defaultWorker.stop()
+	s.mergingWorker.stop()
+
+	for _, r := range s.routers {
+		r.Stop()
+	}
 
 	return nil
 }
@@ -129,38 +157,7 @@ func (s *Server) stopWorkers() {
 	s.workers = nil
 }
 
-func (s *Server) startWorker(routerConfigs []*RouterConfig, command string, sendErrorFlag bool) *worker {
-	id := fmt.Sprintf("%s-%d", s.id, len(s.workers))
-	if command == "" {
-		id = fmt.Sprintf("%s-default", s.id)
-	}
-
-	w := &worker{
-		id:          id,
-		server:      s,
-		command:     command,
-		dynamic:     sendErrorFlag,
-		routers:     make(map[int64]*Router, 4),
-		routerCount: 0,
-	}
-
-	// not add the worker into the workers list of server if no router configs.
-	if len(routerConfigs) > 0 {
-		s.workers = append(s.workers, w)
-
-		for _, routerConfig := range routerConfigs {
-			r := buildRouter(routerConfig)
-			r.id = id + "-" + r.id
-			w.addRouter(r)
-		}
-	}
-
-	w.start()
-
-	return w
-}
-
-func (s *Server) startWorkerGen(gen string, configs []*RouterConfig) {
+func (s *Server) startDynamicWorkers(gen string) {
 	go func() {
 		var (
 			err      error
@@ -181,7 +178,7 @@ func (s *Server) startWorkerGen(gen string, configs []*RouterConfig) {
 
 					cmds := bytes.Split(commands, []byte{'\n'})
 					for _, cmd := range cmds {
-						s.startWorker(configs, string(cmd), true)
+						s.workers = append(s.workers, startWorker(s, string(cmd), true))
 					}
 
 					// wait any error from one of worker
@@ -204,7 +201,7 @@ func (s *Server) startWorkerGen(gen string, configs []*RouterConfig) {
 	}()
 }
 
-func (s *Server) sendWorkerError(err error) {
+func (s *Server) receiveWorkerError(err error) {
 	defer func() {
 		// ignore chan closed error
 		_ = recover()

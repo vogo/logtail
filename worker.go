@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"sync/atomic"
 	"time"
 
 	"github.com/vogo/logger"
@@ -14,13 +13,12 @@ import (
 var ErrWorkerCommandStopped = errors.New("worker command stopped")
 
 type worker struct {
-	id          string
-	server      *Server
-	dynamic     bool      // command generated dynamically
-	command     string    // command lines
-	cmd         *exec.Cmd // command object
-	routerCount int64
-	routers     map[int64]*Router
+	id      string
+	server  *Server
+	dynamic bool      // command generated dynamically
+	command string    // command lines
+	cmd     *exec.Cmd // command object
+	filters map[int64]*Filter
 }
 
 func (w *worker) Write(data []byte) (int, error) {
@@ -28,7 +26,7 @@ func (w *worker) Write(data []byte) (int, error) {
 	d := make([]byte, len(data))
 	copy(d, data)
 
-	for _, r := range w.routers {
+	for _, r := range w.filters {
 		r.receive(d)
 	}
 
@@ -37,32 +35,25 @@ func (w *worker) Write(data []byte) (int, error) {
 	return len(d), nil
 }
 
-func (w *worker) writeToRouter(bytes []byte) (int, error) {
-	for _, r := range w.routers {
+func (w *worker) writeToFilters(bytes []byte) (int, error) {
+	for _, r := range w.filters {
 		r.receive(bytes)
 	}
 
 	return len(bytes), nil
 }
 
-func (w *worker) addRouter(router *Router) {
-	router.worker = w
-
+func (w *worker) startRouterFilter(router *Router) {
 	select {
 	case <-w.server.stop:
 		return
 	default:
-		index := atomic.AddInt64(&w.routerCount, 1)
-
-		if router.id == "" {
-			router.id = fmt.Sprintf("%s-%d", w.id, index)
-		}
-
-		w.routers[index] = router
+		filter := newFilter(w, router)
+		w.filters[router.id] = filter
 
 		go func() {
-			defer delete(w.routers, index)
-			router.start()
+			defer delete(w.filters, router.id)
+			filter.start()
 		}()
 	}
 }
@@ -74,6 +65,7 @@ func (w *worker) start() {
 
 	go func() {
 		defer func() {
+			w.stop()
 			logger.Infof("worker [%s] stopped", w.id)
 		}()
 
@@ -95,7 +87,7 @@ func (w *worker) start() {
 
 					// if the command is generated dynamic, should not restart by self, send error instead.
 					if w.dynamic {
-						w.server.sendWorkerError(err)
+						w.server.receiveWorkerError(err)
 						return
 					}
 
@@ -135,11 +127,40 @@ func (w *worker) stop() {
 		w.cmd = nil
 	}
 
-	w.stopRouters()
+	w.stopFilters()
 }
 
-func (w *worker) stopRouters() {
-	for _, router := range w.routers {
-		router.stop()
+func (w *worker) stopFilters() {
+	for _, filter := range w.filters {
+		filter.stop()
+	}
+}
+
+func startWorker(s *Server, command string, dynamic bool) *worker {
+	w := newWorker(s, command, dynamic)
+
+	if len(s.routers) > 0 {
+		for _, r := range s.routers {
+			w.startRouterFilter(r)
+		}
+	}
+
+	w.start()
+
+	return w
+}
+
+func newWorker(s *Server, command string, dynamic bool) *worker {
+	id := fmt.Sprintf("%s-%d", s.id, len(s.workers))
+	if command == "" {
+		id = fmt.Sprintf("%s-default", s.id)
+	}
+
+	return &worker{
+		id:      id,
+		server:  s,
+		command: command,
+		dynamic: dynamic,
+		filters: make(map[int64]*Filter, 4),
 	}
 }

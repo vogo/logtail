@@ -40,7 +40,6 @@ type ServerConfig struct {
 }
 
 type RouterConfig struct {
-	ID        string            `json:"id"`
 	Matchers  []*MatcherConfig  `json:"matchers"`
 	Transfers []*TransferConfig `json:"transfers"`
 }

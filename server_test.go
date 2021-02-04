@@ -17,7 +17,6 @@ func TestServer(t *testing.T) {
 		DefaultFormat: &logtail.Format{Prefix: "!!!!-!!-!!"},
 		DefaultRouters: []*logtail.RouterConfig{
 			{
-				ID: "test-router",
 				Matchers: []*logtail.MatcherConfig{
 					{
 						Contains:    []string{"ERROR", "test"},
@@ -39,6 +38,7 @@ func TestServer(t *testing.T) {
 	}
 
 	server := logtail.NewServer(config, config.Servers[0])
+	server.Start()
 
 	_ = server.Fire([]byte(`2020-11-11 ERROR test1
  follow1
@@ -89,7 +89,6 @@ func TestServerCommands(t *testing.T) {
 		DefaultFormat: &logtail.Format{Prefix: "!!!!-!!-!!"},
 		DefaultRouters: []*logtail.RouterConfig{
 			{
-				ID: "test-router",
 				Matchers: []*logtail.MatcherConfig{
 					{
 						Contains: []string{"ERROR"},
@@ -104,7 +103,7 @@ func TestServerCommands(t *testing.T) {
 		},
 		Servers: []*logtail.ServerConfig{
 			{
-				ID:       "server-1",
+				ID:       "server-test",
 				Commands: commands,
 			},
 		},
@@ -119,4 +118,6 @@ func TestServerCommands(t *testing.T) {
 	logtail.StartLogtail(config)
 
 	<-time.After(time.Second * 2)
+
+	logtail.StopLogtail()
 }

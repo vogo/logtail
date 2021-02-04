@@ -26,11 +26,12 @@ func startServer(c *Config, config *ServerConfig) {
 	serverDBLock.Lock()
 	defer serverDBLock.Unlock()
 
-	NewServer(c, config)
+	server := NewServer(c, config)
+	server.Start()
 }
 
-func buildRouter(config *RouterConfig) *Router {
-	return newRouter(config.ID, buildMatchers(config.Matchers), buildTransfers(config.Transfers))
+func buildRouter(s *Server, config *RouterConfig) *Router {
+	return NewRouter(s, buildMatchers(config.Matchers), buildTransfers(config.Transfers))
 }
 
 func buildMatchers(matcherConfigs []*MatcherConfig) []Matcher {

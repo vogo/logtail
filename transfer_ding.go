@@ -2,6 +2,7 @@ package logtail
 
 import (
 	"bytes"
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -48,20 +49,16 @@ func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 			break
 		}
 
-		b = bytes.Replace(b, quotationBytes, escapeQuotationBytes, -1)
-		b = bytes.Replace(b, []byte{'\n'}, []byte{'\\', 'n'}, -1)
-
-		if len(b) > messageRemainCapacity {
-			b = b[:messageRemainCapacity]
-			for len(b) > 0 && b[len(b)-1]&0xC0 == 0x80 {
-				b = b[:len(b)-1]
-			}
-		}
+		b = EscapeLimitJSONBytes(b, messageRemainCapacity)
 
 		list[idx] = b
 		idx++
 
 		messageRemainCapacity -= len(b)
+	}
+
+	if !bytes.HasPrefix(list[3], []byte(`2021`)) {
+		fmt.Println(list[3])
 	}
 
 	list[idx] = dingTextMessageDataSuffix

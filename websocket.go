@@ -3,6 +3,7 @@ package logtail
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -43,8 +44,8 @@ func startWebsocketTransfer(response http.ResponseWriter, request *http.Request,
 	}
 
 	websocketTransfer := &WebsocketTransfer{conn: c}
-	router := newRouter("", nil, []Transfer{websocketTransfer})
-	server.defaultWorker.addRouter(router)
+	router := NewRouter(server, nil, []Transfer{websocketTransfer})
+	server.mergingWorker.startRouterFilter(router)
 	startWebsocketHeartbeat(router, websocketTransfer)
 }
 
@@ -54,8 +55,8 @@ func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
 	defer func() {
 		_ = recover()
 
-		router.stop()
-		logger.Infof("router [%s] websocket heartbeat stopped", router.id)
+		router.Stop()
+		logger.Infof("router [%s] websocket heartbeat stopped", router.name)
 	}()
 
 	for {
@@ -67,19 +68,25 @@ func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
 			_, data, err := transfer.conn.ReadMessage()
 
 			if err != nil {
-				logger.Warnf("router [%s] websocket heartbeat error: %+v", router.id, err)
-				router.stop()
+				if !isEncodeError(err) {
+					logger.Warnf("router [%s] websocket heartbeat error: %+v", router.name, err)
+					router.Stop()
+				}
 
 				return
 			}
 
 			if len(data) > 0 && data[0] == MessageTypeMatcherConfig {
 				if err := handleMatcherConfigUpdate(router, data[1:]); err != nil {
-					logger.Warnf("router [%s] websocket matcher config error: %+v", router.id, err)
+					logger.Warnf("router [%s] websocket matcher config error: %+v", router.name, err)
 				}
 			}
 		}
 	}
+}
+
+func isEncodeError(err error) bool {
+	return strings.Contains(err.Error(), "utf8")
 }
 
 func handleMatcherConfigUpdate(router *Router, data []byte) error {
