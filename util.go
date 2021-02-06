@@ -61,9 +61,11 @@ func ignoreLineEnd(bytes []byte, length, index *int) {
 const DoubleSize = 2
 
 func EscapeLimitJSONBytes(b []byte, capacity int) []byte {
+	size := len(b)
 	num := capacity
-	if len(b) < num {
-		num = len(b)
+
+	if size < num {
+		num = size
 	}
 
 	t := make([]byte, num*DoubleSize)
@@ -80,24 +82,33 @@ func EscapeLimitJSONBytes(b []byte, capacity int) []byte {
 		from = i + 1
 
 		if i < num {
-			t[index] = '\\'
-			index++
-
-			switch b[i] {
-			case '\n':
-				t[index] = 'n'
-			case '\t':
-				t[index] = 't'
-			case '"':
-				t[index] = '"'
-			}
-			index++
+			fillJSONEscape(t, &index, b[i])
 		}
 	}
 
-	for i := index - 1; i >= 0 && t[i]&0xC0 == 0x80; i-- {
-		index = i - 1
+	// from <= size means not reach the end of the bytes
+	if from <= size {
+		// remove uncompleted utf8 bytes
+		for i := index - 1; i >= 0 && t[i]&0xC0 == 0x80; i-- {
+			index = i - 1
+		}
 	}
 
 	return t[:index]
+}
+
+func fillJSONEscape(t []byte, index *int, b byte) {
+	t[*index] = '\\'
+	*index++
+
+	switch b {
+	case '\n':
+		t[*index] = 'n'
+	case '\t':
+		t[*index] = 't'
+	case '"':
+		t[*index] = '"'
+	}
+
+	*index++
 }

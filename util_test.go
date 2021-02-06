@@ -17,4 +17,7 @@ func TestEscapeLimitJsonBytes(t *testing.T) {
 	assert.Equal(t, []byte(`ab\tcd`), logtail.EscapeLimitJSONBytes([]byte(`ab	cd`), 8))
 	assert.Equal(t, []byte(`ab\ncd`), logtail.EscapeLimitJSONBytes([]byte("ab\ncd"), 8))
 	assert.Equal(t, []byte(`abc\n`), logtail.EscapeLimitJSONBytes([]byte("abc\nd"), 4))
+	assert.Equal(t, []byte(`abc\n`), logtail.EscapeLimitJSONBytes([]byte("abc\nd"), 4))
+
+	assert.Equal(t, []byte(`test 操作异常`), logtail.EscapeLimitJSONBytes([]byte("test 操作异常"), 1024))
 }
