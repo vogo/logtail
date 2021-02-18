@@ -8,6 +8,8 @@ import (
 )
 
 func TestMatch(t *testing.T) {
+	t.Parallel()
+
 	data := []byte(`2020-12-25 14:54:38.523  ERROR exception occurs`)
 
 	assert.True(t, logtail.NewContainsMatcher("ERROR", true).Match(data))
@@ -19,6 +21,8 @@ func TestMatch(t *testing.T) {
 }
 
 func TestMatch2(t *testing.T) {
+	t.Parallel()
+
 	data := []byte(`2020-12-25 14:54:38.523  错误 error 异常 exception 数据找不到信息`)
 
 	assert.True(t, logtail.NewContainsMatcher("error", true).Match(data))

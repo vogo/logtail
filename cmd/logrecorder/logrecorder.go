@@ -8,16 +8,16 @@ import (
 	"syscall"
 )
 
-type recorder struct {
-}
+type recorder struct{}
 
 func (r *recorder) Write(p []byte) (int, error) {
 	_, _ = fmt.Fprintf(os.Stdout, "\n----------------\n")
+
 	return os.Stdout.Write(p)
 }
 
 func main() {
-	var c = flag.String("c", "", "command")
+	c := flag.String("c", "", "command")
 
 	flag.Parse()
 

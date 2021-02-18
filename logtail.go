@@ -17,7 +17,8 @@ import (
 func Start() {
 	config, err := parseConfig()
 	if err != nil {
-		fmt.Println(err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
+
 		flag.PrintDefaults()
 		os.Exit(1)
 	}

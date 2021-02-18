@@ -8,6 +8,8 @@ import (
 )
 
 func TestEscapeLimitJsonBytes(t *testing.T) {
+	t.Parallel()
+
 	assert.Equal(t, []byte(`ab`), logtail.EscapeLimitJSONBytes([]byte(`abcd`), 2))
 	assert.Equal(t, []byte(`abcd`), logtail.EscapeLimitJSONBytes([]byte(`abcd`), 4))
 	assert.Equal(t, []byte(`你好`), logtail.EscapeLimitJSONBytes([]byte(`你好世界`), 8))

@@ -11,8 +11,10 @@ import (
 	"github.com/vogo/vogo/vos"
 )
 
-const DefaultServerID = "default"
-const CommandFailRetryInterval = 10 * time.Second
+const (
+	DefaultServerID          = "default"
+	CommandFailRetryInterval = 10 * time.Second
+)
 
 type Server struct {
 	id            string
@@ -111,6 +113,7 @@ func (s *Server) Write(data []byte) (int, error) {
 // Fire custom generate bytes data to the first worker of the server.
 func (s *Server) Fire(data []byte) error {
 	_, err := s.workers[0].Write(data)
+
 	return err
 }
 

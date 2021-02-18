@@ -90,6 +90,7 @@ func (f *Filter) Match(bytes []byte, length, index *int) []byte {
 
 	if !f.matches(bytes[start:*index]) {
 		ignoreLineEnd(bytes, length, index)
+
 		return nil
 	}
 
@@ -154,6 +155,7 @@ func (f *Filter) start() {
 		case data := <-f.channel:
 			if data == nil {
 				f.stop()
+
 				return
 			}
 
@@ -172,6 +174,7 @@ func (f *Filter) nextBytes() []byte {
 	case bytes := <-f.channel:
 		if bytes == nil {
 			f.stop()
+
 			return nil
 		}
 

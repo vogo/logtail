@@ -11,13 +11,13 @@ import (
 type DingText struct {
 	Content string `json:"content"`
 }
+
 type DingMessage struct {
 	MsgType string   `json:"msgtype"`
 	Text    DingText `json:"text"`
 }
 
-type handler struct {
-}
+type handler struct{}
 
 func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	var (
@@ -28,6 +28,7 @@ func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	data, err = ioutil.ReadAll(req.Body)
 	if err != nil {
 		_, _ = res.Write([]byte(fmt.Sprintf("error: %v", err)))
+
 		return
 	}
 
@@ -36,6 +37,7 @@ func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	err = json.Unmarshal(data, msg)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "json unmarshal error: %v, data: %s\n", err, data)
+
 		return
 	}
 

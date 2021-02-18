@@ -77,6 +77,7 @@ func (ft *FileTransfer) submitFile() error {
 
 		if ft.writeSize == 0 {
 			ft.file.Close()
+
 			return os.Remove(ft.name)
 		}
 
@@ -134,6 +135,7 @@ func (ft *FileTransfer) write(data [][]byte) {
 	if ft.file == nil {
 		if err := ft.resetFile(); err != nil {
 			logger.Errorf("reset file error: %v", err)
+
 			return
 		}
 	}
@@ -150,6 +152,7 @@ func (ft *FileTransfer) write(data [][]byte) {
 
 		if err := ft.resetFile(); err != nil {
 			logger.Errorf("reset file error: %v", err)
+
 			return
 		}
 	}

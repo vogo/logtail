@@ -29,6 +29,10 @@ linters-settings:
 linters:
   enable-all: true
   disable:
+    - exhaustivestruct
+    - wrapcheck
+    - noctx
+    - cyclop
 
 run:
   skip-files:

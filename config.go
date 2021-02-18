@@ -74,7 +74,6 @@ func parseConfig() (cfg *Config, parseErr error) {
 	flag.Parse()
 
 	config, err := readConfig(*file, *port, *command, *matchContains, *dingURL, *webhookURL)
-
 	if err != nil {
 		return nil, err
 	}
@@ -175,11 +174,7 @@ func validateRouterConfig(router *RouterConfig) error {
 		return err
 	}
 
-	if err := validateTransfers(router.Transfers); err != nil {
-		return err
-	}
-
-	return nil
+	return validateTransfers(router.Transfers)
 }
 
 func validateMatchers(matchers []*MatcherConfig) error {

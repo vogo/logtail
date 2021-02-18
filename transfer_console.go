@@ -6,8 +6,7 @@ import (
 
 const TransferTypeConsole = "console"
 
-type ConsoleTransfer struct {
-}
+type ConsoleTransfer struct{}
 
 func (d *ConsoleTransfer) Trans(serverID string, data ...[]byte) error {
 	for _, b := range data {

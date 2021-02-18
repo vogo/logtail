@@ -11,7 +11,7 @@ import (
 const readLogInterval = time.Millisecond * 10
 
 func main() {
-	var f = flag.String("f", "", "file")
+	f := flag.String("f", "", "file")
 
 	flag.Parse()
 

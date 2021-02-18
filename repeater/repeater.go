@@ -3,6 +3,7 @@ package repeater
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -15,7 +16,7 @@ func Repeat(f string, c chan []byte) {
 		err          error
 	)
 
-	file, err := os.OpenFile(f, os.O_RDONLY, 0600)
+	file, err := os.OpenFile(f, os.O_RDONLY, 0o600)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "failed open file: %v", err)
 		os.Exit(1)
@@ -23,7 +24,7 @@ func Repeat(f string, c chan []byte) {
 
 	reader := bufio.NewReader(file)
 
-	var splitLine = []byte(`----------------`)
+	splitLine := []byte(`----------------`)
 
 	for {
 		var b []byte
@@ -35,6 +36,7 @@ func Repeat(f string, c chan []byte) {
 
 			if len(previousLine) == 0 && bytes.Equal(line, splitLine) {
 				b = b[:len(b)-1]
+
 				break
 			}
 
@@ -47,12 +49,13 @@ func Repeat(f string, c chan []byte) {
 		c <- b
 	}
 }
+
 func readLine(reader *bufio.Reader) []byte {
 	var read []byte
 
 	line, prefix, err := reader.ReadLine()
 	if err != nil {
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			// block when eof
 			select {}
 		}
@@ -64,7 +67,7 @@ func readLine(reader *bufio.Reader) []byte {
 	for prefix {
 		read, prefix, err = reader.ReadLine()
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				// block when eof
 				select {}
 			}

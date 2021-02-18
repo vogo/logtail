@@ -21,7 +21,7 @@ func main() {
 }
 
 func makeStatic() error {
-	var files = []string{
+	files := []string{
 		"index.html",
 	}
 
@@ -56,7 +56,7 @@ func makeStatic() error {
 		return err
 	}
 
-	return ioutil.WriteFile("static.go", fmtBuf, 0600)
+	return ioutil.WriteFile("static.go", fmtBuf, 0o600)
 }
 
 // sanitize prepares a valid UTF-8 string as a raw string constant.

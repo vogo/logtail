@@ -3,6 +3,7 @@ version := v1.0.0
 format:
 		goimports -w -l .
 		go fmt
+		gofumpt -w .
 
 check:
 		golangci-lint run

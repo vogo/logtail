@@ -33,6 +33,7 @@ func startWebsocketTransfer(response http.ResponseWriter, request *http.Request,
 	c, err := websocketUpgrader.Upgrade(response, request, nil)
 	if err != nil {
 		logger.Error("web socket error:", err)
+
 		return
 	}
 	defer c.Close()
@@ -40,6 +41,7 @@ func startWebsocketTransfer(response http.ResponseWriter, request *http.Request,
 	server, ok := serverDB[serverID]
 	if !ok {
 		logger.Warnf("server id not found: %s", serverID)
+
 		return
 	}
 
@@ -65,8 +67,8 @@ func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
 			return
 		default:
 			_ = transfer.conn.SetReadDeadline(time.Now().Add(WebsocketHeartbeatReadTimeout))
-			_, data, err := transfer.conn.ReadMessage()
 
+			_, data, err := transfer.conn.ReadMessage()
 			if err != nil {
 				if !isEncodeError(err) {
 					logger.Warnf("router [%s] websocket heartbeat error: %+v", router.name, err)

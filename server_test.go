@@ -13,6 +13,8 @@ import (
 )
 
 func TestServer(t *testing.T) {
+	t.Parallel()
+
 	config := &logtail.Config{
 		DefaultFormat: &logtail.Format{Prefix: "!!!!-!!-!!"},
 		DefaultRouters: []*logtail.RouterConfig{
@@ -66,6 +68,8 @@ follow9`))
 }
 
 func TestServerCommands(t *testing.T) {
+	t.Parallel()
+
 	workDir := filepath.Join(os.TempDir(), "test_logtail_dir")
 	assert.NoError(t, os.MkdirAll(workDir, os.ModePerm))
 
@@ -76,11 +80,11 @@ func TestServerCommands(t *testing.T) {
 
 	assert.NoError(t, ioutil.WriteFile(log1, []byte(`2020-11-11 ERROR test1
  follow1
- follow2`), 0600))
+ follow2`), 0o600))
 
 	assert.NoError(t, ioutil.WriteFile(log2, []byte(`2020-11-11 ERROR test2 "中文"
  follow3
- follow4`), 0600))
+ follow4`), 0o600))
 
 	commands := fmt.Sprintf("tail -f %s\ntail -f %s", log1, log2)
 	commandGen := fmt.Sprintf("echo \"tail -f %s\ntail -f %s\"", log1, log2)

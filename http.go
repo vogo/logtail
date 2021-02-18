@@ -8,11 +8,12 @@ import (
 	"strings"
 )
 
-type httpHandler struct {
-}
+type httpHandler struct{}
 
-const URIIndexPrefix = "/index"
-const URITailPrefix = "/tail"
+const (
+	URIIndexPrefix = "/index"
+	URITailPrefix  = "/tail"
+)
 
 // ServeHTTP serve http
 // routers:
@@ -26,6 +27,7 @@ func (l *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 
 	if uri == "" || uri == "/" || uri == URIIndexPrefix {
 		responseServerList(response)
+
 		return
 	}
 
@@ -35,6 +37,7 @@ func (l *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 
 		if !ok {
 			response.WriteHeader(http.StatusNotFound)
+
 			return
 		}
 
@@ -50,12 +53,14 @@ func (l *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 		tailServerID = uri[len(URITailPrefix)+1:]
 		if _, ok := serverDB[tailServerID]; !ok {
 			response.WriteHeader(http.StatusNotFound)
+
 			return
 		}
 	}
 
 	if tailServerID != "" {
 		startWebsocketTransfer(response, request, tailServerID)
+
 		return
 	}
 

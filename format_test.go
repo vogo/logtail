@@ -8,6 +8,8 @@ import (
 )
 
 func TestWildcardMatch(t *testing.T) {
+	t.Parallel()
+
 	assert.False(t, logtail.WildcardMatch("!!!!", nil))
 	assert.True(t, logtail.WildcardMatch("", nil))
 	assert.True(t, logtail.WildcardMatch("", []byte("abcd")))

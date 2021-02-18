@@ -1,8 +1,6 @@
 package logtail
 
 import (
-	"bytes"
-	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -11,8 +9,10 @@ import (
 
 const TransferTypeDing = "ding"
 
-const dingMessageDataFixedBytesNum = 4
-const dingMessageDataMaxLength = 1024
+const (
+	dingMessageDataFixedBytesNum = 4
+	dingMessageDataMaxLength     = 1024
+)
 
 // transfer next message after the interval, ignore messages in the interval.
 const dingMessageTransferInterval = time.Second * 5
@@ -55,10 +55,6 @@ func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 		idx++
 
 		messageRemainCapacity -= len(b)
-	}
-
-	if !bytes.HasPrefix(list[3], []byte(`2021`)) {
-		fmt.Println(list[3])
 	}
 
 	list[idx] = dingTextMessageDataSuffix
