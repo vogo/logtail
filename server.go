@@ -12,7 +12,10 @@ import (
 )
 
 const (
-	DefaultServerID          = "default"
+	// DefaultServerID default server id.
+	DefaultServerID = "default"
+
+	// CommandFailRetryInterval command fail retry interval.
 	CommandFailRetryInterval = 10 * time.Second
 )
 
@@ -43,7 +46,7 @@ func NewServer(config *Config, serverConfig *ServerConfig) *Server {
 		once:    sync.Once{},
 		stop:    make(chan struct{}),
 		format:  format,
-		routers: make(map[int64]*Router, 4),
+		routers: make(map[int64]*Router, defaultMapSize),
 	}
 
 	if existsServer, ok := serverDB[server.id]; ok {

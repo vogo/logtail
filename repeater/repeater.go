@@ -9,6 +9,8 @@ import (
 	"os"
 )
 
+const filePerm = 0o600
+
 func Repeat(f string, c chan []byte) {
 	var (
 		previousLine []byte
@@ -16,7 +18,7 @@ func Repeat(f string, c chan []byte) {
 		err          error
 	)
 
-	file, err := os.OpenFile(f, os.O_RDONLY, 0o600)
+	file, err := os.OpenFile(f, os.O_RDONLY, filePerm)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "failed open file: %v", err)
 		os.Exit(1)

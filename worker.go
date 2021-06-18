@@ -59,15 +59,17 @@ func (w *worker) startRouterFilter(router *Router) {
 }
 
 func (w *worker) start() {
-	if w.command == "" {
-		return
-	}
-
 	go func() {
 		defer func() {
 			w.stop()
 			logger.Infof("worker [%s] stopped", w.id)
 		}()
+
+		if w.command == "" {
+			<-w.server.stop
+
+			return
+		}
 
 		for {
 			select {
@@ -163,6 +165,6 @@ func newWorker(s *Server, command string, dynamic bool) *worker {
 		server:  s,
 		command: command,
 		dynamic: dynamic,
-		filters: make(map[int64]*Filter, 4),
+		filters: make(map[int64]*Filter, defaultMapSize),
 	}
 }

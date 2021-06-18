@@ -131,7 +131,7 @@ func (f *Filter) Trans(bytes ...[]byte) error {
 
 func (f *Filter) stop() {
 	f.once.Do(func() {
-		logger.Infof("router [%s] stopping", f.id)
+		logger.Infof("filter [%s] stopping", f.id)
 		close(f.close)
 		close(f.channel)
 	})
@@ -140,13 +140,13 @@ func (f *Filter) stop() {
 func (f *Filter) start() {
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Errorf("router [%s] error: %+v", f.id, err)
+			logger.Errorf("filter [%s] error: %+v", f.id, err)
 		}
 
-		logger.Infof("router [%s] stopped", f.id)
+		logger.Infof("filter [%s] stopped", f.id)
 	}()
 
-	logger.Infof("router [%s] start", f.id)
+	logger.Infof("filter [%s] start", f.id)
 
 	for {
 		select {
@@ -160,7 +160,7 @@ func (f *Filter) start() {
 			}
 
 			if err := f.Route(data); err != nil {
-				logger.Warnf("router [%s] route error: %+v", f.id, err)
+				logger.Warnf("filter [%s] route error: %+v", f.id, err)
 				f.stop()
 			}
 		}

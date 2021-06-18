@@ -58,7 +58,7 @@ type TransferConfig struct {
 func parseConfig() (cfg *Config, parseErr error) {
 	defer func() {
 		if err := recover(); err != nil {
-			parseErr = err.(error)
+			parseErr, _ = err.(error)
 		}
 	}()
 

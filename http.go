@@ -11,8 +11,11 @@ import (
 type httpHandler struct{}
 
 const (
+	// URIIndexPrefix uri index prefix.
 	URIIndexPrefix = "/index"
-	URITailPrefix  = "/tail"
+
+	// URITailPrefix uri tail prefix.
+	URITailPrefix = "/tail"
 )
 
 // ServeHTTP serve http

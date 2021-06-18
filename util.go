@@ -1,5 +1,7 @@
 package logtail
 
+const defaultMapSize = 4
+
 func isNumberChar(b byte) bool {
 	return b >= '0' && b <= '9'
 }

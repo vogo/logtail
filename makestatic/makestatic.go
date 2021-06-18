@@ -12,6 +12,8 @@ import (
 	"unicode/utf8"
 )
 
+const filePerm = 0o600
+
 func main() {
 	if err := makeStatic(); err != nil {
 		log.Fatal(err)
@@ -56,7 +58,7 @@ func makeStatic() error {
 		return err
 	}
 
-	return ioutil.WriteFile("static.go", fmtBuf, 0o600)
+	return ioutil.WriteFile("static.go", fmtBuf, filePerm)
 }
 
 // sanitize prepares a valid UTF-8 string as a raw string constant.

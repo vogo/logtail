@@ -1,12 +1,8 @@
 linters-settings:
   govet:
     check-shadowing: true
-  golint:
-    min-confidence: 0
   gocyclo:
     min-complexity: 13
-  maligned:
-    suggest-new: true
   dupl:
     threshold: 100
   goconst:
@@ -33,6 +29,7 @@ linters:
     - wrapcheck
     - noctx
     - cyclop
+    - tagliatelle
 
 run:
   skip-files:
