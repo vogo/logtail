@@ -15,7 +15,7 @@ const DefaultServerPort = 54321
 var (
 	ErrNoServerConfig   = errors.New("no server config")
 	ErrServerIDNil      = errors.New("server id is nil")
-	ErrServerCommandNil = errors.New("server command is nil")
+	ErrNoTailingConfig  = errors.New("no tailing command/file config")
 	ErrTransURLNil      = errors.New("transfer url is nil")
 	ErrTransTypeNil     = errors.New("transfer type is nil")
 	ErrTransTypeInvalid = errors.New("invalid transfer type")
@@ -31,12 +31,36 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	ID         string          `json:"id"`
-	Command    string          `json:"command"`     // single command
-	Commands   string          `json:"commands"`    // multiple commands split by new line
-	CommandGen string          `json:"command_gen"` // command to generate multiple commands split by new line
-	Format     *Format         `json:"format"`
-	Routers    []*RouterConfig `json:"routers"`
+	ID      string          `json:"id"`
+	Format  *Format         `json:"format"`
+	Routers []*RouterConfig `json:"routers"`
+
+	// single command.
+	Command string `json:"command"`
+
+	// multiple commands split by new line.
+	Commands string `json:"commands"`
+
+	// command to generate multiple commands split by new line.
+	CommandGen string `json:"command_gen"`
+
+	// command to generate multiple commands split by new line.
+	File *FileConfig `json:"file"`
+}
+
+// FileConfig tailing file config.
+type FileConfig struct {
+	// the file or directory to tail.
+	Path string `json:"path"`
+
+	// only tailing files with the prefix.
+	Prefix string `json:"prefix"`
+
+	// only tailing files with the suffix.
+	Suffix string `json:"suffix"`
+
+	// Whether include all files in sub directories recursively.
+	Recursive bool `json:"recursive"`
 }
 
 type RouterConfig struct {
@@ -154,8 +178,8 @@ func validateServerConfig(server *ServerConfig) error {
 		return ErrServerIDNil
 	}
 
-	if server.Command == "" && server.Commands == "" && server.CommandGen == "" {
-		return ErrServerCommandNil
+	if server.Command == "" && server.Commands == "" && server.CommandGen == "" && server.File == nil {
+		return ErrNoTailingConfig
 	}
 
 	if len(server.Routers) > 0 {

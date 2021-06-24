@@ -4,7 +4,7 @@ import (
 	"github.com/vogo/logger"
 )
 
-// StopLogtail start config servers.
+// StartLogtail start config servers.
 func StartLogtail(config *Config) {
 	defaultFormat = config.DefaultFormat
 

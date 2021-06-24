@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/vogo/fwatch"
 	"github.com/vogo/logger"
 	"github.com/vogo/vogo/vos"
 )
@@ -27,10 +28,14 @@ type Server struct {
 	format        *Format
 	workerError   chan error
 	mergingWorker *worker
-	workers       []*worker
+	workers       map[string]*worker
 	workerStarter func()
 	routersCount  int64
 	routers       map[int64]*Router
+}
+
+func (s *Server) addWorker(w *worker) {
+	s.workers[w.id] = w
 }
 
 // NewServer start a new server.
@@ -47,6 +52,7 @@ func NewServer(config *Config, serverConfig *ServerConfig) *Server {
 		stop:    make(chan struct{}),
 		format:  format,
 		routers: make(map[int64]*Router, defaultMapSize),
+		workers: make(map[string]*worker, defaultMapSize),
 	}
 
 	if existsServer, ok := serverDB[server.id]; ok {
@@ -90,16 +96,22 @@ func (s *Server) initial(config *Config, serverConfig *ServerConfig) {
 		s.mergingWorker.start()
 
 		switch {
+		case serverConfig.File != nil:
+			if fwatch.IsDir(serverConfig.File.Path) {
+				go s.startDirWorkers(serverConfig.File)
+			} else {
+				s.addWorker(startWorker(s, "tail -f "+serverConfig.File.Path, false))
+			}
 		case serverConfig.CommandGen != "":
-			s.startDynamicWorkers(serverConfig.CommandGen)
+			go s.startCommandGenWorkers(serverConfig.CommandGen)
 		case serverConfig.Commands != "":
 			commands := strings.Split(serverConfig.Commands, "\n")
 
 			for _, cmd := range commands {
-				s.workers = append(s.workers, startWorker(s, cmd, false))
+				s.addWorker(startWorker(s, cmd, false))
 			}
 		default:
-			s.workers = append(s.workers, startWorker(s, serverConfig.Command, false))
+			s.addWorker(startWorker(s, serverConfig.Command, false))
 		}
 	}
 }
@@ -115,11 +127,18 @@ func (s *Server) Write(data []byte) (int, error) {
 
 // Fire custom generate bytes data to the first worker of the server.
 func (s *Server) Fire(data []byte) error {
-	_, err := s.workers[0].Write(data)
+	for _, w := range s.workers {
+		_, err := w.Write(data)
 
-	return err
+		return err
+	}
+
+	return nil
 }
 
+// Start start server.
+// First, start all routers.
+// Then, call the start func.
 func (s *Server) Start() {
 	for _, r := range s.routers {
 		_ = r.Start()
@@ -155,6 +174,7 @@ func (s *Server) Stop() error {
 	return nil
 }
 
+// stopWorkers stop all workers of server, but not for the merging worker.
 func (s *Server) stopWorkers() {
 	for _, w := range s.workers {
 		w.stop()
@@ -163,48 +183,49 @@ func (s *Server) stopWorkers() {
 	s.workers = nil
 }
 
-func (s *Server) startDynamicWorkers(gen string) {
-	go func() {
-		var (
-			err      error
-			commands []byte
-		)
+// startCommandGenWorkers start workers using generated commands.
+// When one of workers has error, stop all workers,
+// and generate new commands to create new workers.
+func (s *Server) startCommandGenWorkers(gen string) {
+	var (
+		err      error
+		commands []byte
+	)
 
-		for {
+	for {
+		select {
+		case <-s.stop:
+			return
+		default:
+			commands, err = vos.ExecShell(gen)
+			if err != nil {
+				logger.Errorf("server [%s] command error: %+v, command: %s", s.id, err, gen)
+			} else {
+				// create a new chan everytime
+				s.workerError = make(chan error)
+
+				cmds := bytes.Split(commands, []byte{'\n'})
+				for _, cmd := range cmds {
+					s.addWorker(startWorker(s, string(cmd), true))
+				}
+
+				// wait any error from one of worker
+				err = <-s.workerError
+				logger.Errorf("server [%s] receive worker error: %+v", s.id, err)
+				close(s.workerError)
+
+				s.stopWorkers()
+			}
+
 			select {
 			case <-s.stop:
 				return
 			default:
-				commands, err = vos.ExecShell(gen)
-				if err != nil {
-					logger.Errorf("server [%s] command error: %+v, command: %s", s.id, err, gen)
-				} else {
-					// create a new chan everytime
-					s.workerError = make(chan error)
-
-					cmds := bytes.Split(commands, []byte{'\n'})
-					for _, cmd := range cmds {
-						s.workers = append(s.workers, startWorker(s, string(cmd), true))
-					}
-
-					// wait any error from one of worker
-					err = <-s.workerError
-					logger.Errorf("server [%s] receive worker error: %+v", s.id, err)
-					close(s.workerError)
-
-					s.stopWorkers()
-				}
-
-				select {
-				case <-s.stop:
-					return
-				default:
-					logger.Errorf("server [%s] failed, retry after 10s!", s.id)
-					time.Sleep(CommandFailRetryInterval)
-				}
+				logger.Errorf("server [%s] failed, retry after 10s!", s.id)
+				time.Sleep(CommandFailRetryInterval)
 			}
 		}
-	}()
+	}
 }
 
 func (s *Server) receiveWorkerError(err error) {
@@ -214,4 +235,66 @@ func (s *Server) receiveWorkerError(err error) {
 	}()
 
 	s.workerError <- err
+}
+
+// startDirWorkers start workers using file config.
+func (s *Server) startDirWorkers(config *FileConfig) {
+	watcher, err := fwatch.NewFileWatcher(config.Path, config.Recursive, fileInactiveDeadline, func(name string) bool {
+		return (config.Prefix == "" || strings.HasPrefix(name, config.Prefix)) &&
+			(config.Suffix == "" || strings.HasSuffix(name, config.Suffix))
+	})
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	logger.Infof("server [%s] start watch directory: %s", s.id, config.Path)
+
+	go s.startDirWatchWorkers(config.Path, watcher)
+
+	if err = watcher.Start(); err != nil {
+		logger.Fatal(err)
+	}
+}
+
+const fileInactiveDeadline = time.Minute * 20
+
+func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) {
+	defer func() {
+		_ = watcher.Stop()
+
+		logger.Infof("server [%s] stop watch directory: %s", s.id, path)
+	}()
+
+	firWorkerMap := make(map[string]*worker, defaultMapSize)
+
+	for {
+		select {
+		case err := <-s.workerError:
+			// only log worker error
+			logger.Errorf("server [%s] receive worker error: %+v", s.id, err)
+		case <-watcher.Done:
+			return
+		case <-s.stop:
+			return
+		case f := <-watcher.ActiveChan:
+			logger.Infof("--> active file: %s", f.Name)
+			w := startWorker(s, "tail -f "+f.Name, true)
+			firWorkerMap[f.Name] = w
+			s.addWorker(w)
+		case f := <-watcher.InactiveChan:
+			logger.Infof("--> inactive file: %s", f.Name)
+
+			if w, ok := firWorkerMap[f.Name]; ok {
+				w.stop()
+				delete(firWorkerMap, f.Name)
+			}
+		case name := <-watcher.RemoveChan:
+			logger.Infof("--> remove file: %s", name)
+
+			if w, ok := firWorkerMap[name]; ok {
+				w.stop()
+				delete(firWorkerMap, name)
+			}
+		}
+	}
 }
