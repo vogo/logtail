@@ -265,7 +265,7 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 		logger.Infof("server [%s] stop watch directory: %s", s.id, path)
 	}()
 
-	firWorkerMap := make(map[string]*worker, defaultMapSize)
+	fileWorkerMap := make(map[string]*worker, defaultMapSize)
 
 	for {
 		select {
@@ -277,23 +277,29 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 		case <-s.stop:
 			return
 		case f := <-watcher.ActiveChan:
-			logger.Infof("--> active file: %s", f.Name)
-			w := startWorker(s, "tail -f "+f.Name, true)
-			firWorkerMap[f.Name] = w
-			s.addWorker(w)
-		case f := <-watcher.InactiveChan:
-			logger.Infof("--> inactive file: %s", f.Name)
+			logger.Infof("notify active file: %s", f.Name)
 
-			if w, ok := firWorkerMap[f.Name]; ok {
+			if w, ok := fileWorkerMap[f.Name]; ok {
+				logger.Infof("worker [%s] is already tailing file: %s", w.id, f.Name)
+			} else {
+				// non-dynamic worker will retry self
+				w := startWorker(s, "tail -f "+f.Name, false)
+				fileWorkerMap[f.Name] = w
+				s.addWorker(w)
+			}
+		case f := <-watcher.InactiveChan:
+			logger.Infof("notify inactive file: %s", f.Name)
+
+			if w, ok := fileWorkerMap[f.Name]; ok {
 				w.stop()
-				delete(firWorkerMap, f.Name)
+				delete(fileWorkerMap, f.Name)
 			}
 		case name := <-watcher.RemoveChan:
-			logger.Infof("--> remove file: %s", name)
+			logger.Infof("notify remove file: %s", name)
 
-			if w, ok := firWorkerMap[name]; ok {
+			if w, ok := fileWorkerMap[name]; ok {
 				w.stop()
-				delete(firWorkerMap, name)
+				delete(fileWorkerMap, name)
 			}
 		}
 	}
