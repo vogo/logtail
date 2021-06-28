@@ -291,7 +291,7 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 			} else {
 				// non-dynamic worker will retry self
 				w := startWorker(s, "tail -f "+f.Name, false)
-				w.stopper = NewStopper()
+				w.stopper = FromStopper(s.stopper)
 				fileWorkerMap[f.Name] = w
 				s.addWorker(w)
 			}
