@@ -23,8 +23,7 @@ const (
 type Server struct {
 	id            string
 	lock          sync.Mutex
-	once          sync.Once
-	stop          chan struct{}
+	stopper       *Stopper
 	format        *Format
 	workerError   chan error
 	mergingWorker *worker
@@ -48,8 +47,7 @@ func NewServer(config *Config, serverConfig *ServerConfig) *Server {
 	server := &Server{
 		id:      serverConfig.ID,
 		lock:    sync.Mutex{},
-		once:    sync.Once{},
-		stop:    make(chan struct{}),
+		stopper: NewStopper(),
 		format:  format,
 		routers: make(map[int64]*Router, defaultMapSize),
 		workers: make(map[string]*worker, defaultMapSize),
@@ -159,9 +157,7 @@ func (s *Server) Stop() error {
 	}()
 
 	logger.Infof("server %s stopping", s.id)
-	s.once.Do(func() {
-		close(s.stop)
-	})
+	s.stopper.Stop()
 
 	s.stopWorkers()
 
@@ -183,6 +179,17 @@ func (s *Server) stopWorkers() {
 	s.workers = nil
 }
 
+// stopWorkers stop all workers of server, but not for the merging worker.
+func (s *Server) shutdownWorker(w *worker) {
+	delete(s.workers, w.id)
+
+	// close worker stop chan.
+	w.stopper.Stop()
+
+	// call worker stop.
+	w.stop()
+}
+
 // startCommandGenWorkers start workers using generated commands.
 // When one of workers has error, stop all workers,
 // and generate new commands to create new workers.
@@ -194,7 +201,7 @@ func (s *Server) startCommandGenWorkers(gen string) {
 
 	for {
 		select {
-		case <-s.stop:
+		case <-s.stopper.stop:
 			return
 		default:
 			commands, err = vos.ExecShell(gen)
@@ -218,7 +225,7 @@ func (s *Server) startCommandGenWorkers(gen string) {
 			}
 
 			select {
-			case <-s.stop:
+			case <-s.stopper.stop:
 				return
 			default:
 				logger.Errorf("server [%s] failed, retry after 10s!", s.id)
@@ -274,7 +281,7 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 			logger.Errorf("server [%s] receive worker error: %+v", s.id, err)
 		case <-watcher.Done:
 			return
-		case <-s.stop:
+		case <-s.stopper.stop:
 			return
 		case f := <-watcher.ActiveChan:
 			logger.Infof("notify active file: %s", f.Name)
@@ -284,6 +291,7 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 			} else {
 				// non-dynamic worker will retry self
 				w := startWorker(s, "tail -f "+f.Name, false)
+				w.stopper = NewStopper()
 				fileWorkerMap[f.Name] = w
 				s.addWorker(w)
 			}
@@ -291,14 +299,14 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 			logger.Infof("notify inactive file: %s", f.Name)
 
 			if w, ok := fileWorkerMap[f.Name]; ok {
-				w.stop()
+				w.shutdown()
 				delete(fileWorkerMap, f.Name)
 			}
 		case name := <-watcher.RemoveChan:
 			logger.Infof("notify remove file: %s", name)
 
 			if w, ok := fileWorkerMap[name]; ok {
-				w.stop()
+				w.shutdown()
 				delete(fileWorkerMap, name)
 			}
 		}

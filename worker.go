@@ -15,6 +15,7 @@ var ErrWorkerCommandStopped = errors.New("worker command stopped")
 type worker struct {
 	id      string
 	server  *Server
+	stopper *Stopper
 	dynamic bool      // command generated dynamically
 	command string    // command lines
 	cmd     *exec.Cmd // command object
@@ -45,7 +46,7 @@ func (w *worker) writeToFilters(bytes []byte) (int, error) {
 
 func (w *worker) startRouterFilter(router *Router) {
 	select {
-	case <-w.server.stop:
+	case <-w.stopper.stop:
 		return
 	default:
 		filter := newFilter(w, router)
@@ -66,14 +67,14 @@ func (w *worker) start() {
 		}()
 
 		if w.command == "" {
-			<-w.server.stop
+			<-w.stopper.stop
 
 			return
 		}
 
 		for {
 			select {
-			case <-w.server.stop:
+			case <-w.stopper.stop:
 				return
 			default:
 				logger.Infof("worker [%s] command: %s", w.id, w.command)
@@ -95,7 +96,7 @@ func (w *worker) start() {
 					}
 
 					select {
-					case <-w.server.stop:
+					case <-w.stopper.stop:
 						return
 					default:
 						logger.Errorf("worker [%s] failed, retry after 10s! command: %s", w.id, w.command)
@@ -114,6 +115,8 @@ func (w *worker) start() {
 	}()
 }
 
+// stop will stop the current worker, but it may retry to start later.
+// it will not close the Stopper.stop chan.
 func (w *worker) stop() {
 	defer func() {
 		if err := recover(); err != nil {
@@ -132,6 +135,13 @@ func (w *worker) stop() {
 	}
 
 	w.stopFilters()
+}
+
+// shutdown will close the current worker, even may close the server,
+// depending on the effect scope of the Stopper.
+func (w *worker) shutdown() {
+	// let server do the worker shutdown.
+	w.server.shutdownWorker(w)
 }
 
 func (w *worker) stopFilters() {
@@ -163,6 +173,7 @@ func newWorker(s *Server, command string, dynamic bool) *worker {
 	return &worker{
 		id:      id,
 		server:  s,
+		stopper: s.stopper,
 		command: command,
 		dynamic: dynamic,
 		filters: make(map[int64]*Filter, defaultMapSize),
