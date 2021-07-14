@@ -263,7 +263,7 @@ func (s *Server) startDirWorkers(config *FileConfig) {
 	}
 }
 
-// default one day
+// file inactive deadline, default one day.
 const fileInactiveDeadline = time.Hour * 24
 
 func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) {

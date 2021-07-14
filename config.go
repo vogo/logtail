@@ -24,6 +24,7 @@ var (
 
 type Config struct {
 	Port           int             `json:"port"`
+	LogLevel       string          `json:"log_level"`
 	DefaultFormat  *Format         `json:"default_format"`
 	Servers        []*ServerConfig `json:"servers"`
 	DefaultRouters []*RouterConfig `json:"default_routers"`

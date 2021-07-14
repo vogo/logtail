@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -23,6 +24,8 @@ func Start() {
 		os.Exit(1)
 	}
 
+	configLogLevel(config.LogLevel)
+
 	vos.LoadUserEnv()
 
 	// stop exist servers first
@@ -37,6 +40,20 @@ func Start() {
 	}()
 
 	handleSignal()
+}
+
+func configLogLevel(level string) {
+	level = strings.ToUpper(level)
+	switch level {
+	case "ERROR":
+		logger.SetLevel(logger.LevelError)
+	case "WARN":
+		logger.SetLevel(logger.LevelWarn)
+	case "INFO":
+		logger.SetLevel(logger.LevelInfo)
+	case "DEBUG":
+		logger.SetLevel(logger.LevelDebug)
+	}
 }
 
 func handleSignal() {
