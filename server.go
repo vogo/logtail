@@ -98,7 +98,7 @@ func (s *Server) initial(config *Config, serverConfig *ServerConfig) {
 			if fwatch.IsDir(serverConfig.File.Path) {
 				go s.startDirWorkers(serverConfig.File)
 			} else {
-				s.addWorker(startWorker(s, "tail -f "+serverConfig.File.Path, false))
+				s.addWorker(startWorker(s, followRetryTailCommand(serverConfig.File.Path), false))
 			}
 		case serverConfig.CommandGen != "":
 			go s.startCommandGenWorkers(serverConfig.CommandGen)
@@ -291,7 +291,7 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 				logger.Infof("worker [%s] is already tailing file: %s", w.id, f.Name)
 			} else {
 				// non-dynamic worker will retry self
-				w := startWorker(s, "tail -f "+f.Name, false)
+				w := startWorker(s, followRetryTailCommand(f.Name), false)
 				w.stopper = FromStopper(s.stopper)
 				fileWorkerMap[f.Name] = w
 				s.addWorker(w)

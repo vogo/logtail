@@ -1,5 +1,7 @@
 package logtail
 
+import "fmt"
+
 const defaultMapSize = 4
 
 func isNumberChar(b byte) bool {
@@ -113,4 +115,9 @@ func fillJSONEscape(t []byte, index *int, b byte) {
 	}
 
 	*index++
+}
+
+//  flag `-F` is same as `--follow=name --retry`
+func followRetryTailCommand(f string) string {
+	return fmt.Sprintf("tail -F %s", f)
 }
