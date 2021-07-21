@@ -157,7 +157,10 @@ func (s *Server) stopWorkers() {
 		w.stop()
 	}
 
-	s.workers = nil
+	// fix nil exception
+	s.workers = []*worker{}
+
+	//s.workers = nil
 }
 
 func (s *Server) startDynamicWorkers(gen string) {
