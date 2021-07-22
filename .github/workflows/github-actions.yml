@@ -67,9 +67,9 @@ jobs:
 
       - name: Install tools
         run: |
-          go get -u golang.org/x/tools/...
+          go get golang.org/x/tools/cmd/goimports
           go get -u mvdan.cc/gofumpt
-          go get -u github.com/golangci/golangci-lint/...
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.41.1
 
       - name: Go Fmt
         run: make format && [[ -z `git status -s` ]]
