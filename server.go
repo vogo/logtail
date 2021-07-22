@@ -172,11 +172,12 @@ func (s *Server) Stop() error {
 
 // stopWorkers stop all workers of server, but not for the merging worker.
 func (s *Server) stopWorkers() {
-	for _, w := range s.workers {
+	for k, w := range s.workers {
 		w.stop()
-	}
 
-	s.workers = nil
+		// fix nil exception
+		delete(s.workers, k)
+	}
 }
 
 // stopWorkers stop all workers of server, but not for the merging worker.
