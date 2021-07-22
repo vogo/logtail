@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/vogo/fwatch"
 	"github.com/vogo/logger"
 )
 
@@ -51,8 +52,15 @@ type ServerConfig struct {
 
 // FileConfig tailing file config.
 type FileConfig struct {
-	// the file or directory to tail.
+	// Path the file or directory to tail.
 	Path string `json:"path"`
+
+	// Method watch method,
+	// - os: using os file system api to monitor file changes,
+	// - timer: interval check file stat to check file changes,
+	// For some network mount devices, can't get file change events for os api,
+	// you'd better to check file stat to know the changes.
+	Method fwatch.WatchMethod `json:"method"`
 
 	// only tailing files with the prefix.
 	Prefix string `json:"prefix"`

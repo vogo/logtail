@@ -246,10 +246,11 @@ func (s *Server) receiveWorkerError(err error) {
 
 // startDirWorkers start workers using file config.
 func (s *Server) startDirWorkers(config *FileConfig) {
-	watcher, err := fwatch.NewFileWatcher(config.Path, config.Recursive, fileInactiveDeadline, func(name string) bool {
-		return (config.Prefix == "" || strings.HasPrefix(name, config.Prefix)) &&
-			(config.Suffix == "" || strings.HasSuffix(name, config.Suffix))
-	})
+	watcher, err := fwatch.NewFileWatcher(config.Path, config.Recursive, config.Method, fileInactiveDeadline,
+		func(name string) bool {
+			return (config.Prefix == "" || strings.HasPrefix(name, config.Prefix)) &&
+				(config.Suffix == "" || strings.HasSuffix(name, config.Suffix))
+		})
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -263,8 +264,8 @@ func (s *Server) startDirWorkers(config *FileConfig) {
 	}
 }
 
-// file inactive deadline, default one day.
-const fileInactiveDeadline = time.Hour * 24
+// file inactive deadline, default one hour.
+const fileInactiveDeadline = time.Hour
 
 func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) {
 	defer func() {
