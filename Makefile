@@ -9,7 +9,7 @@ check:
 		golangci-lint run
 
 test:
-		go test
+		go test -coverprofile=coverage.txt -covermode=atomic
 
 static: index.html
 	go run makestatic/makestatic.go
