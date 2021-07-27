@@ -11,8 +11,8 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/vogo/fsnotify v1.4.10-0.20210606062753-a470c8d404e0 h1:shwCWdzShrGvCk9bhicXFMPCPbxE+EqzJtMKd3Lbrn4=
 github.com/vogo/fsnotify v1.4.10-0.20210606062753-a470c8d404e0/go.mod h1:eNmmuMP+7CDRMeHrX0U8GN3rAY4Ar7GprPWoW0iuBYI=
-github.com/vogo/fwatch v0.0.0-20210727073952-d5527e11cc4c h1:2IXyrucBJvw/rfCKuPiYPEKSDEFuD0GSL/y/ew26Wms=
-github.com/vogo/fwatch v0.0.0-20210727073952-d5527e11cc4c/go.mod h1:HkD7ypmHf/zg7/XJQZARtArO7eWVcv/bIqfsrt7HA44=
+github.com/vogo/fwatch v0.0.0-20210727100122-67840183b86f h1:M1yYb6Y0wfeg8FROyJZUa8SO8nQcG4ImfHPCJOl4AYw=
+github.com/vogo/fwatch v0.0.0-20210727100122-67840183b86f/go.mod h1:HkD7ypmHf/zg7/XJQZARtArO7eWVcv/bIqfsrt7HA44=
 github.com/vogo/logger v1.3.0 h1:dofEemPRR1eGcVsUPmFWQnQ72EiH9EXzLFZU8EN/EVQ=
 github.com/vogo/logger v1.3.0/go.mod h1:JNvSUGbxH+Et7KQrPr8Zmg9BWb4piD0yEooLiUVz+y8=
 github.com/vogo/vogo v0.0.0-20210123113352-5c0b9fc41f4d h1:M0+dbElFOh7Zcn35T/x9+iwfelhJ95veLicWuV6rRcg=
