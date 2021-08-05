@@ -52,6 +52,7 @@ jobs:
         run: |
           go get golang.org/x/tools/cmd/goimports
           go get -u mvdan.cc/gofumpt
+          go install github.com/lsm-dev/license-header-checker/cmd/license-header-checker@latest
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.41.1
 
       - name: Check out code into the Go module directory

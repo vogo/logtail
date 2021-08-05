@@ -1,3 +1,20 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package logtail
 
 import (
@@ -8,6 +25,7 @@ import (
 	"time"
 
 	"github.com/vogo/fwatch"
+	"github.com/vogo/gstop"
 	"github.com/vogo/logger"
 	"github.com/vogo/vogo/vos"
 )
@@ -23,7 +41,7 @@ const (
 type Server struct {
 	id            string
 	lock          sync.Mutex
-	stopper       *Stopper
+	stopper       *gstop.Stopper
 	format        *Format
 	workerError   chan error
 	mergingWorker *worker
@@ -47,7 +65,7 @@ func NewServer(config *Config, serverConfig *ServerConfig) *Server {
 	server := &Server{
 		id:      serverConfig.ID,
 		lock:    sync.Mutex{},
-		stopper: NewStopper(),
+		stopper: gstop.New(),
 		format:  format,
 		routers: make(map[int64]*Router, defaultMapSize),
 		workers: make(map[string]*worker, defaultMapSize),
@@ -202,7 +220,7 @@ func (s *Server) startCommandGenWorkers(gen string) {
 
 	for {
 		select {
-		case <-s.stopper.stop:
+		case <-s.stopper.C:
 			return
 		default:
 			commands, err = vos.ExecShell(gen)
@@ -226,7 +244,7 @@ func (s *Server) startCommandGenWorkers(gen string) {
 			}
 
 			select {
-			case <-s.stopper.stop:
+			case <-s.stopper.C:
 				return
 			default:
 				logger.Errorf("server [%s] failed, retry after 10s!", s.id)
@@ -292,7 +310,7 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 			logger.Errorf("server [%s] receive worker error: %+v", s.id, err)
 		case <-watcher.Stopper.C:
 			return
-		case <-s.stopper.stop:
+		case <-s.stopper.C:
 			return
 		case e := <-watcher.Events:
 			switch e.Event {
@@ -304,7 +322,7 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 				} else {
 					// non-dynamic worker will retry self
 					w := startWorker(s, followRetryTailCommand(e.Name), false)
-					w.stopper = FromStopper(s.stopper)
+					w.stopper = s.stopper.NewChild()
 					fileWorkerMap[e.Name] = w
 					s.addWorker(w)
 				}
