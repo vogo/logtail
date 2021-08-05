@@ -247,12 +247,17 @@ func (s *Server) receiveWorkerError(err error) {
 
 // startDirWorkers start workers using file config.
 func (s *Server) startDirWorkers(config *FileConfig) {
-	watcher, err := fwatch.NewFileWatcher(config.Path, config.Recursive, config.Method, fileInactiveDeadline,
-		func(name string) bool {
-			return (config.Prefix == "" || strings.HasPrefix(name, config.Prefix)) &&
-				(config.Suffix == "" || strings.HasSuffix(name, config.Suffix))
-		})
+	watcher, err := fwatch.New(config.Method, fileInactiveDeadline, fileSilenceDeadline)
 	if err != nil {
+		logger.Fatal(err)
+	}
+
+	matcher := func(name string) bool {
+		return (config.Prefix == "" || strings.HasPrefix(name, config.Prefix)) &&
+			(config.Suffix == "" || strings.HasSuffix(name, config.Suffix))
+	}
+
+	if err = watcher.WatchDir(config.Path, config.Recursive, matcher); err != nil {
 		logger.Fatal(err)
 	}
 
@@ -268,6 +273,9 @@ func (s *Server) startDirWorkers(config *FileConfig) {
 // file inactive deadline, default one hour.
 const fileInactiveDeadline = time.Hour
 
+// file inactive deadline, default one day.
+const fileSilenceDeadline = time.Hour * 24
+
 func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) {
 	defer func() {
 		_ = watcher.Stop()
@@ -282,35 +290,38 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 		case err := <-s.workerError:
 			// only log worker error
 			logger.Errorf("server [%s] receive worker error: %+v", s.id, err)
-		case <-watcher.Done:
+		case <-watcher.Stopper.C:
 			return
 		case <-s.stopper.stop:
 			return
-		case f := <-watcher.ActiveChan:
-			logger.Infof("notify active file: %s", f.Name)
+		case e := <-watcher.Events:
+			switch e.Event {
+			case fwatch.Create, fwatch.Write:
+				logger.Infof("notify active file: %s", e.Name)
 
-			if w, ok := fileWorkerMap[f.Name]; ok {
-				logger.Infof("worker [%s] is already tailing file: %s", w.id, f.Name)
-			} else {
-				// non-dynamic worker will retry self
-				w := startWorker(s, followRetryTailCommand(f.Name), false)
-				w.stopper = FromStopper(s.stopper)
-				fileWorkerMap[f.Name] = w
-				s.addWorker(w)
-			}
-		case f := <-watcher.InactiveChan:
-			logger.Infof("notify inactive file: %s", f.Name)
+				if w, ok := fileWorkerMap[e.Name]; ok {
+					logger.Infof("worker [%s] is already tailing file: %s", w.id, e.Name)
+				} else {
+					// non-dynamic worker will retry self
+					w := startWorker(s, followRetryTailCommand(e.Name), false)
+					w.stopper = FromStopper(s.stopper)
+					fileWorkerMap[e.Name] = w
+					s.addWorker(w)
+				}
+			case fwatch.Inactive:
+				logger.Infof("notify inactive file: %s", e.Name)
 
-			if w, ok := fileWorkerMap[f.Name]; ok {
-				w.shutdown()
-				delete(fileWorkerMap, f.Name)
-			}
-		case name := <-watcher.RemoveChan:
-			logger.Infof("notify remove file: %s", name)
+				if w, ok := fileWorkerMap[e.Name]; ok {
+					w.shutdown()
+					delete(fileWorkerMap, e.Name)
+				}
+			case fwatch.Remove, fwatch.Silence:
+				logger.Infof("notify remove file: %s", e.Name)
 
-			if w, ok := fileWorkerMap[name]; ok {
-				w.shutdown()
-				delete(fileWorkerMap, name)
+				if w, ok := fileWorkerMap[e.Name]; ok {
+					w.shutdown()
+					delete(fileWorkerMap, e.Name)
+				}
 			}
 		}
 	}
