@@ -24,7 +24,7 @@ package:
 	cd dist && GOOS=linux go build ../cmd/logtail/logtail.go && zip logtail-$(version)-linux.zip logtail && rm -f logtail
 	cd dist && GOOS=darwin go build ../cmd/logtail/logtail.go && zip logtail-$(version)-mac.zip logtail && rm -f logtail
 
-build: format check test static package
+build: static format check test package
 
 linux-tools:
 	cd dist && GOOS=linux go build ../cmd/logrecorder/logrecorder.go

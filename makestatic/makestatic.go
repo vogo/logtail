@@ -51,7 +51,6 @@ func makeStatic() error {
 	defer f.Close()
 
 	buf := new(bytes.Buffer)
-	fmt.Fprintf(buf, "// Copyright 2020 wongoo. All rights reserved.")
 	fmt.Fprintf(buf, "\n\n%v\n\npackage logtail\n\n", warning)
 	fmt.Fprintf(buf, "var indexHTMLContent=[]byte(")
 
