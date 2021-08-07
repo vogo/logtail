@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sync"
 	"time"
 
 	"github.com/vogo/gstop"
@@ -31,6 +32,7 @@ import (
 var ErrWorkerCommandStopped = errors.New("worker command stopped")
 
 type worker struct {
+	mu      sync.Mutex
 	id      string
 	server  *Server
 	stopper *gstop.Stopper
@@ -63,6 +65,9 @@ func (w *worker) writeToFilters(bytes []byte) (int, error) {
 }
 
 func (w *worker) startRouterFilter(router *Router) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
 	select {
 	case <-w.stopper.C:
 		return
@@ -163,6 +168,9 @@ func (w *worker) shutdown() {
 }
 
 func (w *worker) stopFilters() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
 	for _, filter := range w.filters {
 		filter.stop()
 	}
@@ -189,6 +197,7 @@ func newWorker(s *Server, command string, dynamic bool) *worker {
 	}
 
 	return &worker{
+		mu:      sync.Mutex{},
 		id:      id,
 		server:  s,
 		stopper: s.stopper,

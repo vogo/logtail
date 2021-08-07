@@ -275,17 +275,13 @@ func (s *Server) startDirWorkers(config *FileConfig) {
 			(config.Suffix == "" || strings.HasSuffix(name, config.Suffix))
 	}
 
+	logger.Infof("server [%s] start watch directory: %s", s.id, config.Path)
+
 	if err = watcher.WatchDir(config.Path, config.Recursive, matcher); err != nil {
 		logger.Fatal(err)
 	}
 
-	logger.Infof("server [%s] start watch directory: %s", s.id, config.Path)
-
 	go s.startDirWatchWorkers(config.Path, watcher)
-
-	if err = watcher.Start(); err != nil {
-		logger.Fatal(err)
-	}
 }
 
 // file inactive deadline, default one hour.
