@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/vogo/gstop"
 )
 
 const DurationReadNextTimeout = time.Millisecond * 60
@@ -29,8 +31,7 @@ type Router struct {
 	id        int64
 	name      string
 	lock      sync.Mutex
-	once      sync.Once
-	close     chan struct{}
+	stopper   *gstop.Stopper
 	matchers  []Matcher
 	transfers []Transfer
 }
@@ -43,8 +44,7 @@ func NewRouter(s *Server, matchers []Matcher, transfers []Transfer) *Router {
 		id:        routerID,
 		name:      name,
 		lock:      sync.Mutex{},
-		once:      sync.Once{},
-		close:     make(chan struct{}),
+		stopper:   s.stopper.NewChild(),
 		matchers:  matchers,
 		transfers: transfers,
 	}
@@ -67,7 +67,5 @@ func (r *Router) Start() error {
 }
 
 func (r *Router) Stop() {
-	r.once.Do(func() {
-		close(r.close)
-	})
+	r.stopper.Stop()
 }

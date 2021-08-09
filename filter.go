@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/vogo/gstop"
 	"github.com/vogo/logger"
 )
 
@@ -29,8 +30,7 @@ type Filter struct {
 	id      string
 	channel Channel
 	lock    sync.Mutex
-	once    sync.Once
-	close   chan struct{}
+	stopper *gstop.Stopper
 	worker  *worker
 	router  *Router
 }
@@ -40,8 +40,7 @@ func newFilter(worker *worker, router *Router) *Filter {
 		id:      fmt.Sprintf("%s-%d", worker.id, router.id),
 		channel: make(chan []byte, DefaultChannelBufferSize),
 		lock:    sync.Mutex{},
-		once:    sync.Once{},
-		close:   make(chan struct{}),
+		stopper: worker.stopper.NewChild(),
 		worker:  worker,
 		router:  router,
 	}
@@ -147,11 +146,12 @@ func (f *Filter) Trans(bytes ...[]byte) error {
 }
 
 func (f *Filter) stop() {
-	f.once.Do(func() {
+	f.stopper.Defer(func() {
 		logger.Infof("filter [%s] stopping", f.id)
-		close(f.close)
 		close(f.channel)
 	})
+
+	f.stopper.Stop()
 }
 
 func (f *Filter) start() {
@@ -167,7 +167,7 @@ func (f *Filter) start() {
 
 	for {
 		select {
-		case <-f.close:
+		case <-f.stopper.C:
 			return
 		case data := <-f.channel:
 			if data == nil {
@@ -186,7 +186,7 @@ func (f *Filter) start() {
 
 func (f *Filter) nextBytes() []byte {
 	select {
-	case <-f.close:
+	case <-f.stopper.C:
 		return nil
 	case bytes := <-f.channel:
 		if bytes == nil {
@@ -207,7 +207,7 @@ func (f *Filter) receive(data []byte) {
 	}()
 
 	select {
-	case <-f.close:
+	case <-f.stopper.C:
 		return
 	case f.channel <- data:
 	default:

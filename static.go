@@ -80,7 +80,7 @@ var indexHTMLContent = []byte(`<!DOCTYPE html>
             if (ws != null && ws.readyState === 1) {
                 try {
                     let containsRequest = [{
-                        "match_contains": btn.value
+                        "contains": btn.value
                     }]
                     let json = JSON.stringify(containsRequest)
                     ws.send("1" + json)

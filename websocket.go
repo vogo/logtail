@@ -80,7 +80,7 @@ func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
 
 	for {
 		select {
-		case <-router.close:
+		case <-router.stopper.C:
 			return
 		default:
 			_ = transfer.conn.SetReadDeadline(time.Now().Add(WebsocketHeartbeatReadTimeout))
@@ -96,8 +96,8 @@ func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
 			}
 
 			if len(data) > 0 && data[0] == MessageTypeMatcherConfig {
-				if err := handleMatcherConfigUpdate(router, data[1:]); err != nil {
-					logger.Warnf("router [%s] websocket matcher config error: %+v", router.name, err)
+				if configErr := handleMatcherConfigUpdate(router, data[1:]); configErr != nil {
+					logger.Warnf("router [%s] websocket matcher config error: %+v", router.name, configErr)
 				}
 			}
 		}

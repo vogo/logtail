@@ -122,7 +122,7 @@ func (ft *FileTransfer) start(r *Router) error {
 
 		for {
 			select {
-			case <-ft.router.close:
+			case <-ft.router.stopper.C:
 				return
 			case data := <-ft.buffer:
 				ft.write(data)
@@ -139,7 +139,7 @@ func (ft *FileTransfer) Trans(serverID string, data ...[]byte) error {
 	}()
 
 	select {
-	case <-ft.router.close:
+	case <-ft.router.stopper.C:
 		return nil
 	case ft.buffer <- data:
 	default:
