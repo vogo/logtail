@@ -13,8 +13,9 @@ github.com/vogo/fsnotify v1.4.10-0.20210606062753-a470c8d404e0 h1:shwCWdzShrGvCk
 github.com/vogo/fsnotify v1.4.10-0.20210606062753-a470c8d404e0/go.mod h1:eNmmuMP+7CDRMeHrX0U8GN3rAY4Ar7GprPWoW0iuBYI=
 github.com/vogo/fwatch v0.0.0-20210807143059-84a30fa4c507 h1:o26VmGMADGM4uHadvCdNN7Jo6bxmwiWu8l/C4EzKBwA=
 github.com/vogo/fwatch v0.0.0-20210807143059-84a30fa4c507/go.mod h1:F3Xwf1FXucp0lxXRaK/YDBIp8Wp8LIfLNW2UdifxDrk=
-github.com/vogo/gstop v1.0.0 h1:xxDvmVEMjEiGZA7ILmmi38uTJ/jvI0FAD/AdjghbDQo=
 github.com/vogo/gstop v1.0.0/go.mod h1:xw3MTGyblZVO5nS85+tjW/rMceoH/cxc3QtV72LAv14=
+github.com/vogo/gstop v1.1.0 h1:M16hf4KY1+/O9Ezeb7dUV0JKO1sb9aLFY0IR08fdRV8=
+github.com/vogo/gstop v1.1.0/go.mod h1:xw3MTGyblZVO5nS85+tjW/rMceoH/cxc3QtV72LAv14=
 github.com/vogo/logger v1.3.0 h1:dofEemPRR1eGcVsUPmFWQnQ72EiH9EXzLFZU8EN/EVQ=
 github.com/vogo/logger v1.3.0/go.mod h1:JNvSUGbxH+Et7KQrPr8Zmg9BWb4piD0yEooLiUVz+y8=
 github.com/vogo/vogo v0.0.0-20210123113352-5c0b9fc41f4d h1:M0+dbElFOh7Zcn35T/x9+iwfelhJ95veLicWuV6rRcg=

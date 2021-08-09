@@ -45,10 +45,6 @@ func newFilter(worker *worker, router *Router) *Filter {
 		router:  router,
 	}
 
-	f.stopper.Defer(func() {
-		close(f.channel)
-	})
-
 	return f
 }
 
@@ -150,8 +146,10 @@ func (f *Filter) Trans(bytes ...[]byte) error {
 }
 
 func (f *Filter) stop() {
-	logger.Infof("filter [%s] stopping", f.id)
-	f.stopper.Stop()
+	f.stopper.StopWith(func() {
+		logger.Infof("filter [%s] stopping", f.id)
+		close(f.channel)
+	})
 }
 
 func (f *Filter) start() {
