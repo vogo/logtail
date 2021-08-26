@@ -2,6 +2,7 @@
 
 ## 1. Features
 - tailing command output
+- support watch files under directory/sub-directories
 - support (dynamically) multiple commands tailing
 - support websocket tailing
 - support log matching filter
@@ -25,7 +26,7 @@ examples:
 
 ```bash
 # tailing file logs
-logtail -port=54321 -cmd="tailf /home/my/logs/myapp.log"
+logtail -port=54321 -cmd="tail -F /home/my/logs/myapp.log"
 
 # tailing kubectl logs
 logtail -port=54322 -cmd="kubectl logs --tail 10 -f \$(kubectl get pods --selector=app=myapp -o jsonpath='{.items[*].metadata.name}')"
@@ -114,6 +115,25 @@ Tailing multiple commands which are generated dynamically:
   ]
 }
 ```
+
+Watch changing files under directory/sub-directories and tailing them:
+```json
+{
+  "servers": [
+    {
+      "id": "app1",
+      "file": { "path": "/logs/k8s_logs/service-app1/", "recursive": true, "suffix": ".log","method":"timer"}
+    },
+    {
+      "id": "app2",
+      "file": { "path": "/logs/k8s_logs/service-app2/", "recursive": true, "suffix": ".log","method":"os"}
+    }
+  ]
+}
+```
+The value of method could be `os` or `timer`:
+- os: using os file system api to monitor file changes
+- timer: interval check file stat to check file changes
 
 ### 3.3. tailing logs
 
