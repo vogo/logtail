@@ -1,6 +1,3 @@
-//go:build aix || darwin || dragonfly || freebsd || linux || netbsd || openbsd || solaris
-// +build aix darwin dragonfly freebsd linux netbsd openbsd solaris
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,17 +15,20 @@
  * limitations under the License.
  */
 
-package logtail
+package main
 
 import (
-	"os/exec"
-	"syscall"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
+
+	"github.com/vogo/logtail"
 )
 
-func setCmdSysProcAttr(cmd *exec.Cmd) {
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-}
+func main() {
+	go func() {
+		log.Println(http.ListenAndServe(":6060", nil))
+	}()
 
-func killCmd(cmd *exec.Cmd) error {
-	return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	logtail.Start()
 }

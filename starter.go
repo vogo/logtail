@@ -75,19 +75,18 @@ func buildTransfers(transferConfigs []*TransferConfig) []Transfer {
 }
 
 func buildTransfer(config *TransferConfig) Transfer {
-	if config.Type == TransferTypeWebhook {
-		NewWebhookTransfer(config.URL)
-	}
-
-	if config.Type == TransferTypeDing {
+	switch config.Type {
+	case TransferTypeWebhook:
+		return NewWebhookTransfer(config.URL)
+	case TransferTypeDing:
 		return NewDingTransfer(config.URL)
-	}
-
-	if config.Type == TransferTypeFile {
+	case TransferTypeFile:
 		return NewFileTransfer(config.Dir)
+	case TransferTypeConsole:
+		return &ConsoleTransfer{}
+	default:
+		return &NullTransfer{}
 	}
-
-	return &ConsoleTransfer{}
 }
 
 func buildMatcher(config *MatcherConfig) []Matcher {

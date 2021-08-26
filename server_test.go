@@ -29,8 +29,63 @@ import (
 	"github.com/vogo/logtail"
 )
 
+var fireData [][]byte
+
+func initFireData() {
+	baseText := "long text 数据 long text 数据 long text 数据 long text 数据 long text 数据 long text 数据 long text 数据"
+
+	var longText string
+
+	for i := 0; i < 100; i++ {
+		longText += baseText
+	}
+
+	fireData = [][]byte{
+
+		[]byte(`2020-11-11 ERROR test1
+ follow1
+ follow2`),
+
+		[]byte(`2020-11-11 ERROR test2 "中文"
+ follow3
+ follow4`),
+
+		[]byte(`2020-11-11 INFO ` + longText),
+
+		[]byte(`2020-11-11 ERROR ` + longText),
+
+		[]byte(`2020-11-11 INFO ` + longText),
+
+		[]byte(`2020-11-11 ERROR test3
+ follow5
+ follow6`),
+
+		[]byte(`follow7
+ follow8
+2020-11-11 ERROR test4`),
+
+		[]byte(`follow5
+follow9`),
+
+		[]byte(`2020-11-11 ERROR 6 no TEST should not match`),
+
+		[]byte(`2020-11-11 ERROR test7 contains NORMAL so should not match`),
+	}
+}
+
+var ticker = time.NewTicker(time.Millisecond)
+
+func fireServer(s *logtail.Server) {
+	for _, b := range fireData {
+		<-ticker.C
+
+		_ = s.Fire(b)
+	}
+}
+
 func TestServer(t *testing.T) {
 	t.Parallel()
+	initFireData()
 
 	config := &logtail.Config{
 		DefaultFormat: &logtail.Format{Prefix: "!!!!-!!-!!"},
@@ -44,7 +99,7 @@ func TestServer(t *testing.T) {
 				},
 				Transfers: []*logtail.TransferConfig{
 					{
-						Type: "console",
+						Type: "null",
 					},
 				},
 			},
@@ -59,32 +114,14 @@ func TestServer(t *testing.T) {
 	server := logtail.NewServer(config, config.Servers[0])
 	server.Start()
 
-	_ = server.Fire([]byte(`2020-11-11 ERROR test1
- follow1
- follow2`))
-
-	_ = server.Fire([]byte(`2020-11-11 ERROR test2 "中文"
- follow3
- follow4`))
-
-	_ = server.Fire([]byte(`2020-11-11 ERROR test3
- follow5
- follow6`))
-
-	_ = server.Fire([]byte(`follow7
- follow8
-2020-11-11 ERROR test4`))
-
-	_ = server.Fire([]byte(`follow5
-follow9`))
-
-	_ = server.Fire([]byte(`2020-11-11 ERROR 6 no TEST should not match`))
-	_ = server.Fire([]byte(`2020-11-11 ERROR test7 contains NORMAL so should not match`))
+	for i := 0; i < 1000; i++ {
+		fireServer(server)
+	}
 
 	<-time.After(time.Second)
 }
 
-func TestServerCommands(t *testing.T) {
+func TestCommands(t *testing.T) {
 	t.Parallel()
 
 	workDir := filepath.Join(os.TempDir(), "test_logtail_dir")

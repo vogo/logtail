@@ -6,3 +6,6 @@ server.key
 dist
 
 coverage.txt
+
+*.test
+*.prof

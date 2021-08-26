@@ -1,6 +1,3 @@
-//go:build aix || darwin || dragonfly || freebsd || linux || netbsd || openbsd || solaris
-// +build aix darwin dragonfly freebsd linux netbsd openbsd solaris
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -20,15 +17,12 @@
 
 package logtail
 
-import (
-	"os/exec"
-	"syscall"
-)
+const TransferTypeNull = "null"
 
-func setCmdSysProcAttr(cmd *exec.Cmd) {
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+type NullTransfer struct{}
+
+func (d *NullTransfer) Trans(serverID string, data ...[]byte) error {
+	return nil
 }
 
-func killCmd(cmd *exec.Cmd) error {
-	return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
-}
+func (d *NullTransfer) start(*Router) error { return nil }

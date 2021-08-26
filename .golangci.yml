@@ -30,6 +30,7 @@ linters:
     - noctx
     - cyclop
     - tagliatelle
+    - gochecknoglobals
 
 run:
   skip-files:
@@ -42,5 +43,8 @@ issues:
       linters:
         - gosec
     - text: "Potential HTTP request made with variable url"
+      linters:
+        - gosec
+    - text: "G108: Profiling endpoint is automatically exposed on /debug/pprof"
       linters:
         - gosec
