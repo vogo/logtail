@@ -18,26 +18,23 @@
 package logtail
 
 import (
-	"sync"
-
-	"github.com/gorilla/websocket"
+	"sync/atomic"
 )
 
-var (
-	dingTextMessageDataPrefix = []byte(`{"msgtype":"text","text":{"content":"[logtail-`)
-	dingTextMessageDataSuffix = []byte(`"}}`)
-	larkTextMessageDataPrefix = []byte(`{"msg_type":"text","content":{"text":"[logtail-`)
-	larkTextMessageDataSuffix = []byte(`"}}`)
-	messageTitleContentSplit  = []byte("]: ")
-	quotationBytes            = []byte(`"`)
-	escapeQuotationBytes      = []byte(`\"`)
-)
+const TransferTypeLark = "feishu"
 
-var websocketUpgrader = websocket.Upgrader{}
+type LarkTransfer struct {
+	delegateTransfer Transfer // delegate
+}
 
-var (
-	serverDBLock = sync.Mutex{}
-	serverDB     = make(map[string]*Server, 4)
-)
+func (d *LarkTransfer) start(*Router) error { return nil }
 
-var defaultFormat *Format
+func (d *LarkTransfer) Trans(serverID string, data ...[]byte) error {
+	return d.delegateTransfer.Trans(serverID, data...)
+}
+
+func NewLarkTransfer(url string) Transfer {
+	return &LarkTransfer{
+		delegateTransfer: NewImTransfer(url, 4, 1024, larkTextMessageDataPrefix, larkTextMessageDataSuffix),
+	}
+}
