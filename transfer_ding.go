@@ -41,6 +41,8 @@ type DingTransfer struct {
 
 func (d *DingTransfer) start(*Router) error { return nil }
 
+// nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
+// Trans transfer data to dingding.
 func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 	if !atomic.CompareAndSwapInt32(&d.transferring, 0, 1) {
 		// ignore message to
@@ -83,7 +85,7 @@ func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 	return nil
 }
 
-func NewDingTransfer(url string) Transfer {
+func NewDingTransfer(url string) *DingTransfer {
 	return &DingTransfer{
 		url:          url,
 		transferring: 0,

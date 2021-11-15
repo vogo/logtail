@@ -74,6 +74,7 @@ func buildTransfers(transferConfigs []*TransferConfig) []Transfer {
 	return transfers
 }
 
+// nolint:ireturn // return diff transfer implementation.
 func buildTransfer(config *TransferConfig) Transfer {
 	switch config.Type {
 	case TransferTypeWebhook:
