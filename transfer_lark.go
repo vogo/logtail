@@ -24,6 +24,7 @@ import (
 	"github.com/vogo/logger"
 )
 
+// a implementation of transfer to support lark.
 type LarkTransfer struct {
 	url                      string
 	transferring             int32 // whether transferring message
@@ -34,10 +35,11 @@ type LarkTransfer struct {
 	messageTransferInterval  time.Duration
 }
 
+const TransferTypeLark = "lark"
+
 const (
 	larkMessageDataFixedBytesNum = 4
 	larkMessageDataMaxLength     = 1024
-	TransferTypeLark             = "feishu"
 	larkMessageTransferInterval  = time.Second * 5
 )
 
@@ -85,6 +87,7 @@ func (d *LarkTransfer) Trans(serverID string, data ...[]byte) error {
 	return nil
 }
 
+// initialize a lark transfer.
 func NewLarkTransfer(url string) Transfer {
 	return &LarkTransfer{
 		url:                      url,
