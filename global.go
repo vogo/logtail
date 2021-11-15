@@ -26,6 +26,8 @@ import (
 var (
 	dingTextMessageDataPrefix = []byte(`{"msgtype":"text","text":{"content":"[logtail-`)
 	dingTextMessageDataSuffix = []byte(`"}}`)
+	larkTextMessageDataPrefix = []byte(`{"msg_type":"text","content":{"text":"[logtail-`)
+	larkTextMessageDataSuffix = []byte(`"}}`)
 	messageTitleContentSplit  = []byte("]: ")
 	quotationBytes            = []byte(`"`)
 	escapeQuotationBytes      = []byte(`\"`)

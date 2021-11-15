@@ -80,6 +80,8 @@ func buildTransfer(config *TransferConfig) Transfer {
 		return NewWebhookTransfer(config.URL)
 	case TransferTypeDing:
 		return NewDingTransfer(config.URL)
+	case TransferTypeLark:
+		return NewLarkTransfer(config.URL)
 	case TransferTypeFile:
 		return NewFileTransfer(config.Dir)
 	case TransferTypeConsole:

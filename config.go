@@ -258,12 +258,13 @@ func validateTransferConfig(transfer *TransferConfig) error {
 
 	if transfer.Type != TransferTypeWebhook &&
 		transfer.Type != TransferTypeDing &&
+		transfer.Type != TransferTypeLark &&
 		transfer.Type != TransferTypeConsole &&
 		transfer.Type != TransferTypeFile {
 		return fmt.Errorf("%w: %s", ErrTransTypeInvalid, transfer.Type)
 	}
 
-	if transfer.Type == TransferTypeWebhook || transfer.Type == TransferTypeDing {
+	if transfer.Type == TransferTypeWebhook || transfer.Type == TransferTypeDing || transfer.Type == TransferTypeLark {
 		if transfer.URL == "" {
 			return ErrTransURLNil
 		}

@@ -41,7 +41,6 @@ func initFireData() {
 	}
 
 	fireData = [][]byte{
-
 		[]byte(`2020-11-11 ERROR test1
  follow1
  follow2`),
