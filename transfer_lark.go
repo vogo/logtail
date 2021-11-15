@@ -17,15 +17,16 @@
 
 package logtail
 
-import (
-	"sync/atomic"
-)
-
 const TransferTypeLark = "feishu"
 
 type LarkTransfer struct {
 	delegateTransfer Transfer // delegate
 }
+
+const (
+	larkMessageDataFixedBytesNum = 4
+	larkMessageDataMaxLength     = 1024
+)
 
 func (d *LarkTransfer) start(*Router) error { return nil }
 
@@ -35,6 +36,10 @@ func (d *LarkTransfer) Trans(serverID string, data ...[]byte) error {
 
 func NewLarkTransfer(url string) Transfer {
 	return &LarkTransfer{
-		delegateTransfer: NewImTransfer(url, 4, 1024, larkTextMessageDataPrefix, larkTextMessageDataSuffix),
+		delegateTransfer: NewImTransfer(url,
+			larkMessageDataFixedBytesNum,
+			larkMessageDataMaxLength,
+			larkTextMessageDataPrefix,
+			larkTextMessageDataSuffix),
 	}
 }

@@ -20,21 +20,21 @@ package logtail
 import (
 	"sync/atomic"
 	"time"
-)
 
-import (
 	"github.com/vogo/logger"
 )
 
 type IMTransfer struct {
 	url                      string
 	transferring             int32 // whether transferring message
-	messageDataFixedBytesNum int32
-	messageDataMaxLength     int32
-	messageDataPrefix        string
-	messageDataSuffix        string
-	messageTransferInterval  int32
+	messageDataFixedBytesNum int
+	messageDataMaxLength     int
+	messageDataPrefix        []byte
+	messageDataSuffix        []byte
+	messageTransferInterval  time.Duration
 }
+
+const messageTransferInterval = time.Second * 5
 
 func (d *IMTransfer) start(*Router) error { return nil }
 
@@ -45,18 +45,18 @@ func (d *IMTransfer) Trans(serverID string, data ...[]byte) error {
 	}
 
 	go func() {
-		<-time.After(messageTransferInterval)
+		<-time.After(d.messageTransferInterval)
 		atomic.StoreInt32(&d.transferring, 0)
 	}()
 
-	size := messageDataFixedBytesNum + len(data)
+	size := d.messageDataFixedBytesNum + len(data)
 	list := make([][]byte, size)
-	list[0] = messageDataPrefix
+	list[0] = d.messageDataPrefix
 	list[1] = []byte(serverID)
 	list[2] = messageTitleContentSplit
 
 	idx := 3
-	messageRemainCapacity := messageDataSuffix
+	messageRemainCapacity := d.messageDataMaxLength
 
 	for _, b := range data {
 		if messageRemainCapacity <= 0 {
@@ -71,7 +71,7 @@ func (d *IMTransfer) Trans(serverID string, data ...[]byte) error {
 		messageRemainCapacity -= len(b)
 	}
 
-	list[idx] = larkTextMessageDataSuffix
+	list[idx] = d.messageDataSuffix
 
 	if err := httpTrans(d.url, list[:idx+1]...); err != nil {
 		logger.Errorf("ding error: %v", err)
@@ -80,7 +80,7 @@ func (d *IMTransfer) Trans(serverID string, data ...[]byte) error {
 	return nil
 }
 
-func NewImTransfer(url string, messageDataFixedBytesNum int32, messageDataMaxLength int32, messageDataPrefix string, messageDataSuffix string) Transfer {
+func NewImTransfer(url string, messageDataFixedBytesNum, messageDataMaxLength int, messageDataPrefix, messageDataSuffix []byte) Transfer {
 	return &IMTransfer{
 		url:                      url,
 		transferring:             0,
@@ -88,6 +88,6 @@ func NewImTransfer(url string, messageDataFixedBytesNum int32, messageDataMaxLen
 		messageDataMaxLength:     messageDataMaxLength,
 		messageDataPrefix:        messageDataPrefix,
 		messageDataSuffix:        messageDataSuffix,
-		messageTransferInterval:  time.Second * 5,
+		messageTransferInterval:  messageTransferInterval,
 	}
 }
