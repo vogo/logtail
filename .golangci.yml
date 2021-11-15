@@ -30,11 +30,9 @@ linters:
     - noctx
     - cyclop
     - tagliatelle
-    - gochecknoglobals
 
 run:
   skip-files:
-    - global.go
   skip-dirs:
 
 issues:

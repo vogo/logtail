@@ -24,20 +24,18 @@ import (
 )
 
 var (
-	dingTextMessageDataPrefix = []byte(`{"msgtype":"text","text":{"content":"[logtail-`)
-	dingTextMessageDataSuffix = []byte(`"}}`)
-	larkTextMessageDataPrefix = []byte(`{"msg_type":"text","content":{"text":"[logtail-`)
-	larkTextMessageDataSuffix = []byte(`"}}`)
-	messageTitleContentSplit  = []byte("]: ")
-	quotationBytes            = []byte(`"`)
-	escapeQuotationBytes      = []byte(`\"`)
-)
+	// nolint:gochecknoglobals // ignore this
+	messageTitleContentSplit = []byte("]: ")
 
-var websocketUpgrader = websocket.Upgrader{}
+	// nolint:gochecknoglobals // ignore this
+	websocketUpgrader = websocket.Upgrader{}
 
-var (
+	// nolint:gochecknoglobals // ignore this
 	serverDBLock = sync.Mutex{}
-	serverDB     = make(map[string]*Server, 4)
-)
 
-var defaultFormat *Format
+	// nolint:gochecknoglobals // ignore this
+	serverDB = make(map[string]*Server, defaultMapSize)
+
+	// nolint:gochecknoglobals // ignore this
+	defaultFormat *Format
+)

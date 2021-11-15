@@ -24,17 +24,13 @@ import (
 	"github.com/vogo/logger"
 )
 
-// a implementation of transfer to support lark.
+// LarkTransfer transfer to support lark.
 type LarkTransfer struct {
-	url                      string
-	transferring             int32 // whether transferring message
-	messageDataFixedBytesNum int
-	messageDataMaxLength     int
-	messageDataPrefix        []byte
-	messageDataSuffix        []byte
-	messageTransferInterval  time.Duration
+	url          string
+	transferring int32 // whether transferring message
 }
 
+// TransferTypeLark transfer type lark.
 const TransferTypeLark = "lark"
 
 const (
@@ -43,8 +39,18 @@ const (
 	larkMessageTransferInterval  = time.Second * 5
 )
 
+var (
+	// nolint:gochecknoglobals // ignore this
+	larkTextMessageDataPrefix = []byte(`{"msg_type":"text","content":{"text":"[logtail-`)
+
+	// nolint:gochecknoglobals // ignore this
+	larkTextMessageDataSuffix = []byte(`"}}`)
+)
+
 func (d *LarkTransfer) start(*Router) error { return nil }
 
+// Trans transfer data to Lark.
+// nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
 func (d *LarkTransfer) Trans(serverID string, data ...[]byte) error {
 	if !atomic.CompareAndSwapInt32(&d.transferring, 0, 1) {
 		// ignore message to
@@ -52,18 +58,18 @@ func (d *LarkTransfer) Trans(serverID string, data ...[]byte) error {
 	}
 
 	go func() {
-		<-time.After(d.messageTransferInterval)
+		<-time.After(larkMessageTransferInterval)
 		atomic.StoreInt32(&d.transferring, 0)
 	}()
 
-	size := d.messageDataFixedBytesNum + len(data)
+	size := larkMessageDataFixedBytesNum + len(data)
 	list := make([][]byte, size)
-	list[0] = d.messageDataPrefix
+	list[0] = larkTextMessageDataPrefix
 	list[1] = []byte(serverID)
 	list[2] = messageTitleContentSplit
 
 	idx := 3
-	messageRemainCapacity := d.messageDataMaxLength
+	messageRemainCapacity := larkMessageDataMaxLength
 
 	for _, b := range data {
 		if messageRemainCapacity <= 0 {
@@ -78,24 +84,19 @@ func (d *LarkTransfer) Trans(serverID string, data ...[]byte) error {
 		messageRemainCapacity -= len(b)
 	}
 
-	list[idx] = d.messageDataSuffix
+	list[idx] = larkTextMessageDataSuffix
 
 	if err := httpTrans(d.url, list[:idx+1]...); err != nil {
-		logger.Errorf("ding error: %v", err)
+		logger.Errorf("lark error: %v", err)
 	}
 
 	return nil
 }
 
-// initialize a lark transfer.
-func NewLarkTransfer(url string) Transfer {
+// NewLarkTransfer initialize a lark transfer.
+func NewLarkTransfer(url string) *LarkTransfer {
 	return &LarkTransfer{
-		url:                      url,
-		transferring:             0,
-		messageDataFixedBytesNum: larkMessageDataFixedBytesNum,
-		messageDataMaxLength:     larkMessageDataMaxLength,
-		messageDataPrefix:        larkTextMessageDataPrefix,
-		messageDataSuffix:        larkTextMessageDataSuffix,
-		messageTransferInterval:  larkMessageTransferInterval,
+		url:          url,
+		transferring: 0,
 	}
 }

@@ -31,6 +31,14 @@ const (
 	dingMessageDataMaxLength     = 1024
 )
 
+var (
+	// nolint:gochecknoglobals // ignore this
+	dingTextMessageDataPrefix = []byte(`{"msgtype":"text","text":{"content":"[logtail-`)
+
+	// nolint:gochecknoglobals // ignore this
+	dingTextMessageDataSuffix = []byte(`"}}`)
+)
+
 // transfer next message after the interval, ignore messages in the interval.
 const dingMessageTransferInterval = time.Second * 5
 
@@ -41,6 +49,8 @@ type DingTransfer struct {
 
 func (d *DingTransfer) start(*Router) error { return nil }
 
+// nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
+// Trans transfer data to dingding.
 func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 	if !atomic.CompareAndSwapInt32(&d.transferring, 0, 1) {
 		// ignore message to
@@ -83,7 +93,8 @@ func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 	return nil
 }
 
-func NewDingTransfer(url string) Transfer {
+// NewDingTransfer new dingding transfer.
+func NewDingTransfer(url string) *DingTransfer {
 	return &DingTransfer{
 		url:          url,
 		transferring: 0,
