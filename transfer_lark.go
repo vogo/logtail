@@ -39,6 +39,14 @@ const (
 	larkMessageTransferInterval  = time.Second * 5
 )
 
+var (
+	// nolint:gochecknoglobals // ignore this
+	larkTextMessageDataPrefix = []byte(`{"msg_type":"text","content":{"text":"[logtail-`)
+
+	// nolint:gochecknoglobals // ignore this
+	larkTextMessageDataSuffix = []byte(`"}}`)
+)
+
 func (d *LarkTransfer) start(*Router) error { return nil }
 
 // nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.

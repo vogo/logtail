@@ -29,6 +29,7 @@ import (
 	"github.com/vogo/logtail"
 )
 
+// nolint:gochecknoglobals // ignore this
 var fireData [][]byte
 
 func initFireData() {
@@ -72,6 +73,7 @@ follow9`),
 	}
 }
 
+// nolint:gochecknoglobals // ignore this
 var ticker = time.NewTicker(time.Millisecond)
 
 func fireServer(s *logtail.Server) {

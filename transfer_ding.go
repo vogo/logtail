@@ -31,6 +31,14 @@ const (
 	dingMessageDataMaxLength     = 1024
 )
 
+var (
+	// nolint:gochecknoglobals // ignore this
+	dingTextMessageDataPrefix = []byte(`{"msgtype":"text","text":{"content":"[logtail-`)
+
+	// nolint:gochecknoglobals // ignore this
+	dingTextMessageDataSuffix = []byte(`"}}`)
+)
+
 // transfer next message after the interval, ignore messages in the interval.
 const dingMessageTransferInterval = time.Second * 5
 
