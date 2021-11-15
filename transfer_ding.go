@@ -93,6 +93,7 @@ func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 	return nil
 }
 
+// NewDingTransfer new dingding transfer.
 func NewDingTransfer(url string) *DingTransfer {
 	return &DingTransfer{
 		url:          url,

@@ -41,6 +41,7 @@ type FileTransfer struct {
 	file         *os.File
 }
 
+// NewFileTransfer new file transfer.
 func NewFileTransfer(dir string) *FileTransfer {
 	return &FileTransfer{
 		dir: dir,

@@ -41,6 +41,7 @@ func (d *WebhookTransfer) Trans(_ string, data ...[]byte) error {
 
 func (d *WebhookTransfer) start(*Router) error { return nil }
 
+// NewWebhookTransfer new webhook transfer.
 func NewWebhookTransfer(url string) *WebhookTransfer {
 	return &WebhookTransfer{url: url}
 }

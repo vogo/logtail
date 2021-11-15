@@ -49,8 +49,8 @@ var (
 
 func (d *LarkTransfer) start(*Router) error { return nil }
 
-// nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
 // Trans transfer data to Lark.
+// nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
 func (d *LarkTransfer) Trans(serverID string, data ...[]byte) error {
 	if !atomic.CompareAndSwapInt32(&d.transferring, 0, 1) {
 		// ignore message to
