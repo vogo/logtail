@@ -26,6 +26,7 @@ import (
 
 // LarkTransfer transfer to support lark.
 type LarkTransfer struct {
+	IDS
 	url          string
 	transferring int32 // whether transferring message
 }
@@ -47,7 +48,9 @@ var (
 	larkTextMessageDataSuffix = []byte(`"}}`)
 )
 
-func (d *LarkTransfer) start(*Router) error { return nil }
+func (d *LarkTransfer) start() error { return nil }
+
+func (d *LarkTransfer) stop() error { return nil }
 
 // Trans transfer data to Lark.
 // nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
@@ -94,8 +97,9 @@ func (d *LarkTransfer) Trans(serverID string, data ...[]byte) error {
 }
 
 // NewLarkTransfer initialize a lark transfer.
-func NewLarkTransfer(url string) *LarkTransfer {
+func NewLarkTransfer(id, url string) *LarkTransfer {
 	return &LarkTransfer{
+		IDS:          IDS{id: id},
 		url:          url,
 		transferring: 0,
 	}

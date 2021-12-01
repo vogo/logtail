@@ -18,6 +18,16 @@
 package logtail
 
 type Transfer interface {
+	ID() string
 	Trans(serverID string, data ...[]byte) error
-	start(*Router) error
+	start() error
+	stop() error
+}
+
+type IDS struct {
+	id string
+}
+
+func (it *IDS) ID() string {
+	return it.id
 }

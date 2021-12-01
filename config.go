@@ -32,7 +32,12 @@ const DefaultServerPort = 54321
 
 var (
 	ErrNoServerConfig   = errors.New("no server config")
+	ErrDuplicatedConfig = errors.New("duplicated config")
 	ErrServerIDNil      = errors.New("server id is nil")
+	ErrRouterIDNil      = errors.New("router id is nil")
+	ErrTransferIDNil    = errors.New("transfer id is nil")
+	ErrRouterNotExist   = errors.New("router not exists")
+	ErrTransferNotExist = errors.New("transfer not exists")
 	ErrNoTailingConfig  = errors.New("no tailing command/file config")
 	ErrTransURLNil      = errors.New("transfer url is nil")
 	ErrTransTypeNil     = errors.New("transfer type is nil")
@@ -47,6 +52,12 @@ type Config struct {
 	Servers        []*ServerConfig `json:"servers"`
 	DefaultRouters []*RouterConfig `json:"default_routers"`
 	GlobalRouters  []*RouterConfig `json:"global_routers"`
+
+	// cache all router config for reference
+	routerMap map[string]*RouterConfig
+
+	// cache all transfer config for reference
+	transferMap map[string]*TransferConfig
 }
 
 type ServerConfig struct {
@@ -75,8 +86,8 @@ type FileConfig struct {
 	// Method watch method,
 	// - os: using os file system api to monitor file changes,
 	// - timer: interval check file stat to check file changes,
-	// For some network mount devices, can't get file change events for os api,
-	// you'd better to check file stat to know the changes.
+	// For some networks mount devices, can't get file change events for os api,
+	// you'd be better to check file stat to know the changes.
 	Method fwatch.WatchMethod `json:"method"`
 
 	// only tailing files with the prefix.
@@ -85,13 +96,18 @@ type FileConfig struct {
 	// only tailing files with the suffix.
 	Suffix string `json:"suffix"`
 
-	// Whether include all files in sub directories recursively.
+	// Whether include all files in subdirectories recursively.
 	Recursive bool `json:"recursive"`
 }
 
 type RouterConfig struct {
+	ID        string            `json:"id"`
 	Matchers  []*MatcherConfig  `json:"matchers"`
 	Transfers []*TransferConfig `json:"transfers"`
+}
+
+func (rc *RouterConfig) isRef() bool {
+	return len(rc.Matchers) == 0 && len(rc.Transfers) == 0
 }
 
 type MatcherConfig struct {
@@ -100,9 +116,14 @@ type MatcherConfig struct {
 }
 
 type TransferConfig struct {
+	ID   string `json:"id"`
 	Type string `json:"type"`
 	URL  string `json:"url"`
 	Dir  string `json:"dir"`
+}
+
+func (tc *TransferConfig) isRef() bool {
+	return len(tc.ID) > 0 && tc.Type == ""
 }
 
 func parseConfig() (cfg *Config, parseErr error) {
@@ -113,6 +134,8 @@ func parseConfig() (cfg *Config, parseErr error) {
 	}()
 
 	var (
+		err           error
+		config        *Config
 		file          = flag.String("file", "", "config file")
 		port          = flag.Int("port", DefaultServerPort, "tail port")
 		command       = flag.String("cmd", "", "tail command")
@@ -123,7 +146,7 @@ func parseConfig() (cfg *Config, parseErr error) {
 
 	flag.Parse()
 
-	config, err := readConfig(*file, *port, *command, *matchContains, *dingURL, *webhookURL)
+	config, err = readConfig(*file, *port, *command, *matchContains, *dingURL, *webhookURL)
 	if err != nil {
 		return nil, err
 	}
@@ -136,9 +159,17 @@ func parseConfig() (cfg *Config, parseErr error) {
 		return nil, ErrNoServerConfig
 	}
 
+	if routerErr := validateRouterConfigs(config, config.DefaultRouters); routerErr != nil {
+		return nil, routerErr
+	}
+
+	if globalRouterErr := validateRouterConfigs(config, config.GlobalRouters); globalRouterErr != nil {
+		return nil, globalRouterErr
+	}
+
 	for _, server := range config.Servers {
-		if err := validateServerConfig(server); err != nil {
-			return nil, err
+		if serverErr := validateServerConfig(config, server); serverErr != nil {
+			return nil, serverErr
 		}
 	}
 
@@ -199,7 +230,7 @@ func readConfig(file string, port int, command, matchContains, dingURL, webhookU
 	return config, nil
 }
 
-func validateServerConfig(server *ServerConfig) error {
+func validateServerConfig(config *Config, server *ServerConfig) error {
 	if server.ID == "" {
 		return ErrServerIDNil
 	}
@@ -208,23 +239,49 @@ func validateServerConfig(server *ServerConfig) error {
 		return ErrNoTailingConfig
 	}
 
-	if len(server.Routers) > 0 {
-		for _, router := range server.Routers {
-			if err := validateRouterConfig(router); err != nil {
-				return err
-			}
+	if err := validateRouterConfigs(config, server.Routers); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateRouterConfigs(config *Config, routers []*RouterConfig) error {
+	for _, router := range routers {
+		if err := validateRouterConfig(config, router); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func validateRouterConfig(router *RouterConfig) error {
+func validateRouterConfig(config *Config, router *RouterConfig) error {
+	if router.ID == "" {
+		return ErrRouterIDNil
+	}
+
+	if router.isRef() {
+		if _, ok := config.routerMap[router.ID]; !ok {
+			return fmt.Errorf("%w: %s", ErrRouterNotExist, router.ID)
+		}
+
+		return nil
+	} else if _, ok := config.routerMap[router.ID]; ok {
+		return fmt.Errorf("%w: %s %s", ErrDuplicatedConfig, "router", router.ID)
+	}
+
 	if err := validateMatchers(router.Matchers); err != nil {
 		return err
 	}
 
-	return validateTransfers(router.Transfers)
+	if err := validateTransfers(config, router.Transfers); err != nil {
+		return err
+	}
+
+	config.routerMap[router.ID] = router
+
+	return nil
 }
 
 func validateMatchers(matchers []*MatcherConfig) error {
@@ -239,10 +296,10 @@ func validateMatchers(matchers []*MatcherConfig) error {
 	return nil
 }
 
-func validateTransfers(transfers []*TransferConfig) error {
+func validateTransfers(config *Config, transfers []*TransferConfig) error {
 	if len(transfers) > 0 {
 		for _, transfer := range transfers {
-			if err := validateTransferConfig(transfer); err != nil {
+			if err := validateTransferConfig(config, transfer); err != nil {
 				return err
 			}
 		}
@@ -251,7 +308,21 @@ func validateTransfers(transfers []*TransferConfig) error {
 	return nil
 }
 
-func validateTransferConfig(transfer *TransferConfig) error {
+func validateTransferConfig(config *Config, transfer *TransferConfig) error {
+	if transfer.ID == "" {
+		return ErrTransferIDNil
+	}
+
+	if transfer.isRef() {
+		if _, ok := config.transferMap[transfer.ID]; !ok {
+			return fmt.Errorf("%w: %s", ErrRouterNotExist, transfer.ID)
+		}
+
+		return nil
+	} else if _, ok := config.transferMap[transfer.ID]; ok {
+		return fmt.Errorf("%w: %s %s", ErrDuplicatedConfig, "transfer", transfer.ID)
+	}
+
 	if transfer.Type == "" {
 		return ErrTransTypeNil
 	}
@@ -275,6 +346,8 @@ func validateTransferConfig(transfer *TransferConfig) error {
 			return ErrTransDirNil
 		}
 	}
+
+	config.transferMap[transfer.ID] = transfer
 
 	return nil
 }

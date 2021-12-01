@@ -23,7 +23,9 @@ import (
 
 const TransferTypeConsole = "console"
 
-type ConsoleTransfer struct{}
+type ConsoleTransfer struct {
+	IDS
+}
 
 func (d *ConsoleTransfer) Trans(serverID string, data ...[]byte) error {
 	for _, b := range data {
@@ -38,4 +40,9 @@ func (d *ConsoleTransfer) Trans(serverID string, data ...[]byte) error {
 	return nil
 }
 
-func (d *ConsoleTransfer) start(*Router) error { return nil }
+func (d *ConsoleTransfer) start() error { return nil }
+
+func (d *ConsoleTransfer) stop() error { return nil }
+
+func (d *ConsoleTransfer) Visit(t Transfer) {
+}

@@ -43,11 +43,14 @@ var (
 const dingMessageTransferInterval = time.Second * 5
 
 type DingTransfer struct {
+	IDS
 	url          string
 	transferring int32 // whether transferring message
 }
 
-func (d *DingTransfer) start(*Router) error { return nil }
+func (d *DingTransfer) start() error { return nil }
+
+func (d *DingTransfer) stop() error { return nil }
 
 // nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
 // Trans transfer data to dingding.
@@ -94,8 +97,9 @@ func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 }
 
 // NewDingTransfer new dingding transfer.
-func NewDingTransfer(url string) *DingTransfer {
+func NewDingTransfer(id, url string) *DingTransfer {
 	return &DingTransfer{
+		IDS:          IDS{id: id},
 		url:          url,
 		transferring: 0,
 	}

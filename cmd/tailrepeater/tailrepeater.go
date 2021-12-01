@@ -34,6 +34,7 @@ func main() {
 				},
 				Transfers: []*logtail.TransferConfig{
 					{
+						ID:   "console",
 						Type: "console",
 					},
 					{

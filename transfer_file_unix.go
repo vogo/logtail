@@ -26,14 +26,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/vogo/gstop"
 	"github.com/vogo/logger"
 	"github.com/vogo/vogo/vio/vioutil"
 )
 
 type FileTransfer struct {
-	router       *Router
+	IDS
+	stopper      *gstop.Stopper
 	dir          string
-	prefix       string
 	name         string
 	buffer       chan [][]byte
 	writeSize    int
@@ -42,9 +43,11 @@ type FileTransfer struct {
 }
 
 // NewFileTransfer new file transfer.
-func NewFileTransfer(dir string) *FileTransfer {
+func NewFileTransfer(id, dir string) *FileTransfer {
 	return &FileTransfer{
-		dir: dir,
+		IDS:     IDS{id: id},
+		stopper: gstop.New(),
+		dir:     dir,
 	}
 }
 
@@ -58,7 +61,7 @@ func (ft *FileTransfer) resetFile() error {
 		}
 	}
 
-	ft.name = filepath.Join(ft.dir, ft.prefix+"-"+time.Now().Format(`20060102150405`)+".log")
+	ft.name = filepath.Join(ft.dir, ft.name+"-"+time.Now().Format(`20060102150405`)+".log")
 	ft.file, err = os.Create(ft.name)
 
 	if err != nil {
@@ -106,10 +109,7 @@ func (ft *FileTransfer) submitFile() error {
 	return nil
 }
 
-func (ft *FileTransfer) start(r *Router) error {
-	ft.prefix = r.name
-	ft.router = r
-
+func (ft *FileTransfer) start() error {
 	if err := ft.resetFile(); err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (ft *FileTransfer) start(r *Router) error {
 
 		for {
 			select {
-			case <-ft.router.stopper.C:
+			case <-ft.stopper.C:
 				return
 			case data := <-ft.buffer:
 				ft.write(data)
@@ -141,11 +141,17 @@ func (ft *FileTransfer) Trans(serverID string, data ...[]byte) error {
 	}()
 
 	select {
-	case <-ft.router.stopper.C:
+	case <-ft.stopper.C:
 		return nil
 	case ft.buffer <- data:
 	default:
 	}
+
+	return nil
+}
+
+func (ft *FileTransfer) stop() error {
+	ft.stopper.Stop()
 
 	return nil
 }

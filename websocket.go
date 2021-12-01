@@ -30,10 +30,13 @@ import (
 const WebsocketHeartbeatReadTimeout = 15 * time.Second
 
 type WebsocketTransfer struct {
+	IDS
 	conn *websocket.Conn
 }
 
-func (ww *WebsocketTransfer) start(*Router) error { return nil }
+func (ww *WebsocketTransfer) start() error { return nil }
+
+func (ww *WebsocketTransfer) stop() error { return nil }
 
 func (ww *WebsocketTransfer) Trans(_ string, data ...[]byte) (err error) {
 	for _, d := range data {

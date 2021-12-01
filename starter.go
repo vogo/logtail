@@ -18,6 +18,8 @@
 package logtail
 
 import (
+	"fmt"
+
 	"github.com/vogo/logger"
 )
 
@@ -25,9 +27,65 @@ import (
 func StartLogtail(config *Config) {
 	defaultFormat = config.DefaultFormat
 
+	startTransfers(config.transferMap)
+
 	for _, serverConfig := range config.Servers {
 		startServer(config, serverConfig)
 	}
+}
+
+func startTransfers(transferMap map[string]*TransferConfig) {
+	for _, c := range transferMap {
+		if _, err := startTransfer(c); err != nil {
+			panic(err)
+		}
+	}
+}
+
+// nolint:ireturn //ignore return interface
+func startTransfer(c *TransferConfig) (Transfer, error) {
+	if t, ok := transferDB[c.ID]; ok {
+		return t, nil
+	}
+
+	if c.isRef() {
+		return nil, fmt.Errorf("%w: %s", ErrTransferNotExist, c.ID)
+	}
+
+	t := buildTransfer(c)
+
+	if err := t.start(); err != nil {
+		logger.Infof("transfer [%s]%s start error: %v", c.Type, t.ID(), err)
+
+		return nil, err
+	}
+
+	logger.Infof("transfer [%s]%s started", c.Type, t.ID())
+
+	existTransfer, exist := transferDB[c.ID]
+
+	// save or replace transfer
+	transferDB[c.ID] = t
+
+	if exist {
+		for _, server := range serverDB {
+			for _, router := range server.routers {
+				router.lock.Lock()
+				for i := range router.transfers {
+					if router.transfers[i].ID() == t.ID() {
+						// replace transfer
+						router.transfers[i] = t
+					}
+				}
+				router.lock.Unlock()
+			}
+		}
+
+		// stop exists transfer
+		_ = existTransfer.stop()
+	}
+
+	return t, nil
 }
 
 // StopLogtail stop servers.
@@ -45,65 +103,4 @@ func startServer(c *Config, config *ServerConfig) {
 
 	server := NewServer(c, config)
 	server.Start()
-}
-
-func buildRouter(s *Server, config *RouterConfig) *Router {
-	return NewRouter(s, buildMatchers(config.Matchers), buildTransfers(config.Transfers))
-}
-
-func buildMatchers(matcherConfigs []*MatcherConfig) []Matcher {
-	var matchers []Matcher
-
-	for _, matchConfig := range matcherConfigs {
-		m := buildMatcher(matchConfig)
-		if len(m) > 0 {
-			matchers = append(matchers, m...)
-		}
-	}
-
-	return matchers
-}
-
-func buildTransfers(transferConfigs []*TransferConfig) []Transfer {
-	transfers := make([]Transfer, len(transferConfigs))
-
-	for i, transferConfig := range transferConfigs {
-		transfers[i] = buildTransfer(transferConfig)
-	}
-
-	return transfers
-}
-
-// nolint:ireturn // return diff transfer implementation.
-func buildTransfer(config *TransferConfig) Transfer {
-	switch config.Type {
-	case TransferTypeWebhook:
-		return NewWebhookTransfer(config.URL)
-	case TransferTypeDing:
-		return NewDingTransfer(config.URL)
-	case TransferTypeLark:
-		return NewLarkTransfer(config.URL)
-	case TransferTypeFile:
-		return NewFileTransfer(config.Dir)
-	case TransferTypeConsole:
-		return &ConsoleTransfer{}
-	default:
-		return &NullTransfer{}
-	}
-}
-
-func buildMatcher(config *MatcherConfig) []Matcher {
-	matchers := make([]Matcher, len(config.Contains)+len(config.NotContains))
-
-	for i, contains := range config.Contains {
-		matchers[i] = NewContainsMatcher(contains, true)
-	}
-
-	containsLen := len(config.Contains)
-
-	for i, contains := range config.NotContains {
-		matchers[i+containsLen] = NewContainsMatcher(contains, false)
-	}
-
-	return matchers
 }

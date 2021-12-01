@@ -32,6 +32,7 @@ const TransferTypeWebhook = "webhook"
 var ErrHTTPStatusNonOK = errors.New("http status non ok")
 
 type WebhookTransfer struct {
+	IDS
 	url string
 }
 
@@ -39,11 +40,16 @@ func (d *WebhookTransfer) Trans(_ string, data ...[]byte) error {
 	return httpTrans(d.url, data...)
 }
 
-func (d *WebhookTransfer) start(*Router) error { return nil }
+func (d *WebhookTransfer) start() error { return nil }
+
+func (d *WebhookTransfer) stop() error { return nil }
 
 // NewWebhookTransfer new webhook transfer.
-func NewWebhookTransfer(url string) *WebhookTransfer {
-	return &WebhookTransfer{url: url}
+func NewWebhookTransfer(id, url string) *WebhookTransfer {
+	return &WebhookTransfer{
+		IDS: IDS{id: id},
+		url: url,
+	}
 }
 
 func httpTrans(url string, data ...[]byte) error {

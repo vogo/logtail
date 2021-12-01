@@ -152,7 +152,7 @@ func (s *Server) Fire(data []byte) error {
 	return nil
 }
 
-// Start start server.
+// Start the server.
 // First, start all routers.
 // Then, call the start func.
 func (s *Server) Start() {
@@ -163,7 +163,7 @@ func (s *Server) Start() {
 	s.workerStarter()
 }
 
-// Stop stop server.
+// Stop the server.
 func (s *Server) Stop() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()

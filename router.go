@@ -57,12 +57,6 @@ func (r *Router) SetMatchers(matchers []Matcher) {
 }
 
 func (r *Router) Start() error {
-	for _, t := range r.transfers {
-		if err := t.start(r); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 

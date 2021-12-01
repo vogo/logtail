@@ -34,6 +34,9 @@ var (
 	serverDBLock = sync.Mutex{}
 
 	// nolint:gochecknoglobals // ignore this
+	transferDB = make(map[string]Transfer, defaultMapSize)
+
+	// nolint:gochecknoglobals // ignore this
 	serverDB = make(map[string]*Server, defaultMapSize)
 
 	// nolint:gochecknoglobals // ignore this

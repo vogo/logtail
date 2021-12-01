@@ -100,6 +100,7 @@ func TestServer(t *testing.T) {
 				},
 				Transfers: []*logtail.TransferConfig{
 					{
+						ID:   "null",
 						Type: "null",
 					},
 				},
@@ -155,6 +156,7 @@ func TestCommands(t *testing.T) {
 				},
 				Transfers: []*logtail.TransferConfig{
 					{
+						ID:   "console",
 						Type: "console",
 					},
 				},
