@@ -58,7 +58,7 @@ func startWebsocketTransfer(response http.ResponseWriter, request *http.Request,
 	}
 	defer c.Close()
 
-	server, ok := serverDB[serverID]
+	server, ok := defaultRunner.Servers[serverID]
 	if !ok {
 		logger.Warnf("server id not found: %s", serverID)
 

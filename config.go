@@ -21,11 +21,9 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
-	"fmt"
 	"io/ioutil"
 
 	"github.com/vogo/fwatch"
-	"github.com/vogo/logger"
 )
 
 const DefaultServerPort = 54321
@@ -46,18 +44,40 @@ var (
 )
 
 type Config struct {
-	Port           int             `json:"port"`
-	LogLevel       string          `json:"log_level"`
-	DefaultFormat  *Format         `json:"default_format"`
-	Servers        []*ServerConfig `json:"servers"`
-	DefaultRouters []*RouterConfig `json:"default_routers"`
-	GlobalRouters  []*RouterConfig `json:"global_routers"`
+	Port           int               `json:"port"`
+	LogLevel       string            `json:"log_level"`
+	DefaultFormat  *Format           `json:"default_format"`
+	Transfers      []*TransferConfig `json:"transfers"`
+	Routers        []*RouterConfig   `json:"routers"`
+	Servers        []*ServerConfig   `json:"servers"`
+	DefaultRouters []string          `json:"default_routers"`
+	GlobalRouters  []string          `json:"global_routers"`
 
 	// cache all router config for reference
 	routerMap map[string]*RouterConfig
 
 	// cache all transfer config for reference
 	transferMap map[string]*TransferConfig
+}
+
+func (c *Config) AppendDefaultRouters(configs []*RouterConfig) []*RouterConfig {
+	for _, id := range c.DefaultRouters {
+		if r, ok := c.routerMap[id]; ok {
+			configs = append(configs, r)
+		}
+	}
+
+	return configs
+}
+
+func (c *Config) AppendGlobalRouters(configs []*RouterConfig) []*RouterConfig {
+	for _, id := range c.GlobalRouters {
+		if r, ok := c.routerMap[id]; ok {
+			configs = append(configs, r)
+		}
+	}
+
+	return configs
 }
 
 type ServerConfig struct {
@@ -101,13 +121,9 @@ type FileConfig struct {
 }
 
 type RouterConfig struct {
-	ID        string            `json:"id"`
-	Matchers  []*MatcherConfig  `json:"matchers"`
-	Transfers []*TransferConfig `json:"transfers"`
-}
-
-func (rc *RouterConfig) isRef() bool {
-	return len(rc.Matchers) == 0 && len(rc.Transfers) == 0
+	ID        string           `json:"id"`
+	Matchers  []*MatcherConfig `json:"matchers"`
+	Transfers []string         `json:"transfers"`
 }
 
 type MatcherConfig struct {
@@ -122,10 +138,6 @@ type TransferConfig struct {
 	Dir  string `json:"dir"`
 }
 
-func (tc *TransferConfig) isRef() bool {
-	return len(tc.ID) > 0 && tc.Type == ""
-}
-
 func parseConfig() (cfg *Config, parseErr error) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -134,8 +146,6 @@ func parseConfig() (cfg *Config, parseErr error) {
 	}()
 
 	var (
-		err           error
-		config        *Config
 		file          = flag.String("file", "", "config file")
 		port          = flag.Int("port", DefaultServerPort, "tail port")
 		command       = flag.String("cmd", "", "tail command")
@@ -146,65 +156,42 @@ func parseConfig() (cfg *Config, parseErr error) {
 
 	flag.Parse()
 
-	config, err = readConfig(*file, *port, *command, *matchContains, *dingURL, *webhookURL)
-	if err != nil {
-		return nil, err
-	}
+	if *file != "" {
+		config := &Config{}
+		data, fileErr := ioutil.ReadFile(*file)
 
-	if config.Port == 0 {
-		config.Port = DefaultServerPort
-	}
-
-	if len(config.Servers) == 0 {
-		return nil, ErrNoServerConfig
-	}
-
-	if routerErr := validateRouterConfigs(config, config.DefaultRouters); routerErr != nil {
-		return nil, routerErr
-	}
-
-	if globalRouterErr := validateRouterConfigs(config, config.GlobalRouters); globalRouterErr != nil {
-		return nil, globalRouterErr
-	}
-
-	for _, server := range config.Servers {
-		if serverErr := validateServerConfig(config, server); serverErr != nil {
-			return nil, serverErr
-		}
-	}
-
-	return config, nil
-}
-
-func readConfig(file string, port int, command, matchContains, dingURL, webhookURL string) (*Config, error) {
-	config := &Config{}
-
-	if file != "" {
-		data, err := ioutil.ReadFile(file)
-		if err != nil {
-			return nil, err
+		if fileErr != nil {
+			return nil, fileErr
 		}
 
-		if err := json.Unmarshal(data, config); err != nil {
-			return nil, err
+		if jsonErr := json.Unmarshal(data, config); jsonErr != nil {
+			return nil, jsonErr
 		}
 
 		return config, nil
 	}
 
+	return buildCommandLineConfig(*port, *command, *matchContains, *dingURL, *webhookURL), nil
+}
+
+func buildCommandLineConfig(port int, command, matchContains, dingURL, webhookURL string) *Config {
+	config := &Config{}
+
 	config.Port = port
 	serverConfig := &ServerConfig{
-		ID: DefaultServerID,
+		ID: DefaultID,
 	}
 
 	config.Servers = append(config.Servers, serverConfig)
 	serverConfig.Command = command
 
 	if dingURL == "" && webhookURL == "" && matchContains == "" {
-		return config, nil
+		return config
 	}
 
-	routerConfig := &RouterConfig{}
+	routerConfig := &RouterConfig{
+		Transfers: []string{DefaultID},
+	}
 	serverConfig.Routers = append(serverConfig.Routers, routerConfig)
 
 	if matchContains != "" {
@@ -214,148 +201,18 @@ func readConfig(file string, port int, command, matchContains, dingURL, webhookU
 	}
 
 	if dingURL != "" {
-		routerConfig.Transfers = append(routerConfig.Transfers, &TransferConfig{
+		config.Transfers = []*TransferConfig{{
+			ID:   DefaultID,
 			Type: TransferTypeDing,
 			URL:  dingURL,
-		})
-	}
-
-	if webhookURL != "" {
-		routerConfig.Transfers = append(routerConfig.Transfers, &TransferConfig{
+		}}
+	} else if webhookURL != "" {
+		config.Transfers = []*TransferConfig{{
+			ID:   DefaultID,
 			Type: TransferTypeWebhook,
 			URL:  webhookURL,
-		})
+		}}
 	}
 
-	return config, nil
-}
-
-func validateServerConfig(config *Config, server *ServerConfig) error {
-	if server.ID == "" {
-		return ErrServerIDNil
-	}
-
-	if server.Command == "" && server.Commands == "" && server.CommandGen == "" && server.File == nil {
-		return ErrNoTailingConfig
-	}
-
-	if err := validateRouterConfigs(config, server.Routers); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func validateRouterConfigs(config *Config, routers []*RouterConfig) error {
-	for _, router := range routers {
-		if err := validateRouterConfig(config, router); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func validateRouterConfig(config *Config, router *RouterConfig) error {
-	if router.ID == "" {
-		return ErrRouterIDNil
-	}
-
-	if router.isRef() {
-		if _, ok := config.routerMap[router.ID]; !ok {
-			return fmt.Errorf("%w: %s", ErrRouterNotExist, router.ID)
-		}
-
-		return nil
-	} else if _, ok := config.routerMap[router.ID]; ok {
-		return fmt.Errorf("%w: %s %s", ErrDuplicatedConfig, "router", router.ID)
-	}
-
-	if err := validateMatchers(router.Matchers); err != nil {
-		return err
-	}
-
-	if err := validateTransfers(config, router.Transfers); err != nil {
-		return err
-	}
-
-	config.routerMap[router.ID] = router
-
-	return nil
-}
-
-func validateMatchers(matchers []*MatcherConfig) error {
-	if len(matchers) > 0 {
-		for _, filter := range matchers {
-			if err := validateMatchConfig(filter); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func validateTransfers(config *Config, transfers []*TransferConfig) error {
-	if len(transfers) > 0 {
-		for _, transfer := range transfers {
-			if err := validateTransferConfig(config, transfer); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func validateTransferConfig(config *Config, transfer *TransferConfig) error {
-	if transfer.ID == "" {
-		return ErrTransferIDNil
-	}
-
-	if transfer.isRef() {
-		if _, ok := config.transferMap[transfer.ID]; !ok {
-			return fmt.Errorf("%w: %s", ErrRouterNotExist, transfer.ID)
-		}
-
-		return nil
-	} else if _, ok := config.transferMap[transfer.ID]; ok {
-		return fmt.Errorf("%w: %s %s", ErrDuplicatedConfig, "transfer", transfer.ID)
-	}
-
-	if transfer.Type == "" {
-		return ErrTransTypeNil
-	}
-
-	if transfer.Type != TransferTypeWebhook &&
-		transfer.Type != TransferTypeDing &&
-		transfer.Type != TransferTypeLark &&
-		transfer.Type != TransferTypeConsole &&
-		transfer.Type != TransferTypeFile {
-		return fmt.Errorf("%w: %s", ErrTransTypeInvalid, transfer.Type)
-	}
-
-	if transfer.Type == TransferTypeWebhook || transfer.Type == TransferTypeDing || transfer.Type == TransferTypeLark {
-		if transfer.URL == "" {
-			return ErrTransURLNil
-		}
-	}
-
-	if transfer.Type == TransferTypeFile {
-		if transfer.Dir == "" {
-			return ErrTransDirNil
-		}
-	}
-
-	config.transferMap[transfer.ID] = transfer
-
-	return nil
-}
-
-func validateMatchConfig(config *MatcherConfig) error {
-	if len(config.Contains) == 0 && len(config.NotContains) == 0 {
-		logger.Debugf("match contains is nil")
-	}
-
-	return nil
+	return config
 }

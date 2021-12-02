@@ -33,22 +33,21 @@ import (
 
 // Start parse command config, and start logtail servers with http listener.
 func Start() {
-	config, err := parseConfig()
-	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err)
+	config, parseErr := parseConfig()
+	if parseErr != nil {
+		_, _ = fmt.Fprintln(os.Stderr, parseErr)
 
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
-	configLogLevel(config.LogLevel)
-
 	vos.LoadUserEnv()
 
-	// stop exist servers first
-	StopLogtail()
-
-	go StartLogtail(config)
+	go func() {
+		if startErr := StartLogtail(config); startErr != nil {
+			panic(startErr)
+		}
+	}()
 
 	go func() {
 		if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), &httpHandler{}); err != nil {
@@ -78,7 +77,8 @@ func handleSignal() {
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	sig := <-signalChan
 	logger.Infof("signal: %v", sig)
-	StopLogtail()
+
+	_ = StopLogtail()
 
 	// wait all goroutines stopping
 	<-time.After(time.Second)

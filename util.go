@@ -55,7 +55,7 @@ func indexToLineStart(format *Format, data []byte) []byte {
 
 func isFollowingLine(format *Format, bytes []byte) bool {
 	if format == nil {
-		format = defaultFormat
+		format = defaultRunner.Config.DefaultFormat
 	}
 
 	if format != nil {

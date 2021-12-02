@@ -19,10 +19,12 @@ package logtail
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
+
+	"github.com/vogo/logger"
 )
 
 type httpHandler struct{}
@@ -33,6 +35,9 @@ const (
 
 	// URITailPrefix uri tail prefix.
 	URITailPrefix = "/tail"
+
+	// URIManagePrefix uri manage prefix.
+	URIManagePrefix = "/manage/"
 )
 
 // ServeHTTP serve http
@@ -45,41 +50,20 @@ const (
 func (l *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	uri := request.RequestURI
 
-	if uri == "" || uri == "/" || uri == URIIndexPrefix {
-		responseServerList(response)
-
-		return
-	}
-
 	if strings.HasPrefix(uri, URIIndexPrefix+"/") {
-		serverID := uri[len(URIIndexPrefix)+1:]
-		_, ok := serverDB[serverID]
-
-		if !ok {
-			response.WriteHeader(http.StatusNotFound)
-
-			return
-		}
-
-		routeToServerIndex(response, serverID)
+		routeToIndexPage(response, uri)
 
 		return
 	}
 
-	tailServerID := ""
-	if uri == URITailPrefix {
-		tailServerID = DefaultServerID
-	} else if strings.HasPrefix(uri, URITailPrefix+"/") {
-		tailServerID = uri[len(URITailPrefix)+1:]
-		if _, ok := serverDB[tailServerID]; !ok {
-			response.WriteHeader(http.StatusNotFound)
+	if strings.HasPrefix(uri, URITailPrefix) {
+		routeToTail(request, response, uri)
 
-			return
-		}
+		return
 	}
 
-	if tailServerID != "" {
-		startWebsocketTransfer(response, request, tailServerID)
+	if strings.HasPrefix(uri, URIManagePrefix) {
+		routeToManage(request, response, uri[len(URIManagePrefix)+1:])
 
 		return
 	}
@@ -87,16 +71,67 @@ func (l *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 	responseServerList(response)
 }
 
+func routeToManage(_ *http.Request, response http.ResponseWriter, op string) {
+	switch op {
+	case "transfer/list":
+		listTransfers(response)
+	case "transfer/add":
+	case "transfer/start":
+	case "transfer/stop":
+		logger.Info(op)
+	}
+}
+
+func listTransfers(response http.ResponseWriter) {
+	response.Header().Add("content-type", "application/json")
+
+	b, _ := json.Marshal(defaultRunner.Config.Transfers)
+
+	_, _ = response.Write(b)
+}
+
+func routeToTail(request *http.Request, response http.ResponseWriter, uri string) {
+	tailServerID := ""
+	if uri == URITailPrefix {
+		tailServerID = DefaultID
+	} else if strings.HasPrefix(uri, URITailPrefix+"/") {
+		tailServerID = uri[len(URITailPrefix)+1:]
+		if _, ok := defaultRunner.Servers[tailServerID]; !ok {
+			tailServerID = ""
+		}
+	}
+
+	if tailServerID == "" {
+		response.WriteHeader(http.StatusNotFound)
+
+		return
+	}
+
+	startWebsocketTransfer(response, request, tailServerID)
+}
+
 func responseServerList(response http.ResponseWriter) {
 	buf := bytes.NewBuffer(nil)
 
-	for k := range serverDB {
-		buf.WriteString(fmt.Sprintf("<a href=\"/index/%s\" target=_blank>%s</a> ", k, k))
+	buf.WriteString(`<ul>`)
+
+	for k := range defaultRunner.Servers {
+		buf.WriteString(fmt.Sprintf(`<li><a href="/index/%s" target=_blank>%s</a></li>`, k, k))
 	}
 
+	buf.WriteString(`</ul>`)
 	_, _ = response.Write(buf.Bytes())
 }
 
-func routeToServerIndex(response io.Writer, _ string) {
+func routeToIndexPage(response http.ResponseWriter, uri string) {
+	serverID := uri[len(URIIndexPrefix)+1:]
+	_, ok := defaultRunner.Servers[serverID]
+
+	if !ok {
+		response.WriteHeader(http.StatusNotFound)
+
+		return
+	}
+
 	_, _ = response.Write(indexHTMLContent)
 }

@@ -31,8 +31,6 @@ import (
 )
 
 const (
-	// DefaultServerID default server id.
-	DefaultServerID = "default"
 
 	// CommandFailRetryInterval command fail retry interval.
 	CommandFailRetryInterval = 10 * time.Second
@@ -43,11 +41,12 @@ type Server struct {
 	lock          sync.Mutex
 	stopper       *gstop.Stopper
 	format        *Format
+	runner        *Runner
 	workerError   chan error
-	mergingWorker *worker
-	workers       map[string]*worker
 	workerStarter func()
 	routersCount  int64
+	mergingWorker *worker
+	workers       map[string]*worker
 	routers       map[int64]*Router
 }
 
@@ -56,10 +55,10 @@ func (s *Server) addWorker(w *worker) {
 }
 
 // NewServer start a new server.
-func NewServer(config *Config, serverConfig *ServerConfig) *Server {
+func NewServer(runner *Runner, serverConfig *ServerConfig) *Server {
 	format := serverConfig.Format
 	if format == nil {
-		format = config.DefaultFormat
+		format = runner.Config.DefaultFormat
 	}
 
 	server := &Server{
@@ -67,19 +66,20 @@ func NewServer(config *Config, serverConfig *ServerConfig) *Server {
 		lock:    sync.Mutex{},
 		stopper: gstop.New(),
 		format:  format,
+		runner:  runner,
 		routers: make(map[int64]*Router, defaultMapSize),
 		workers: make(map[string]*worker, defaultMapSize),
 	}
 
-	if existsServer, ok := serverDB[server.id]; ok {
+	if existsServer, ok := runner.Servers[server.id]; ok {
 		_ = existsServer.Stop()
 
-		delete(serverDB, server.id)
+		delete(runner.Servers, server.id)
 	}
 
-	serverDB[server.id] = server
+	runner.Servers[server.id] = server
 
-	server.initial(config, serverConfig)
+	server.initial(runner.Config, serverConfig)
 
 	return server
 }
@@ -89,10 +89,10 @@ func (s *Server) initial(config *Config, serverConfig *ServerConfig) {
 	if len(serverConfig.Routers) > 0 {
 		routerConfigs = append(routerConfigs, serverConfig.Routers...)
 	} else {
-		routerConfigs = append(routerConfigs, config.DefaultRouters...)
+		routerConfigs = config.AppendDefaultRouters(routerConfigs)
 	}
 
-	routerConfigs = append(routerConfigs, config.GlobalRouters...)
+	routerConfigs = config.AppendGlobalRouters(routerConfigs)
 
 	// not add the worker into the workers list of server if no router configs.
 	routerCount := len(routerConfigs)
@@ -126,8 +126,10 @@ func (s *Server) initial(config *Config, serverConfig *ServerConfig) {
 			for _, cmd := range commands {
 				s.addWorker(startWorker(s, cmd, false))
 			}
-		default:
+		case serverConfig.Command != "":
 			s.addWorker(startWorker(s, serverConfig.Command, false))
+		default:
+			logger.Warnf("no external stream for server %s, call server.Fire([]byte) to send data", s.id)
 		}
 	}
 }

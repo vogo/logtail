@@ -17,90 +17,31 @@
 
 package logtail
 
-import (
-	"fmt"
-
-	"github.com/vogo/logger"
-)
+// nolint:gochecknoglobals // ignore this
+var defaultRunner *Runner
 
 // StartLogtail start config servers.
-func StartLogtail(config *Config) {
-	defaultFormat = config.DefaultFormat
-
-	startTransfers(config.transferMap)
-
-	for _, serverConfig := range config.Servers {
-		startServer(config, serverConfig)
+func StartLogtail(config *Config) error {
+	runner, err := NewRunner(config)
+	if err != nil {
+		return err
 	}
+
+	if defaultRunner != nil {
+		defaultRunner.Stop()
+	}
+
+	defaultRunner = runner
+
+	return defaultRunner.Start()
 }
 
-func startTransfers(transferMap map[string]*TransferConfig) {
-	for _, c := range transferMap {
-		if _, err := startTransfer(c); err != nil {
-			panic(err)
-		}
-	}
-}
-
-// nolint:ireturn //ignore return interface
-func startTransfer(c *TransferConfig) (Transfer, error) {
-	if t, ok := transferDB[c.ID]; ok {
-		return t, nil
+// StopLogtail stop logtail.
+func StopLogtail() error {
+	if defaultRunner != nil {
+		defaultRunner.Stop()
+		defaultRunner = nil
 	}
 
-	if c.isRef() {
-		return nil, fmt.Errorf("%w: %s", ErrTransferNotExist, c.ID)
-	}
-
-	t := buildTransfer(c)
-
-	if err := t.start(); err != nil {
-		logger.Infof("transfer [%s]%s start error: %v", c.Type, t.ID(), err)
-
-		return nil, err
-	}
-
-	logger.Infof("transfer [%s]%s started", c.Type, t.ID())
-
-	existTransfer, exist := transferDB[c.ID]
-
-	// save or replace transfer
-	transferDB[c.ID] = t
-
-	if exist {
-		for _, server := range serverDB {
-			for _, router := range server.routers {
-				router.lock.Lock()
-				for i := range router.transfers {
-					if router.transfers[i].ID() == t.ID() {
-						// replace transfer
-						router.transfers[i] = t
-					}
-				}
-				router.lock.Unlock()
-			}
-		}
-
-		// stop exists transfer
-		_ = existTransfer.stop()
-	}
-
-	return t, nil
-}
-
-// StopLogtail stop servers.
-func StopLogtail() {
-	for _, s := range serverDB {
-		if err := s.Stop(); err != nil {
-			logger.Errorf("server %s close error: %+v", s.id, err)
-		}
-	}
-}
-
-func startServer(c *Config, config *ServerConfig) {
-	serverDBLock.Lock()
-	defer serverDBLock.Unlock()
-
-	server := NewServer(c, config)
-	server.Start()
+	return nil
 }

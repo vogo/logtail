@@ -1,0 +1,133 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package logtail
+
+import (
+	"sync"
+
+	"github.com/vogo/logger"
+)
+
+// Runner the logtail runner.
+type Runner struct {
+	lock      sync.Mutex
+	Config    *Config
+	Servers   map[string]*Server
+	Transfers map[string]Transfer
+}
+
+// NewRunner new logtail runner.
+func NewRunner(config *Config) (*Runner, error) {
+	if err := initialCheckConfig(config); err != nil {
+		return nil, err
+	}
+
+	runner := &Runner{
+		lock:      sync.Mutex{},
+		Config:    config,
+		Servers:   make(map[string]*Server, defaultMapSize),
+		Transfers: make(map[string]Transfer, defaultMapSize),
+	}
+
+	return runner, nil
+}
+
+func (r *Runner) Start() error {
+	configLogLevel(r.Config.LogLevel)
+
+	if err := r.startTransfers(); err != nil {
+		return err
+	}
+
+	for _, serverConfig := range r.Config.Servers {
+		r.startServer(serverConfig)
+	}
+
+	return nil
+}
+
+func (r *Runner) startTransfers() error {
+	for _, c := range r.Config.transferMap {
+		if _, err := r.startTransfer(c); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// nolint:ireturn //ignore this.
+func (r *Runner) startTransfer(c *TransferConfig) (Transfer, error) {
+	t := buildTransfer(c)
+
+	if err := t.start(); err != nil {
+		logger.Infof("transfer [%s]%s start error: %v", c.Type, t.ID(), err)
+
+		return nil, err
+	}
+
+	logger.Infof("transfer [%s]%s started", c.Type, t.ID())
+
+	existTransfer, exist := r.Transfers[c.ID]
+
+	// save or replace transfer
+	r.Transfers[c.ID] = t
+
+	if exist {
+		for _, server := range r.Servers {
+			for _, router := range server.routers {
+				router.lock.Lock()
+				for i := range router.transfers {
+					if router.transfers[i].ID() == t.ID() {
+						// replace transfer
+						router.transfers[i] = t
+					}
+				}
+				router.lock.Unlock()
+			}
+		}
+
+		// stop exists transfer
+		_ = existTransfer.stop()
+	}
+
+	return t, nil
+}
+
+// Stop the runner.
+func (r *Runner) Stop() {
+	for _, s := range r.Servers {
+		if err := s.Stop(); err != nil {
+			logger.Errorf("server %s close error: %+v", s.id, err)
+		}
+	}
+
+	for _, t := range r.Transfers {
+		if err := t.stop(); err != nil {
+			logger.Errorf("transfer %s close error: %+v", t.ID(), err)
+		}
+	}
+}
+
+func (r *Runner) startServer(config *ServerConfig) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	server := NewServer(r, config)
+	server.Start()
+}

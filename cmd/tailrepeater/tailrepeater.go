@@ -25,25 +25,29 @@ import (
 func main() {
 	config := &logtail.Config{
 		DefaultFormat: &logtail.Format{Prefix: "!!!!-!!-!!"},
-		DefaultRouters: []*logtail.RouterConfig{
+		Transfers: []*logtail.TransferConfig{
 			{
+				ID:   "console",
+				Type: "console",
+			},
+			{
+				ID:   "ding",
+				Type: "ding",
+				URL:  "http://localhost:55321",
+			},
+		},
+		Routers: []*logtail.RouterConfig{
+			{
+				ID: "error-console",
 				Matchers: []*logtail.MatcherConfig{
 					{
 						Contains: []string{"ERROR"},
 					},
 				},
-				Transfers: []*logtail.TransferConfig{
-					{
-						ID:   "console",
-						Type: "console",
-					},
-					{
-						Type: "ding",
-						URL:  "http://localhost:55321",
-					},
-				},
+				Transfers: []string{"console", "ding"},
 			},
 		},
+		DefaultRouters: []string{"error-console"},
 		Servers: []*logtail.ServerConfig{
 			{
 				ID: "server-test",
@@ -51,8 +55,16 @@ func main() {
 		},
 	}
 
-	server := logtail.NewServer(config, config.Servers[0])
-	server.Start()
+	runner, err := logtail.NewRunner(config)
+	if err != nil {
+		panic(err)
+	}
+
+	if err = runner.Start(); err != nil {
+		panic(err)
+	}
+
+	server := runner.Servers[config.Servers[0].ID]
 
 	c := make(chan []byte)
 	go repeater.Repeat("/Users/gelnyang/temp/logtail/test.log", c)

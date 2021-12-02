@@ -20,7 +20,7 @@ package logtail
 import "github.com/vogo/logger"
 
 func buildRouter(s *Server, config *RouterConfig) *Router {
-	return NewRouter(s, buildMatchers(config.Matchers), buildTransfers(config.Transfers))
+	return NewRouter(s, buildMatchers(config.Matchers), buildTransfers(s.runner, config.Transfers))
 }
 
 func buildMatchers(matcherConfigs []*MatcherConfig) []Matcher {
@@ -36,13 +36,13 @@ func buildMatchers(matcherConfigs []*MatcherConfig) []Matcher {
 	return matchers
 }
 
-func buildTransfers(transferConfigs []*TransferConfig) []Transfer {
-	transfers := make([]Transfer, 0, len(transferConfigs))
+func buildTransfers(runner *Runner, ids []string) []Transfer {
+	transfers := make([]Transfer, 0, len(ids))
 
-	for _, transferConfig := range transferConfigs {
-		t, err := startTransfer(transferConfig)
-		if err != nil {
-			logger.Errorf("start transfer error: %v", err)
+	for _, id := range ids {
+		t, ok := runner.Transfers[id]
+		if !ok {
+			logger.Errorf("transfer not exists: %s", id)
 
 			continue
 		}
