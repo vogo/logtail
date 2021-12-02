@@ -15,19 +15,38 @@
  * limitations under the License.
  */
 
-package logtail
+package transfer
 
-type Transfer interface {
-	ID() string
-	Trans(serverID string, data ...[]byte) error
-	Start() error
-	Stop() error
+import (
+	"os"
+)
+
+const TypeConsole = "console"
+
+type ConsoleTransfer struct {
+	ID string
 }
 
-type IDS struct {
-	id string
+func (d *ConsoleTransfer) Name() string {
+	return d.ID
 }
 
-func (it *IDS) ID() string {
-	return it.id
+func (d *ConsoleTransfer) Trans(serverID string, data ...[]byte) error {
+	for _, b := range data {
+		_, _ = os.Stdout.Write(b)
+
+		n := len(b)
+		if n > 0 && b[n-1] != '\n' {
+			_, _ = os.Stdout.Write([]byte{'\n'})
+		}
+	}
+
+	return nil
+}
+
+func (d *ConsoleTransfer) Start() error { return nil }
+
+func (d *ConsoleTransfer) Stop() error { return nil }
+
+func (d *ConsoleTransfer) Visit(t Transfer) {
 }

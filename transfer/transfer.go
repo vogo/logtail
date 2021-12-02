@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 
-package logtail
+package transfer
 
-const TransferTypeFile = "file"
-
-// TransferFileSize 8 MB for each transfer file.
-const TransferFileSize = 1024 * 1024 * 8
+type Transfer interface {
+	Name() string
+	Trans(serverID string, data ...[]byte) error
+	Start() error
+	Stop() error
+}

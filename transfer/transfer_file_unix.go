@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-package logtail
+package transfer
 
 import (
 	"os"
@@ -31,6 +31,8 @@ import (
 	"github.com/vogo/vogo/vio/vioutil"
 )
 
+const DefaultChannelBufferSize = 16
+
 type FileTransfer struct {
 	id           string
 	stopper      *gstop.Stopper
@@ -42,7 +44,7 @@ type FileTransfer struct {
 	file         *os.File
 }
 
-func (ft *FileTransfer) ID() string {
+func (ft *FileTransfer) Name() string {
 	return ft.id
 }
 

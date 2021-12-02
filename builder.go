@@ -17,7 +17,10 @@
 
 package logtail
 
-import "github.com/vogo/logger"
+import (
+	"github.com/vogo/logger"
+	"github.com/vogo/logtail/transfer"
+)
 
 func buildRouter(s *Server, config *RouterConfig) *Router {
 	return NewRouter(s, buildMatchers(config.Matchers), buildTransfers(s.runner, config.Transfers))
@@ -36,8 +39,8 @@ func buildMatchers(matcherConfigs []*MatcherConfig) []Matcher {
 	return matchers
 }
 
-func buildTransfers(runner *Runner, ids []string) []Transfer {
-	transfers := make([]Transfer, 0, len(ids))
+func buildTransfers(runner *Runner, ids []string) []transfer.Transfer {
+	transfers := make([]transfer.Transfer, 0, len(ids))
 
 	for _, id := range ids {
 		t, ok := runner.Transfers[id]
@@ -54,23 +57,23 @@ func buildTransfers(runner *Runner, ids []string) []Transfer {
 }
 
 // nolint:ireturn // return diff transfer implementation.
-func buildTransfer(config *TransferConfig) Transfer {
+func buildTransfer(config *TransferConfig) transfer.Transfer {
 	switch config.Type {
-	case TransferTypeWebhook:
-		return NewWebhookTransfer(config.ID, config.URL)
-	case TransferTypeDing:
-		return NewDingTransfer(config.ID, config.URL)
-	case TransferTypeLark:
-		return NewLarkTransfer(config.ID, config.URL)
-	case TransferTypeFile:
-		return NewFileTransfer(config.ID, config.Dir)
-	case TransferTypeConsole:
-		return &ConsoleTransfer{
-			id: config.ID,
+	case transfer.TypeWebhook:
+		return transfer.NewWebhookTransfer(config.ID, config.URL)
+	case transfer.TypeDing:
+		return transfer.NewDingTransfer(config.ID, config.URL)
+	case transfer.TypeLark:
+		return transfer.NewLarkTransfer(config.ID, config.URL)
+	case transfer.TypeFile:
+		return transfer.NewFileTransfer(config.ID, config.Dir)
+	case transfer.TypeConsole:
+		return &transfer.ConsoleTransfer{
+			ID: config.ID,
 		}
 	default:
-		return &NullTransfer{
-			id: config.ID,
+		return &transfer.NullTransfer{
+			ID: config.ID,
 		}
 	}
 }

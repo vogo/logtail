@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package logtail
+package transfer
 
 import (
 	"sync/atomic"
@@ -31,8 +31,8 @@ type LarkTransfer struct {
 	transferring int32 // whether transferring message
 }
 
-// TransferTypeLark transfer type lark.
-const TransferTypeLark = "lark"
+// TypeLark transfer type lark.
+const TypeLark = "lark"
 
 const (
 	larkMessageDataFixedBytesNum = 4
@@ -48,7 +48,7 @@ var (
 	larkTextMessageDataSuffix = []byte(`"}}`)
 )
 
-func (d *LarkTransfer) ID() string {
+func (d *LarkTransfer) Name() string {
 	return d.id
 }
 func (d *LarkTransfer) Start() error { return nil }

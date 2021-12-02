@@ -15,38 +15,22 @@
  * limitations under the License.
  */
 
-package logtail
+package transfer
 
-import (
-	"os"
-)
+const TypeNull = "null"
 
-const TransferTypeConsole = "console"
-
-type ConsoleTransfer struct {
-	id string
+type NullTransfer struct {
+	ID string
 }
 
-func (d *ConsoleTransfer) ID() string {
-	return d.id
+func (d *NullTransfer) Name() string {
+	return d.ID
 }
 
-func (d *ConsoleTransfer) Trans(serverID string, data ...[]byte) error {
-	for _, b := range data {
-		_, _ = os.Stdout.Write(b)
-
-		n := len(b)
-		if n > 0 && b[n-1] != '\n' {
-			_, _ = os.Stdout.Write([]byte{'\n'})
-		}
-	}
-
+func (d *NullTransfer) Trans(serverID string, data ...[]byte) error {
 	return nil
 }
 
-func (d *ConsoleTransfer) Start() error { return nil }
+func (d *NullTransfer) Start() error { return nil }
 
-func (d *ConsoleTransfer) Stop() error { return nil }
-
-func (d *ConsoleTransfer) Visit(t Transfer) {
-}
+func (d *NullTransfer) Stop() error { return nil }

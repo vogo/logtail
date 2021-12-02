@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/vogo/logger"
+	"github.com/vogo/logtail/transfer"
 )
 
 // Runner the logtail runner.
@@ -28,7 +29,7 @@ type Runner struct {
 	lock      sync.Mutex
 	Config    *Config
 	Servers   map[string]*Server
-	Transfers map[string]Transfer
+	Transfers map[string]transfer.Transfer
 }
 
 // NewRunner new logtail runner.
@@ -41,7 +42,7 @@ func NewRunner(config *Config) (*Runner, error) {
 		lock:      sync.Mutex{},
 		Config:    config,
 		Servers:   make(map[string]*Server, defaultMapSize),
-		Transfers: make(map[string]Transfer, defaultMapSize),
+		Transfers: make(map[string]transfer.Transfer, defaultMapSize),
 	}
 
 	return runner, nil
@@ -72,16 +73,16 @@ func (r *Runner) startTransfers() error {
 }
 
 // nolint:ireturn //ignore this.
-func (r *Runner) startTransfer(c *TransferConfig) (Transfer, error) {
+func (r *Runner) startTransfer(c *TransferConfig) (transfer.Transfer, error) {
 	t := buildTransfer(c)
 
 	if err := t.Start(); err != nil {
-		logger.Infof("transfer [%s]%s Start error: %v", c.Type, t.ID(), err)
+		logger.Infof("transfer [%s]%s Start error: %v", c.Type, t.Name(), err)
 
 		return nil, err
 	}
 
-	logger.Infof("transfer [%s]%s started", c.Type, t.ID())
+	logger.Infof("transfer [%s]%s started", c.Type, t.Name())
 
 	existTransfer, exist := r.Transfers[c.ID]
 
@@ -93,7 +94,7 @@ func (r *Runner) startTransfer(c *TransferConfig) (Transfer, error) {
 			for _, router := range server.routers {
 				router.lock.Lock()
 				for i := range router.transfers {
-					if router.transfers[i].ID() == t.ID() {
+					if router.transfers[i].Name() == t.Name() {
 						// replace transfer
 						router.transfers[i] = t
 					}
@@ -119,7 +120,7 @@ func (r *Runner) Stop() {
 
 	for _, t := range r.Transfers {
 		if err := t.Stop(); err != nil {
-			logger.Errorf("transfer %s close error: %+v", t.ID(), err)
+			logger.Errorf("transfer %s close error: %+v", t.Name(), err)
 		}
 	}
 }

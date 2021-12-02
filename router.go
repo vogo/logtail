@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/vogo/gstop"
+	"github.com/vogo/logtail/transfer"
 )
 
 const DurationReadNextTimeout = time.Millisecond * 60
@@ -33,10 +34,10 @@ type Router struct {
 	lock      sync.Mutex
 	Stopper   *gstop.Stopper
 	matchers  []Matcher
-	transfers []Transfer
+	transfers []transfer.Transfer
 }
 
-func NewRouter(s *Server, matchers []Matcher, transfers []Transfer) *Router {
+func NewRouter(s *Server, matchers []Matcher, transfers []transfer.Transfer) *Router {
 	routerID := s.nextRouterID()
 	name := fmt.Sprintf("%s-%d", s.id, routerID)
 

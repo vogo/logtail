@@ -79,61 +79,6 @@ func ignoreLineEnd(bytes []byte, length, index *int) {
 	}
 }
 
-const DoubleSize = 2
-
-func EscapeLimitJSONBytes(b []byte, capacity int) []byte {
-	size := len(b)
-	num := capacity
-
-	if size < num {
-		num = size
-	}
-
-	t := make([]byte, num*DoubleSize)
-
-	index := 0
-	from := 0
-
-	for i := 0; i < num; i++ {
-		for ; i < num && b[i] != '\n' && b[i] != '\t' && b[i] != '"'; i++ {
-		}
-
-		copy(t[index:], b[from:i])
-		index += i - from
-		from = i + 1
-
-		if i < num {
-			fillJSONEscape(t, &index, b[i])
-		}
-	}
-
-	// from <= size means not reach the end of the bytes
-	if from <= size {
-		// remove uncompleted utf8 bytes
-		for i := index - 1; i >= 0 && t[i]&0xC0 == 0x80; i-- {
-			index = i - 1
-		}
-	}
-
-	return t[:index]
-}
-
-func fillJSONEscape(t []byte, index *int, b byte) {
-	t[*index] = '\\'
-	*index++
-
-	switch b {
-	case '\n':
-		t[*index] = 'n'
-	case '\t':
-		t[*index] = 't'
-	case '"':
-		t[*index] = '"'
-	}
-
-	*index++
-}
-
 //  flag `-F` is same as `--follow=name --retry`
 func followRetryTailCommand(f string) string {
 	return fmt.Sprintf("tail -F %s", f)

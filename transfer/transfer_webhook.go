@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package logtail
+package transfer
 
 import (
 	"errors"
@@ -27,7 +27,7 @@ import (
 	"github.com/vogo/vogo/vio"
 )
 
-const TransferTypeWebhook = "webhook"
+const TypeWebhook = "webhook"
 
 var ErrHTTPStatusNonOK = errors.New("http status non ok")
 
@@ -36,7 +36,7 @@ type WebhookTransfer struct {
 	url string
 }
 
-func (d *WebhookTransfer) ID() string {
+func (d *WebhookTransfer) Name() string {
 	return d.id
 }
 

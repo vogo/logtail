@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 
 	"github.com/vogo/fwatch"
+	"github.com/vogo/logtail/transfer"
 )
 
 const DefaultServerPort = 54321
@@ -203,13 +204,13 @@ func buildCommandLineConfig(port int, command, matchContains, dingURL, webhookUR
 	if dingURL != "" {
 		config.Transfers = []*TransferConfig{{
 			ID:   DefaultID,
-			Type: TransferTypeDing,
+			Type: transfer.TypeDing,
 			URL:  dingURL,
 		}}
 	} else if webhookURL != "" {
 		config.Transfers = []*TransferConfig{{
 			ID:   DefaultID,
-			Type: TransferTypeWebhook,
+			Type: transfer.TypeWebhook,
 			URL:  webhookURL,
 		}}
 	}

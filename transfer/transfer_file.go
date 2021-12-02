@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-package logtail
+package transfer
 
-func NewFileTransfer(dir string) Transfer {
-	panic("file transfer not supported for windows")
-}
+const TypeFile = "file"
+
+// TransferFileSize 8 MB for each transfer file.
+const TransferFileSize = 1024 * 1024 * 8

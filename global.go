@@ -21,6 +21,3 @@ const (
 	// DefaultID default id.
 	DefaultID = "default"
 )
-
-// nolint:gochecknoglobals // ignore this
-var messageTitleContentSplit = []byte("]: ")

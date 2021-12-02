@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/vogo/logger"
+	"github.com/vogo/logtail/transfer"
 )
 
 // check the config and fill some default values.
@@ -137,9 +138,9 @@ func validateMatchers(matchers []*MatcherConfig) error {
 	return nil
 }
 
-func validateTransferRef(config *Config, transfers []string) error {
-	if len(transfers) > 0 {
-		for _, id := range transfers {
+func validateTransferRef(config *Config, ids []string) error {
+	if len(ids) > 0 {
+		for _, id := range ids {
 			if _, ok := config.transferMap[id]; !ok {
 				return fmt.Errorf("%w: %s", ErrTransferNotExist, id)
 			}
@@ -149,31 +150,31 @@ func validateTransferRef(config *Config, transfers []string) error {
 	return nil
 }
 
-func checkTransferConfig(config *Config, transfer *TransferConfig) error {
-	if transfer.ID == "" {
+func checkTransferConfig(config *Config, transferConfig *TransferConfig) error {
+	if transferConfig.ID == "" {
 		return ErrTransferIDNil
 	}
 
-	if transfer.Type == "" {
+	if transferConfig.Type == "" {
 		return ErrTransTypeNil
 	}
 
-	switch transfer.Type {
-	case TransferTypeWebhook, TransferTypeDing, TransferTypeLark:
-		if transfer.URL == "" {
+	switch transferConfig.Type {
+	case transfer.TypeWebhook, transfer.TypeDing, transfer.TypeLark:
+		if transferConfig.URL == "" {
 			return ErrTransURLNil
 		}
-	case TransferTypeFile:
-		if transfer.Dir == "" {
+	case transfer.TypeFile:
+		if transferConfig.Dir == "" {
 			return ErrTransDirNil
 		}
-	case TransferTypeConsole, TransferTypeNull:
+	case transfer.TypeConsole, transfer.TypeNull:
 		break
 	default:
-		return fmt.Errorf("%w: %s", ErrTransTypeInvalid, transfer.Type)
+		return fmt.Errorf("%w: %s", ErrTransTypeInvalid, transferConfig.Type)
 	}
 
-	config.transferMap[transfer.ID] = transfer
+	config.transferMap[transferConfig.ID] = transferConfig
 
 	return nil
 }

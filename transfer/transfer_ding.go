@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package logtail
+package transfer
 
 import (
 	"sync/atomic"
@@ -24,7 +24,7 @@ import (
 	"github.com/vogo/logger"
 )
 
-const TransferTypeDing = "ding"
+const TypeDing = "ding"
 
 const (
 	dingMessageDataFixedBytesNum = 4
@@ -37,6 +37,9 @@ var (
 
 	// nolint:gochecknoglobals // ignore this
 	dingTextMessageDataSuffix = []byte(`"}}`)
+
+	// nolint:gochecknoglobals // ignore this
+	messageTitleContentSplit = []byte("]: ")
 )
 
 // transfer next message after the interval, ignore messages in the interval.
@@ -48,7 +51,7 @@ type DingTransfer struct {
 	transferring int32 // whether transferring message
 }
 
-func (d *DingTransfer) ID() string {
+func (d *DingTransfer) Name() string {
 	return d.id
 }
 func (d *DingTransfer) Start() error { return nil }

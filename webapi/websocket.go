@@ -26,6 +26,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/vogo/logger"
 	"github.com/vogo/logtail"
+	"github.com/vogo/logtail/transfer"
 )
 
 const WebsocketHeartbeatReadTimeout = 15 * time.Second
@@ -34,8 +35,12 @@ const WebsocketHeartbeatReadTimeout = 15 * time.Second
 var websocketUpgrader = websocket.Upgrader{}
 
 type WebsocketTransfer struct {
-	logtail.IDS
+	id   string
 	conn *websocket.Conn
+}
+
+func (ww *WebsocketTransfer) Name() string {
+	return ww.id
 }
 
 func (ww *WebsocketTransfer) Start() error { return nil }
@@ -70,14 +75,14 @@ func startWebsocketTransfer(runner *logtail.Runner, response http.ResponseWriter
 	}
 
 	websocketTransfer := &WebsocketTransfer{conn: c}
-	router := logtail.NewRouter(server, nil, []logtail.Transfer{websocketTransfer})
+	router := logtail.NewRouter(server, nil, []transfer.Transfer{websocketTransfer})
 	server.MergingWorker.StartRouterFilter(router)
 	startWebsocketHeartbeat(router, websocketTransfer)
 }
 
 const MessageTypeMatcherConfig = '1'
 
-func startWebsocketHeartbeat(router *logtail.Router, transfer *WebsocketTransfer) {
+func startWebsocketHeartbeat(router *logtail.Router, wt *WebsocketTransfer) {
 	defer func() {
 		_ = recover()
 
@@ -90,9 +95,9 @@ func startWebsocketHeartbeat(router *logtail.Router, transfer *WebsocketTransfer
 		case <-router.Stopper.C:
 			return
 		default:
-			_ = transfer.conn.SetReadDeadline(time.Now().Add(WebsocketHeartbeatReadTimeout))
+			_ = wt.conn.SetReadDeadline(time.Now().Add(WebsocketHeartbeatReadTimeout))
 
-			_, data, err := transfer.conn.ReadMessage()
+			_, data, err := wt.conn.ReadMessage()
 			if err != nil {
 				if !isEncodeError(err) {
 					logger.Warnf("router [%s] websocket heartbeat error: %+v", router.Name, err)

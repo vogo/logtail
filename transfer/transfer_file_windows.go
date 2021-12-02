@@ -15,22 +15,8 @@
  * limitations under the License.
  */
 
-package logtail
+package transfer
 
-const TransferTypeNull = "null"
-
-type NullTransfer struct {
-	id string
+func NewFileTransfer(dir string) Transfer {
+	panic("file transfer not supported for windows")
 }
-
-func (d *NullTransfer) ID() string {
-	return d.id
-}
-
-func (d *NullTransfer) Trans(serverID string, data ...[]byte) error {
-	return nil
-}
-
-func (d *NullTransfer) Start() error { return nil }
-
-func (d *NullTransfer) Stop() error { return nil }
