@@ -15,35 +15,33 @@
  * limitations under the License.
  */
 
-package main
+package webapi
 
 import (
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+	"net/http"
 
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail"
-	"github.com/vogo/logtail/webapi"
 )
 
-func main() {
-	runner := logtail.Start()
+func routeToTail(runner *logtail.Runner, request *http.Request, response http.ResponseWriter, router string) {
+	tailServerID := getServerID(runner, router)
+	if tailServerID == "" {
+		response.WriteHeader(http.StatusNotFound)
 
-	webapi.StartWebAPI(runner)
+		return
+	}
 
-	handleSignal()
+	startWebsocketTransfer(runner, response, request, tailServerID)
 }
 
-func handleSignal() {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	sig := <-signalChan
-	logger.Infof("signal: %v", sig)
+func getServerID(runner *logtail.Runner, router string) string {
+	if router == "" {
+		return logtail.DefaultID
+	}
 
-	_ = logtail.StopLogtail()
+	if _, ok := runner.Servers[router]; ok {
+		return router
+	}
 
-	// wait all goroutines stopping
-	<-time.After(time.Second)
+	return ""
 }

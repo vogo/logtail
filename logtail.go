@@ -20,19 +20,15 @@ package logtail
 import (
 	"flag"
 	"fmt"
-	"net/http"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
-	"time"
 
 	"github.com/vogo/logger"
 	"github.com/vogo/vogo/vos"
 )
 
 // Start parse command config, and start logtail servers with http listener.
-func Start() {
+func Start() *Runner {
 	config, parseErr := parseConfig()
 	if parseErr != nil {
 		_, _ = fmt.Fprintln(os.Stderr, parseErr)
@@ -43,19 +39,18 @@ func Start() {
 
 	vos.LoadUserEnv()
 
+	runner, err := NewRunner(config)
+	if err != nil {
+		panic(err)
+	}
+
 	go func() {
-		if startErr := StartLogtail(config); startErr != nil {
+		if startErr := StartRunner(runner); startErr != nil {
 			panic(startErr)
 		}
 	}()
 
-	go func() {
-		if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Port), &httpHandler{}); err != nil {
-			panic(err)
-		}
-	}()
-
-	handleSignal()
+	return runner
 }
 
 func configLogLevel(level string) {
@@ -70,16 +65,4 @@ func configLogLevel(level string) {
 	case "DEBUG":
 		logger.SetLevel(logger.LevelDebug)
 	}
-}
-
-func handleSignal() {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	sig := <-signalChan
-	logger.Infof("signal: %v", sig)
-
-	_ = StopLogtail()
-
-	// wait all goroutines stopping
-	<-time.After(time.Second)
 }

@@ -24,7 +24,11 @@ import (
 const TransferTypeConsole = "console"
 
 type ConsoleTransfer struct {
-	IDS
+	id string
+}
+
+func (d *ConsoleTransfer) ID() string {
+	return d.id
 }
 
 func (d *ConsoleTransfer) Trans(serverID string, data ...[]byte) error {
@@ -40,9 +44,9 @@ func (d *ConsoleTransfer) Trans(serverID string, data ...[]byte) error {
 	return nil
 }
 
-func (d *ConsoleTransfer) start() error { return nil }
+func (d *ConsoleTransfer) Start() error { return nil }
 
-func (d *ConsoleTransfer) stop() error { return nil }
+func (d *ConsoleTransfer) Stop() error { return nil }
 
 func (d *ConsoleTransfer) Visit(t Transfer) {
 }

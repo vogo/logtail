@@ -15,35 +15,27 @@
  * limitations under the License.
  */
 
-package main
+package webapi
 
 import (
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+	"encoding/json"
+	"net/http"
 
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail"
-	"github.com/vogo/logtail/webapi"
 )
 
-func main() {
-	runner := logtail.Start()
-
-	webapi.StartWebAPI(runner)
-
-	handleSignal()
+func routeToTransfer(runner *logtail.Runner, _ *http.Request, response http.ResponseWriter, router string) {
+	switch router {
+	case "list":
+		listTransfers(runner, response)
+	case "add":
+	}
 }
 
-func handleSignal() {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	sig := <-signalChan
-	logger.Infof("signal: %v", sig)
+func listTransfers(runner *logtail.Runner, response http.ResponseWriter) {
+	response.Header().Add("content-type", "application/json")
 
-	_ = logtail.StopLogtail()
+	b, _ := json.Marshal(runner.Config.Transfers)
 
-	// wait all goroutines stopping
-	<-time.After(time.Second)
+	_, _ = response.Write(b)
 }

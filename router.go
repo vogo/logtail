@@ -29,9 +29,9 @@ const DurationReadNextTimeout = time.Millisecond * 60
 
 type Router struct {
 	id        int64
-	name      string
+	Name      string
 	lock      sync.Mutex
-	stopper   *gstop.Stopper
+	Stopper   *gstop.Stopper
 	matchers  []Matcher
 	transfers []Transfer
 }
@@ -42,9 +42,9 @@ func NewRouter(s *Server, matchers []Matcher, transfers []Transfer) *Router {
 
 	t := &Router{
 		id:        routerID,
-		name:      name,
+		Name:      name,
 		lock:      sync.Mutex{},
-		stopper:   s.stopper.NewChild(),
+		Stopper:   s.stopper.NewChild(),
 		matchers:  matchers,
 		transfers: transfers,
 	}
@@ -61,5 +61,5 @@ func (r *Router) Start() error {
 }
 
 func (r *Router) Stop() {
-	r.stopper.Stop()
+	r.Stopper.Stop()
 }

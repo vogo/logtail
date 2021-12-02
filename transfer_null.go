@@ -20,13 +20,17 @@ package logtail
 const TransferTypeNull = "null"
 
 type NullTransfer struct {
-	IDS
+	id string
+}
+
+func (d *NullTransfer) ID() string {
+	return d.id
 }
 
 func (d *NullTransfer) Trans(serverID string, data ...[]byte) error {
 	return nil
 }
 
-func (d *NullTransfer) start() error { return nil }
+func (d *NullTransfer) Start() error { return nil }
 
-func (d *NullTransfer) stop() error { return nil }
+func (d *NullTransfer) Stop() error { return nil }

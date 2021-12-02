@@ -20,13 +20,18 @@ package logtail
 // nolint:gochecknoglobals // ignore this
 var defaultRunner *Runner
 
-// StartLogtail start config servers.
+// StartLogtail Start config servers.
 func StartLogtail(config *Config) error {
 	runner, err := NewRunner(config)
 	if err != nil {
 		return err
 	}
 
+	return StartRunner(runner)
+}
+
+// StartRunner Start config servers.
+func StartRunner(runner *Runner) error {
 	if defaultRunner != nil {
 		defaultRunner.Stop()
 	}

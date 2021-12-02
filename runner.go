@@ -75,8 +75,8 @@ func (r *Runner) startTransfers() error {
 func (r *Runner) startTransfer(c *TransferConfig) (Transfer, error) {
 	t := buildTransfer(c)
 
-	if err := t.start(); err != nil {
-		logger.Infof("transfer [%s]%s start error: %v", c.Type, t.ID(), err)
+	if err := t.Start(); err != nil {
+		logger.Infof("transfer [%s]%s Start error: %v", c.Type, t.ID(), err)
 
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (r *Runner) startTransfer(c *TransferConfig) (Transfer, error) {
 		}
 
 		// stop exists transfer
-		_ = existTransfer.stop()
+		_ = existTransfer.Stop()
 	}
 
 	return t, nil
@@ -118,7 +118,7 @@ func (r *Runner) Stop() {
 	}
 
 	for _, t := range r.Transfers {
-		if err := t.stop(); err != nil {
+		if err := t.Stop(); err != nil {
 			logger.Errorf("transfer %s close error: %+v", t.ID(), err)
 		}
 	}

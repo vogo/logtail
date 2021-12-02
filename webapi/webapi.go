@@ -15,4 +15,21 @@
  * limitations under the License.
  */
 
-package logtail_test
+package webapi
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/vogo/logtail"
+)
+
+func StartWebAPI(runner *logtail.Runner) {
+	go func() {
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", runner.Config.Port), &HTTPHandler{
+			runner: runner,
+		}); err != nil {
+			panic(err)
+		}
+	}()
+}

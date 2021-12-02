@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package logtail
+package webapi
 
 import (
 	"encoding/json"
@@ -25,18 +25,22 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/vogo/logger"
+	"github.com/vogo/logtail"
 )
 
 const WebsocketHeartbeatReadTimeout = 15 * time.Second
 
+// nolint:gochecknoglobals // ignore this
+var websocketUpgrader = websocket.Upgrader{}
+
 type WebsocketTransfer struct {
-	IDS
+	logtail.IDS
 	conn *websocket.Conn
 }
 
-func (ww *WebsocketTransfer) start() error { return nil }
+func (ww *WebsocketTransfer) Start() error { return nil }
 
-func (ww *WebsocketTransfer) stop() error { return nil }
+func (ww *WebsocketTransfer) Stop() error { return nil }
 
 func (ww *WebsocketTransfer) Trans(_ string, data ...[]byte) (err error) {
 	for _, d := range data {
@@ -49,7 +53,7 @@ func (ww *WebsocketTransfer) Trans(_ string, data ...[]byte) (err error) {
 	return nil
 }
 
-func startWebsocketTransfer(response http.ResponseWriter, request *http.Request, serverID string) {
+func startWebsocketTransfer(runner *logtail.Runner, response http.ResponseWriter, request *http.Request, serverID string) {
 	c, err := websocketUpgrader.Upgrade(response, request, nil)
 	if err != nil {
 		logger.Error("web socket error:", err)
@@ -58,7 +62,7 @@ func startWebsocketTransfer(response http.ResponseWriter, request *http.Request,
 	}
 	defer c.Close()
 
-	server, ok := defaultRunner.Servers[serverID]
+	server, ok := runner.Servers[serverID]
 	if !ok {
 		logger.Warnf("server id not found: %s", serverID)
 
@@ -66,24 +70,24 @@ func startWebsocketTransfer(response http.ResponseWriter, request *http.Request,
 	}
 
 	websocketTransfer := &WebsocketTransfer{conn: c}
-	router := NewRouter(server, nil, []Transfer{websocketTransfer})
-	server.mergingWorker.startRouterFilter(router)
+	router := logtail.NewRouter(server, nil, []logtail.Transfer{websocketTransfer})
+	server.MergingWorker.StartRouterFilter(router)
 	startWebsocketHeartbeat(router, websocketTransfer)
 }
 
 const MessageTypeMatcherConfig = '1'
 
-func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
+func startWebsocketHeartbeat(router *logtail.Router, transfer *WebsocketTransfer) {
 	defer func() {
 		_ = recover()
 
 		router.Stop()
-		logger.Infof("router [%s] websocket heartbeat stopped", router.name)
+		logger.Infof("router [%s] websocket heartbeat stopped", router.Name)
 	}()
 
 	for {
 		select {
-		case <-router.stopper.C:
+		case <-router.Stopper.C:
 			return
 		default:
 			_ = transfer.conn.SetReadDeadline(time.Now().Add(WebsocketHeartbeatReadTimeout))
@@ -91,7 +95,7 @@ func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
 			_, data, err := transfer.conn.ReadMessage()
 			if err != nil {
 				if !isEncodeError(err) {
-					logger.Warnf("router [%s] websocket heartbeat error: %+v", router.name, err)
+					logger.Warnf("router [%s] websocket heartbeat error: %+v", router.Name, err)
 					router.Stop()
 				}
 
@@ -100,7 +104,7 @@ func startWebsocketHeartbeat(router *Router, transfer *WebsocketTransfer) {
 
 			if len(data) > 0 && data[0] == MessageTypeMatcherConfig {
 				if configErr := handleMatcherConfigUpdate(router, data[1:]); configErr != nil {
-					logger.Warnf("router [%s] websocket matcher config error: %+v", router.name, configErr)
+					logger.Warnf("router [%s] websocket matcher config error: %+v", router.Name, configErr)
 				}
 			}
 		}
@@ -111,17 +115,18 @@ func isEncodeError(err error) bool {
 	return strings.Contains(err.Error(), "utf8")
 }
 
-func handleMatcherConfigUpdate(router *Router, data []byte) error {
-	var matcherConfigs []*MatcherConfig
+func handleMatcherConfigUpdate(router *logtail.Router, data []byte) error {
+	var matcherConfigs []*logtail.MatcherConfig
 	if err := json.Unmarshal(data, &matcherConfigs); err != nil {
 		return err
 	}
 
-	if err := validateMatchers(matcherConfigs); err != nil {
-		return err
+	matchers, matchErr := logtail.NewMatchers(matcherConfigs)
+	if matchErr != nil {
+		return matchErr
 	}
 
-	router.SetMatchers(buildMatchers(matcherConfigs))
+	router.SetMatchers(matchers)
 
 	return nil
 }

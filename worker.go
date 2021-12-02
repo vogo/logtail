@@ -64,7 +64,7 @@ func (w *worker) writeToFilters(bytes []byte) (int, error) {
 	return len(bytes), nil
 }
 
-func (w *worker) startRouterFilter(router *Router) {
+func (w *worker) StartRouterFilter(router *Router) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -181,7 +181,7 @@ func startWorker(s *Server, command string, dynamic bool) *worker {
 
 	if len(s.routers) > 0 {
 		for _, r := range s.routers {
-			w.startRouterFilter(r)
+			w.StartRouterFilter(r)
 		}
 	}
 

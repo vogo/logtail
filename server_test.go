@@ -168,6 +168,9 @@ func TestCommands(t *testing.T) {
 	<-time.After(time.Second * 2)
 
 	_ = logtail.StopLogtail()
+
+	<-time.After(time.Second * 2)
+
 	config.Servers[0].CommandGen = commandGen
 
 	assert.Nil(t, logtail.StartLogtail(config))

@@ -18,7 +18,7 @@
 
 `go get -u github.com/vogo/logtail/cmd/logtail@master`
 
-### 3.2. start logtail server
+### 3.2. Start logtail server
 
 usage: `logtail -port=<port> -cmd="<cmd>"`
 
@@ -144,7 +144,7 @@ browse `http://<server-ip>:<port>` to list all tailing logs.
 You can config log format globally, or config it for a server.
 
 The config `prefix` of the format is the wildcard of the prefix of a new log record, 
-`logtail` will check whether a new line is the start of a new log record, or one of the following lines.
+`logtail` will check whether a new line is the Start of a new log record, or one of the following lines.
 
 The wildcard does NOT support '*' for none or many chars, it supports the following tag:
 - '?' as one byte char;

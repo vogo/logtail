@@ -161,7 +161,7 @@ func (f *Filter) start() {
 		logger.Infof("filter [%s] stopped", f.id)
 	}()
 
-	logger.Infof("filter [%s] start", f.id)
+	logger.Infof("filter [%s] Start", f.id)
 
 	for {
 		select {

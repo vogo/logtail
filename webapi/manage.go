@@ -15,35 +15,31 @@
  * limitations under the License.
  */
 
-package main
+package webapi
 
 import (
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+	"net/http"
 
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail"
-	"github.com/vogo/logtail/webapi"
 )
 
-func main() {
-	runner := logtail.Start()
-
-	webapi.StartWebAPI(runner)
-
-	handleSignal()
+func routeToManage(runner *logtail.Runner, request *http.Request, response http.ResponseWriter, router string) {
+	firstRouter, leftRouter := splitRouter(router)
+	switch firstRouter {
+	case "index":
+		routeToManageIndex(runner, request, response, leftRouter)
+	case "transfer":
+		routeToTransfer(runner, request, response, leftRouter)
+	case "router":
+		routeToRouter(runner, request, response, leftRouter)
+	case "server":
+		routeToServer(runner, request, response, leftRouter)
+	default:
+		routeToNotFound(response)
+	}
 }
 
-func handleSignal() {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	sig := <-signalChan
-	logger.Infof("signal: %v", sig)
-
-	_ = logtail.StopLogtail()
-
-	// wait all goroutines stopping
-	<-time.After(time.Second)
+// nolint:interfacer // ignore this
+func routeToManageIndex(_ *logtail.Runner, _ *http.Request, response http.ResponseWriter, _ string) {
+	_, _ = response.Write(manageHTMLContent)
 }

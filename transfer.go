@@ -20,8 +20,8 @@ package logtail
 type Transfer interface {
 	ID() string
 	Trans(serverID string, data ...[]byte) error
-	start() error
-	stop() error
+	Start() error
+	Stop() error
 }
 
 type IDS struct {

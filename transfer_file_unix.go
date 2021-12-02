@@ -32,7 +32,7 @@ import (
 )
 
 type FileTransfer struct {
-	IDS
+	id           string
 	stopper      *gstop.Stopper
 	dir          string
 	name         string
@@ -42,10 +42,14 @@ type FileTransfer struct {
 	file         *os.File
 }
 
+func (ft *FileTransfer) ID() string {
+	return ft.id
+}
+
 // NewFileTransfer new file transfer.
 func NewFileTransfer(id, dir string) *FileTransfer {
 	return &FileTransfer{
-		IDS:     IDS{id: id},
+		id:      id,
 		stopper: gstop.New(),
 		dir:     dir,
 	}
@@ -109,7 +113,7 @@ func (ft *FileTransfer) submitFile() error {
 	return nil
 }
 
-func (ft *FileTransfer) start() error {
+func (ft *FileTransfer) Start() error {
 	if err := ft.resetFile(); err != nil {
 		return err
 	}
@@ -150,7 +154,7 @@ func (ft *FileTransfer) Trans(serverID string, data ...[]byte) error {
 	return nil
 }
 
-func (ft *FileTransfer) stop() error {
+func (ft *FileTransfer) Stop() error {
 	ft.stopper.Stop()
 
 	return nil

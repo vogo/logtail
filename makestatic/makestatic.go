@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -34,47 +35,52 @@ const filePerm = 0o600
 func main() {
 	if err := makeStatic(); err != nil {
 		log.Fatal(err)
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
 	}
 }
 
 func makeStatic() error {
-	files := []string{
-		"index.html",
-	}
-
-	f, err := os.Create("static.go")
+	f, err := os.Create("webapi/static.go")
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
 	buf := new(bytes.Buffer)
-	fmt.Fprintf(buf, "\n\n%v\n\npackage logtail\n\n", warning)
-	fmt.Fprintf(buf, "var indexHTMLContent=[]byte(")
+	_, _ = fmt.Fprintf(buf, "\n\n%v\n\npackage webapi\n\n", warning)
 
-	for _, fn := range files {
-		b, ioErr := ioutil.ReadFile(fn)
-		if ioErr != nil {
-			return ioErr
-		}
-
-		if utf8.Valid(b) {
-			fmt.Fprintf(buf, "`%s`", sanitize(b))
-		} else {
-			fmt.Fprintf(buf, "%q", b)
-		}
+	if fileErr := addFile(buf, "indexHTMLContent", "webapi/index.html"); fileErr != nil {
+		return fileErr
 	}
 
-	fmt.Fprintf(buf, ")")
+	if fileErr := addFile(buf, "manageHTMLContent", "webapi/manage.html"); fileErr != nil {
+		return fileErr
+	}
 
 	fmtBuf, err := format.Source(buf.Bytes())
 	if err != nil {
 		return err
 	}
 
-	return ioutil.WriteFile("static.go", fmtBuf, filePerm)
+	return ioutil.WriteFile("webapi/static.go", fmtBuf, filePerm)
+}
+
+func addFile(buf io.Writer, variable, fn string) error {
+	_, _ = fmt.Fprintf(buf, "var "+variable+"=[]byte(")
+
+	b, ioErr := ioutil.ReadFile(fn)
+	if ioErr != nil {
+		return ioErr
+	}
+
+	if utf8.Valid(b) {
+		_, _ = fmt.Fprintf(buf, "`%s`", sanitize(b))
+	} else {
+		_, _ = fmt.Fprintf(buf, "%q", b)
+	}
+
+	_, _ = fmt.Fprintf(buf, ")\n\n")
+
+	return nil
 }
 
 // sanitize prepares a valid UTF-8 string as a raw string constant.

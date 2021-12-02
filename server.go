@@ -45,7 +45,7 @@ type Server struct {
 	workerError   chan error
 	workerStarter func()
 	routersCount  int64
-	mergingWorker *worker
+	MergingWorker *worker
 	workers       map[string]*worker
 	routers       map[int64]*Router
 }
@@ -54,7 +54,7 @@ func (s *Server) addWorker(w *worker) {
 	s.workers[w.id] = w
 }
 
-// NewServer start a new server.
+// NewServer Start a new server.
 func NewServer(runner *Runner, serverConfig *ServerConfig) *Server {
 	format := serverConfig.Format
 	if format == nil {
@@ -100,7 +100,7 @@ func (s *Server) initial(config *Config, serverConfig *ServerConfig) {
 		for _, routerConfig := range routerConfigs {
 			r := buildRouter(s, routerConfig)
 			if routerCount == 1 {
-				r.name = s.id
+				r.Name = s.id
 			}
 
 			s.routers[r.id] = r
@@ -108,8 +108,8 @@ func (s *Server) initial(config *Config, serverConfig *ServerConfig) {
 	}
 
 	s.workerStarter = func() {
-		s.mergingWorker = newWorker(s, "", false)
-		s.mergingWorker.start()
+		s.MergingWorker = newWorker(s, "", false)
+		s.MergingWorker.start()
 
 		switch {
 		case serverConfig.File != nil:
@@ -140,7 +140,7 @@ func (s *Server) nextRouterID() int64 {
 
 // Write bytes data to default workers, which will be send to web socket clients.
 func (s *Server) Write(data []byte) (int, error) {
-	return s.mergingWorker.writeToFilters(data)
+	return s.MergingWorker.writeToFilters(data)
 }
 
 // Fire custom generate bytes data to the first worker of the server.
@@ -155,8 +155,8 @@ func (s *Server) Fire(data []byte) error {
 }
 
 // Start the server.
-// First, start all routers.
-// Then, call the start func.
+// First, Start all routers.
+// Then, call the Start func.
 func (s *Server) Start() {
 	for _, r := range s.routers {
 		_ = r.Start()
@@ -181,7 +181,7 @@ func (s *Server) Stop() error {
 
 	s.stopWorkers()
 
-	s.mergingWorker.stop()
+	s.MergingWorker.stop()
 
 	for _, r := range s.routers {
 		r.Stop()
@@ -211,7 +211,7 @@ func (s *Server) shutdownWorker(w *worker) {
 	w.stop()
 }
 
-// startCommandGenWorkers start workers using generated commands.
+// startCommandGenWorkers Start workers using generated commands.
 // When one of workers has error, stop all workers,
 // and generate new commands to create new workers.
 func (s *Server) startCommandGenWorkers(gen string) {
@@ -265,7 +265,7 @@ func (s *Server) receiveWorkerError(err error) {
 	s.workerError <- err
 }
 
-// startDirWorkers start workers using file config.
+// startDirWorkers Start workers using file config.
 func (s *Server) startDirWorkers(config *FileConfig) {
 	watcher, err := fwatch.New(config.Method, fileInactiveDeadline, fileSilenceDeadline)
 	if err != nil {
@@ -277,7 +277,7 @@ func (s *Server) startDirWorkers(config *FileConfig) {
 			(config.Suffix == "" || strings.HasSuffix(name, config.Suffix))
 	}
 
-	logger.Infof("server [%s] start watch directory: %s", s.id, config.Path)
+	logger.Infof("server [%s] Start watch directory: %s", s.id, config.Path)
 
 	if err = watcher.WatchDir(config.Path, config.Recursive, matcher); err != nil {
 		logger.Fatal(err)

@@ -17,19 +17,10 @@
 
 package logtail
 
-import (
-	"github.com/gorilla/websocket"
-)
-
 const (
 	// DefaultID default id.
 	DefaultID = "default"
 )
 
-var (
-	// nolint:gochecknoglobals // ignore this
-	messageTitleContentSplit = []byte("]: ")
-
-	// nolint:gochecknoglobals // ignore this
-	websocketUpgrader = websocket.Upgrader{}
-)
+// nolint:gochecknoglobals // ignore this
+var messageTitleContentSplit = []byte("]: ")

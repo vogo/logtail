@@ -20,3 +20,11 @@ package logtail
 type Matcher interface {
 	Match(bytes []byte) bool
 }
+
+func NewMatchers(configs []*MatcherConfig) ([]Matcher, error) {
+	if err := validateMatchers(configs); err != nil {
+		return nil, err
+	}
+
+	return buildMatchers(configs), nil
+}

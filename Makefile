@@ -15,7 +15,7 @@ check: license-check
 test:
 		go test -coverprofile=coverage.txt -covermode=atomic
 
-static: index.html
+static: webapi/index.html
 	go run makestatic/makestatic.go
 
 package:

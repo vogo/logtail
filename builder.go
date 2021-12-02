@@ -66,11 +66,11 @@ func buildTransfer(config *TransferConfig) Transfer {
 		return NewFileTransfer(config.ID, config.Dir)
 	case TransferTypeConsole:
 		return &ConsoleTransfer{
-			IDS{id: config.ID},
+			id: config.ID,
 		}
 	default:
 		return &NullTransfer{
-			IDS{id: config.ID},
+			id: config.ID,
 		}
 	}
 }
