@@ -19,8 +19,10 @@ package webapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -33,6 +35,9 @@ const WebsocketHeartbeatReadTimeout = 15 * time.Second
 
 // nolint:gochecknoglobals // ignore this
 var websocketUpgrader = websocket.Upgrader{}
+
+// nolint:gochecknoglobals // ignore this
+var wsConnIndex int64
 
 type WebsocketTransfer struct {
 	id   string
@@ -75,7 +80,8 @@ func startWebsocketTransfer(runner *logtail.Runner, response http.ResponseWriter
 	}
 
 	websocketTransfer := &WebsocketTransfer{conn: c}
-	router := logtail.NewRouter(server, nil, []transfer.Transfer{websocketTransfer})
+	index := fmt.Sprintf("ww-%d", atomic.AddInt64(&wsConnIndex, 1))
+	router := logtail.NewRouter(server, index, nil, []transfer.Transfer{websocketTransfer})
 	server.MergingWorker.StartRouterFilter(router)
 	startWebsocketHeartbeat(router, websocketTransfer)
 }

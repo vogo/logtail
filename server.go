@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/vogo/fwatch"
@@ -44,10 +43,9 @@ type Server struct {
 	runner        *Runner
 	workerError   chan error
 	workerStarter func()
-	routersCount  int64
 	MergingWorker *worker
 	workers       map[string]*worker
-	routers       map[int64]*Router
+	routers       map[string]*Router
 }
 
 func (s *Server) addWorker(w *worker) {
@@ -55,31 +53,14 @@ func (s *Server) addWorker(w *worker) {
 }
 
 // NewServer Start a new server.
-func NewServer(runner *Runner, serverConfig *ServerConfig) *Server {
-	format := serverConfig.Format
-	if format == nil {
-		format = runner.Config.DefaultFormat
-	}
-
+func NewServer(serverConfig *ServerConfig) *Server {
 	server := &Server{
-		id:      serverConfig.ID,
+		id:      serverConfig.Name,
 		lock:    sync.Mutex{},
 		stopper: gstop.New(),
-		format:  format,
-		runner:  runner,
-		routers: make(map[int64]*Router, defaultMapSize),
+		routers: make(map[string]*Router, defaultMapSize),
 		workers: make(map[string]*worker, defaultMapSize),
 	}
-
-	if existsServer, ok := runner.Servers[server.id]; ok {
-		_ = existsServer.Stop()
-
-		delete(runner.Servers, server.id)
-	}
-
-	runner.Servers[server.id] = server
-
-	server.initial(runner.Config, serverConfig)
 
 	return server
 }
@@ -87,23 +68,17 @@ func NewServer(runner *Runner, serverConfig *ServerConfig) *Server {
 func (s *Server) initial(config *Config, serverConfig *ServerConfig) {
 	var routerConfigs []*RouterConfig
 	if len(serverConfig.Routers) > 0 {
-		routerConfigs = append(routerConfigs, serverConfig.Routers...)
+		routerConfigs = append(routerConfigs, config.GetRouters(serverConfig.Routers)...)
 	} else {
 		routerConfigs = config.AppendDefaultRouters(routerConfigs)
 	}
 
 	routerConfigs = config.AppendGlobalRouters(routerConfigs)
 
-	// not add the worker into the workers list of server if no router configs.
-	routerCount := len(routerConfigs)
-	if routerCount > 0 {
-		for _, routerConfig := range routerConfigs {
-			r := buildRouter(s, routerConfig)
-			if routerCount == 1 {
-				r.Name = s.id
-			}
-
-			s.routers[r.id] = r
+	for _, routerConfig := range routerConfigs {
+		err := s.addRouter(routerConfig)
+		if err != nil {
+			logger.Warnf("add router %s error: %v", routerConfig.Name, err)
 		}
 	}
 
@@ -132,10 +107,6 @@ func (s *Server) initial(config *Config, serverConfig *ServerConfig) {
 			logger.Warnf("no external stream for server %s, call server.Fire([]byte) to send data", s.id)
 		}
 	}
-}
-
-func (s *Server) nextRouterID() int64 {
-	return atomic.AddInt64(&s.routersCount, 1)
 }
 
 // Write bytes data to default workers, which will be send to web socket clients.
@@ -341,4 +312,20 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 			}
 		}
 	}
+}
+
+func (s *Server) addRouter(routerConfig *RouterConfig) error {
+	if r, exist := s.routers[routerConfig.Name]; exist {
+		r.Stop()
+	}
+
+	r := buildRouter(s, routerConfig)
+
+	if err := r.Start(); err != nil {
+		return err
+	}
+
+	s.routers[routerConfig.Name] = r
+
+	return nil
 }

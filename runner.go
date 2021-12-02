@@ -57,14 +57,17 @@ func (r *Runner) Start() error {
 	}
 
 	for _, serverConfig := range r.Config.Servers {
-		r.startServer(serverConfig)
+		_, err := r.AddServer(serverConfig)
+		if err != nil {
+			logger.Errorf("add server %s error: %v", serverConfig.Name, err)
+		}
 	}
 
 	return nil
 }
 
 func (r *Runner) startTransfers() error {
-	for _, c := range r.Config.transferMap {
+	for _, c := range r.Config.Transfers {
 		if _, err := r.StartTransfer(c); err != nil {
 			return err
 		}
@@ -75,6 +78,9 @@ func (r *Runner) startTransfers() error {
 
 // nolint:ireturn //ignore this.
 func (r *Runner) StartTransfer(c *TransferConfig) (transfer.Transfer, error) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
 	t := buildTransfer(c)
 
 	if err := t.Start(); err != nil {
@@ -85,10 +91,10 @@ func (r *Runner) StartTransfer(c *TransferConfig) (transfer.Transfer, error) {
 
 	logger.Infof("transfer [%s]%s started", c.Type, t.Name())
 
-	existTransfer, exist := r.Transfers[c.ID]
+	existTransfer, exist := r.Transfers[c.Name]
 
 	// save or replace transfer
-	r.Transfers[c.ID] = t
+	r.Transfers[c.Name] = t
 
 	if exist {
 		for _, server := range r.Servers {
@@ -111,10 +117,13 @@ func (r *Runner) StartTransfer(c *TransferConfig) (transfer.Transfer, error) {
 	return t, nil
 }
 
-func (r *Runner) StopTransfer(c *TransferConfig) error {
-	if existTransfer, exist := r.Transfers[c.ID]; exist {
-		if r.existTransfer(c) {
-			return fmt.Errorf("%w: %s", ErrTransferUsing, c.ID)
+func (r *Runner) StopTransfer(name string) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	if existTransfer, exist := r.Transfers[name]; exist {
+		if r.usingTransfer(name) {
+			return fmt.Errorf("%w: %s", ErrTransferUsing, name)
 		}
 
 		err := existTransfer.Stop()
@@ -122,17 +131,17 @@ func (r *Runner) StopTransfer(c *TransferConfig) error {
 			logger.Warnf("stop transfer error: %v", err)
 		}
 
-		delete(r.Transfers, c.ID)
+		delete(r.Transfers, name)
 	}
 
 	return nil
 }
 
-func (r *Runner) existTransfer(c *TransferConfig) bool {
+func (r *Runner) usingTransfer(name string) bool {
 	for _, server := range r.Servers {
 		for _, router := range server.routers {
 			for i := range router.transfers {
-				if router.transfers[i].Name() == c.ID {
+				if router.transfers[i].Name() == name {
 					return true
 				}
 			}
@@ -144,6 +153,9 @@ func (r *Runner) existTransfer(c *TransferConfig) bool {
 
 // Stop the runner.
 func (r *Runner) Stop() {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
 	for _, s := range r.Servers {
 		if err := s.Stop(); err != nil {
 			logger.Errorf("server %s close error: %+v", s.id, err)
@@ -157,10 +169,105 @@ func (r *Runner) Stop() {
 	}
 }
 
-func (r *Runner) startServer(config *ServerConfig) {
+func (r *Runner) AddRouter(config *RouterConfig) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	server := NewServer(r, config)
+	if err := checkRouterConfig(r.Config, config); err != nil {
+		return err
+	}
+
+	var err error
+
+	if _, ok := r.Config.Routers[config.Name]; ok {
+		for _, server := range r.Servers {
+			for _, router := range server.routers {
+				if router.Name == config.Name {
+					if err = server.addRouter(config); err != nil {
+						logger.Errorf("add router error: %v", err)
+					}
+				}
+			}
+		}
+	}
+
+	r.Config.Routers[config.Name] = config
+
+	return err
+}
+
+func (r *Runner) DeleteRouter(name string) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	if _, exist := r.Config.Routers[name]; exist {
+		if r.usingRouter(name) {
+			return fmt.Errorf("%w: %s", ErrRouterUsing, name)
+		}
+
+		delete(r.Config.Routers, name)
+	}
+
+	return nil
+}
+
+func (r *Runner) usingRouter(name string) bool {
+	for _, server := range r.Servers {
+		for _, router := range server.routers {
+			if router.Name == name {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (r *Runner) AddServer(serverConfig *ServerConfig) (*Server, error) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	if err := checkServerConfig(r.Config, serverConfig); err != nil {
+		return nil, err
+	}
+
+	server := NewServer(serverConfig)
+
+	format := serverConfig.Format
+	if format == nil {
+		format = r.Config.DefaultFormat
+	}
+
+	server.format = format
+	server.runner = r
+
+	if existsServer, ok := r.Servers[server.id]; ok {
+		_ = existsServer.Stop()
+
+		delete(r.Servers, server.id)
+	}
+
+	r.Servers[server.id] = server
+
+	server.initial(r.Config, serverConfig)
+
 	server.Start()
+
+	return server, nil
+}
+
+func (r *Runner) DeleteServer(name string) error {
+	s, exist := r.Servers[name]
+
+	if exist {
+		if err := s.Stop(); err != nil {
+			return err
+		}
+
+		delete(r.Servers, name)
+
+		delete(r.Config.Servers, name)
+	}
+
+	return nil
 }

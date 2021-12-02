@@ -88,18 +88,19 @@ func TestServer(t *testing.T) {
 	t.Parallel()
 	initFireData()
 
+	serverID := "server-1"
 	config := &logtail.Config{
 		LogLevel:      "DEBUG",
 		DefaultFormat: &logtail.Format{Prefix: "!!!!-!!-!!"},
-		Transfers: []*logtail.TransferConfig{
-			{
-				ID:   "null",
+		Transfers: map[string]*logtail.TransferConfig{
+			"null": {
+				Name: "null",
 				Type: "null",
 			},
 		},
-		Routers: []*logtail.RouterConfig{
-			{
-				ID: "error-null",
+		Routers: map[string]*logtail.RouterConfig{
+			"error-null": {
+				Name: "error-null",
 				Matchers: []*logtail.MatcherConfig{
 					{
 						Contains:    []string{"ERROR", "test"},
@@ -110,9 +111,9 @@ func TestServer(t *testing.T) {
 			},
 		},
 		DefaultRouters: []string{"error-null"},
-		Servers: []*logtail.ServerConfig{
-			{
-				ID: "server-1",
+		Servers: map[string]*logtail.ServerConfig{
+			serverID: {
+				Name: serverID,
 			},
 		},
 	}
@@ -130,7 +131,7 @@ func TestServer(t *testing.T) {
 		return
 	}
 
-	server := runner.Servers[config.Servers[0].ID]
+	server := runner.Servers[config.Servers[serverID].Name]
 
 	for i := 0; i < 1000; i++ {
 		fireServer(server)
@@ -171,7 +172,8 @@ func TestCommands(t *testing.T) {
 
 	<-time.After(time.Second * 2)
 
-	config.Servers[0].CommandGen = commandGen
+	serverID := "server-test"
+	config.Servers[serverID].CommandGen = commandGen
 
 	assert.Nil(t, logtail.StartLogtail(config))
 
@@ -183,15 +185,15 @@ func TestCommands(t *testing.T) {
 func testCommandConfig(commands string) *logtail.Config {
 	return &logtail.Config{
 		DefaultFormat: &logtail.Format{Prefix: "!!!!-!!-!!"},
-		Transfers: []*logtail.TransferConfig{
-			{
-				ID:   "console",
+		Transfers: map[string]*logtail.TransferConfig{
+			"console": {
+				Name: "console",
 				Type: "console",
 			},
 		},
-		Routers: []*logtail.RouterConfig{
-			{
-				ID: "error-console",
+		Routers: map[string]*logtail.RouterConfig{
+			"error-console": {
+				Name: "error-console",
 				Matchers: []*logtail.MatcherConfig{
 					{
 						Contains: []string{"ERROR"},
@@ -201,9 +203,9 @@ func testCommandConfig(commands string) *logtail.Config {
 			},
 		},
 		DefaultRouters: []string{"error-console"},
-		Servers: []*logtail.ServerConfig{
-			{
-				ID:       "server-test",
+		Servers: map[string]*logtail.ServerConfig{
+			"server-test": {
+				Name:     "server-test",
 				Commands: commands,
 			},
 		},

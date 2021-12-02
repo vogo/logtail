@@ -15,16 +15,10 @@
  * limitations under the License.
  */
 
-package logtail
+package webapi
 
-type Matcher interface {
-	Match(bytes []byte) bool
-}
-
-func NewMatchers(configs []*MatcherConfig) ([]Matcher, error) {
-	if err := checkMatchers(configs); err != nil {
-		return nil, err
-	}
-
-	return buildMatchers(configs), nil
-}
+const (
+	OpList   = "list"
+	OpAdd    = "add"
+	OpDelete = "delete"
+)

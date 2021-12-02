@@ -18,10 +18,67 @@
 package webapi
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/vogo/logtail"
 )
 
-func routeToRouter(runner *logtail.Runner, request *http.Request, response http.ResponseWriter, router string) {
+func routeToRouter(runner *logtail.Runner, request *http.Request, response http.ResponseWriter, op string) {
+	switch op {
+	case OpList:
+		listRouters(runner, response)
+	case OpAdd:
+		addRouter(runner, request, response)
+	case OpDelete:
+		deleteRouter(runner, request, response)
+	default:
+		routeToNotFound(response)
+	}
+}
+
+func listRouters(runner *logtail.Runner, response http.ResponseWriter) {
+	response.Header().Add("content-type", "application/json")
+
+	b, _ := json.Marshal(runner.Config.Routers)
+
+	_, _ = response.Write(b)
+}
+
+func addRouter(runner *logtail.Runner, request *http.Request, response http.ResponseWriter) {
+	config := &logtail.RouterConfig{}
+
+	if err := json.NewDecoder(request.Body).Decode(config); err != nil {
+		routeToError(response, err)
+
+		return
+	}
+
+	if err := runner.AddRouter(config); err != nil {
+		routeToError(response, err)
+
+		return
+	}
+
+	routeToSuccess(response)
+}
+
+func deleteRouter(runner *logtail.Runner, request *http.Request, response http.ResponseWriter) {
+	var err error
+
+	config := &logtail.RouterConfig{}
+
+	if err = json.NewDecoder(request.Body).Decode(config); err != nil {
+		routeToError(response, err)
+
+		return
+	}
+
+	if err = runner.DeleteRouter(config.Name); err != nil {
+		routeToError(response, err)
+
+		return
+	}
+
+	routeToSuccess(response)
 }

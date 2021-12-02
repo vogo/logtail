@@ -23,7 +23,7 @@ import (
 )
 
 func buildRouter(s *Server, config *RouterConfig) *Router {
-	return NewRouter(s, buildMatchers(config.Matchers), buildTransfers(s.runner, config.Transfers))
+	return NewRouter(s, config.Name, buildMatchers(config.Matchers), buildTransfers(s.runner, config.Transfers))
 }
 
 func buildMatchers(matcherConfigs []*MatcherConfig) []Matcher {
@@ -60,20 +60,20 @@ func buildTransfers(runner *Runner, ids []string) []transfer.Transfer {
 func buildTransfer(config *TransferConfig) transfer.Transfer {
 	switch config.Type {
 	case transfer.TypeWebhook:
-		return transfer.NewWebhookTransfer(config.ID, config.URL)
+		return transfer.NewWebhookTransfer(config.Name, config.URL)
 	case transfer.TypeDing:
-		return transfer.NewDingTransfer(config.ID, config.URL)
+		return transfer.NewDingTransfer(config.Name, config.URL)
 	case transfer.TypeLark:
-		return transfer.NewLarkTransfer(config.ID, config.URL)
+		return transfer.NewLarkTransfer(config.Name, config.URL)
 	case transfer.TypeFile:
-		return transfer.NewFileTransfer(config.ID, config.Dir)
+		return transfer.NewFileTransfer(config.Name, config.Dir)
 	case transfer.TypeConsole:
 		return &transfer.ConsoleTransfer{
-			ID: config.ID,
+			ID: config.Name,
 		}
 	default:
 		return &transfer.NullTransfer{
-			ID: config.ID,
+			ID: config.Name,
 		}
 	}
 }

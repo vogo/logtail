@@ -18,10 +18,65 @@
 package webapi
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/vogo/logtail"
 )
 
 func routeToServer(runner *logtail.Runner, request *http.Request, response http.ResponseWriter, router string) {
+	switch router {
+	case OpList:
+		listServers(runner, response)
+	case OpAdd:
+		addServer(runner, request, response)
+	case OpDelete:
+		deleteServer(runner, request, response)
+	default:
+		routeToNotFound(response)
+	}
+}
+
+func listServers(runner *logtail.Runner, response http.ResponseWriter) {
+	response.Header().Add("content-type", "application/json")
+
+	b, _ := json.Marshal(runner.Config.Servers)
+
+	_, _ = response.Write(b)
+}
+
+func addServer(runner *logtail.Runner, request *http.Request, response http.ResponseWriter) {
+	config := &logtail.ServerConfig{}
+
+	if err := json.NewDecoder(request.Body).Decode(config); err != nil {
+		routeToError(response, err)
+
+		return
+	}
+
+	if _, err := runner.AddServer(config); err != nil {
+		routeToError(response, err)
+
+		return
+	}
+
+	routeToSuccess(response)
+}
+
+func deleteServer(runner *logtail.Runner, request *http.Request, response http.ResponseWriter) {
+	config := &logtail.ServerConfig{}
+
+	if err := json.NewDecoder(request.Body).Decode(config); err != nil {
+		routeToError(response, err)
+
+		return
+	}
+
+	if err := runner.DeleteServer(config.Name); err != nil {
+		routeToError(response, err)
+
+		return
+	}
+
+	routeToSuccess(response)
 }

@@ -38,6 +38,7 @@ var (
 	ErrRouterNotExist   = errors.New("router not exists")
 	ErrTransferNotExist = errors.New("transfer not exists")
 	ErrTransferUsing    = errors.New("transfer is using")
+	ErrRouterUsing      = errors.New("router is using")
 	ErrNoTailingConfig  = errors.New("no tailing command/file config")
 	ErrTransURLNil      = errors.New("transfer url is nil")
 	ErrTransTypeNil     = errors.New("transfer type is nil")
@@ -46,25 +47,19 @@ var (
 )
 
 type Config struct {
-	Port           int               `json:"port"`
-	LogLevel       string            `json:"log_level"`
-	DefaultFormat  *Format           `json:"default_format"`
-	Transfers      []*TransferConfig `json:"transfers"`
-	Routers        []*RouterConfig   `json:"routers"`
-	Servers        []*ServerConfig   `json:"servers"`
-	DefaultRouters []string          `json:"default_routers"`
-	GlobalRouters  []string          `json:"global_routers"`
-
-	// cache all router config for reference
-	routerMap map[string]*RouterConfig
-
-	// cache all transfer config for reference
-	transferMap map[string]*TransferConfig
+	Port           int                        `json:"port"`
+	LogLevel       string                     `json:"log_level"`
+	DefaultFormat  *Format                    `json:"default_format"`
+	Transfers      map[string]*TransferConfig `json:"transfers"`
+	Routers        map[string]*RouterConfig   `json:"routers"`
+	Servers        map[string]*ServerConfig   `json:"servers"`
+	DefaultRouters []string                   `json:"default_routers"`
+	GlobalRouters  []string                   `json:"global_routers"`
 }
 
 func (c *Config) AppendDefaultRouters(configs []*RouterConfig) []*RouterConfig {
 	for _, id := range c.DefaultRouters {
-		if r, ok := c.routerMap[id]; ok {
+		if r, ok := c.Routers[id]; ok {
 			configs = append(configs, r)
 		}
 	}
@@ -74,7 +69,19 @@ func (c *Config) AppendDefaultRouters(configs []*RouterConfig) []*RouterConfig {
 
 func (c *Config) AppendGlobalRouters(configs []*RouterConfig) []*RouterConfig {
 	for _, id := range c.GlobalRouters {
-		if r, ok := c.routerMap[id]; ok {
+		if r, ok := c.Routers[id]; ok {
+			configs = append(configs, r)
+		}
+	}
+
+	return configs
+}
+
+func (c *Config) GetRouters(routers []string) []*RouterConfig {
+	var configs []*RouterConfig
+
+	for _, id := range routers {
+		if r, ok := c.Routers[id]; ok {
 			configs = append(configs, r)
 		}
 	}
@@ -83,9 +90,9 @@ func (c *Config) AppendGlobalRouters(configs []*RouterConfig) []*RouterConfig {
 }
 
 type ServerConfig struct {
-	ID      string          `json:"id"`
-	Format  *Format         `json:"format"`
-	Routers []*RouterConfig `json:"routers"`
+	Name    string   `json:"name"`
+	Format  *Format  `json:"format"`
+	Routers []string `json:"routers"`
 
 	// single command.
 	Command string `json:"command"`
@@ -123,7 +130,7 @@ type FileConfig struct {
 }
 
 type RouterConfig struct {
-	ID        string           `json:"id"`
+	Name      string           `json:"name"`
 	Matchers  []*MatcherConfig `json:"matchers"`
 	Transfers []string         `json:"transfers"`
 }
@@ -134,7 +141,7 @@ type MatcherConfig struct {
 }
 
 type TransferConfig struct {
-	ID   string `json:"id"`
+	Name string `json:"name"`
 	Type string `json:"type"`
 	URL  string `json:"url"`
 	Dir  string `json:"dir"`
@@ -177,14 +184,19 @@ func parseConfig() (cfg *Config, parseErr error) {
 }
 
 func buildCommandLineConfig(port int, command, matchContains, dingURL, webhookURL string) *Config {
-	config := &Config{}
+	config := &Config{
+		Transfers: make(map[string]*TransferConfig),
+		Routers:   make(map[string]*RouterConfig),
+		Servers:   make(map[string]*ServerConfig),
+	}
 
 	config.Port = port
 	serverConfig := &ServerConfig{
-		ID: DefaultID,
+		Name:    DefaultID,
+		Routers: []string{DefaultID},
 	}
 
-	config.Servers = append(config.Servers, serverConfig)
+	config.Servers[DefaultID] = serverConfig
 	serverConfig.Command = command
 
 	if dingURL == "" && webhookURL == "" && matchContains == "" {
@@ -194,26 +206,26 @@ func buildCommandLineConfig(port int, command, matchContains, dingURL, webhookUR
 	routerConfig := &RouterConfig{
 		Transfers: []string{DefaultID},
 	}
-	serverConfig.Routers = append(serverConfig.Routers, routerConfig)
+	config.Routers[DefaultID] = routerConfig
 
 	if matchContains != "" {
-		routerConfig.Matchers = append(routerConfig.Matchers, &MatcherConfig{
+		routerConfig.Matchers = []*MatcherConfig{{
 			Contains: []string{matchContains},
-		})
+		}}
 	}
 
 	if dingURL != "" {
-		config.Transfers = []*TransferConfig{{
-			ID:   DefaultID,
+		config.Transfers[DefaultID] = &TransferConfig{
+			Name: DefaultID,
 			Type: transfer.TypeDing,
 			URL:  dingURL,
-		}}
+		}
 	} else if webhookURL != "" {
-		config.Transfers = []*TransferConfig{{
-			ID:   DefaultID,
+		config.Transfers[DefaultID] = &TransferConfig{
+			Name: DefaultID,
 			Type: transfer.TypeWebhook,
 			URL:  webhookURL,
-		}}
+		}
 	}
 
 	return config

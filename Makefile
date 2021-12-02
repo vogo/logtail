@@ -2,7 +2,7 @@ version := v1.0.0
 
 format:
 		goimports -w -l .
-		go fmt
+		gofmt -w .
 		gofumpt -w .
 
 license-check:
@@ -13,7 +13,7 @@ check: license-check
 		golangci-lint run
 
 test:
-		go test -coverprofile=coverage.txt -covermode=atomic
+		go test -v ./... -coverprofile=coverage.txt -covermode=atomic
 
 static: webapi/index.html
 	go run makestatic/makestatic.go

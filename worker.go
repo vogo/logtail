@@ -39,7 +39,7 @@ type worker struct {
 	dynamic bool      // command generated dynamically
 	command string    // command lines
 	cmd     *exec.Cmd // command object
-	filters map[int64]*Filter
+	filters map[string]*Filter
 }
 
 func (w *worker) Write(data []byte) (int, error) {
@@ -203,6 +203,6 @@ func newWorker(s *Server, command string, dynamic bool) *worker {
 		stopper: s.stopper,
 		command: command,
 		dynamic: dynamic,
-		filters: make(map[int64]*Filter, defaultMapSize),
+		filters: make(map[string]*Filter, defaultMapSize),
 	}
 }

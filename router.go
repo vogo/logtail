@@ -29,7 +29,7 @@ import (
 const DurationReadNextTimeout = time.Millisecond * 60
 
 type Router struct {
-	id        int64
+	id        string
 	Name      string
 	lock      sync.Mutex
 	Stopper   *gstop.Stopper
@@ -37,12 +37,11 @@ type Router struct {
 	transfers []transfer.Transfer
 }
 
-func NewRouter(s *Server, matchers []Matcher, transfers []transfer.Transfer) *Router {
-	routerID := s.nextRouterID()
-	name := fmt.Sprintf("%s-%d", s.id, routerID)
+func NewRouter(s *Server, name string, matchers []Matcher, transfers []transfer.Transfer) *Router {
+	id := fmt.Sprintf("%s-%s", s.id, name)
 
 	t := &Router{
-		id:        routerID,
+		id:        id,
 		Name:      name,
 		lock:      sync.Mutex{},
 		Stopper:   s.stopper.NewChild(),

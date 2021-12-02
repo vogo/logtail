@@ -26,8 +26,13 @@ import (
 
 // check the config and fill some default values.
 func initialCheckConfig(config *Config) error {
-	config.routerMap = make(map[string]*RouterConfig, defaultMapSize)
-	config.transferMap = make(map[string]*TransferConfig, defaultMapSize)
+	if config.Routers == nil {
+		config.Routers = make(map[string]*RouterConfig, defaultMapSize)
+	}
+
+	if config.Transfers == nil {
+		config.Transfers = make(map[string]*TransferConfig, defaultMapSize)
+	}
 
 	if config.Port == 0 {
 		config.Port = DefaultServerPort
@@ -69,24 +74,24 @@ func initialCheckConfig(config *Config) error {
 }
 
 func checkServerConfig(config *Config, server *ServerConfig) error {
-	if server.ID == "" {
+	if server.Name == "" {
 		return ErrServerIDNil
 	}
 
 	if server.Command == "" && server.Commands == "" && server.CommandGen == "" && server.File == nil {
-		logger.Warnf("%v for server %s", ErrNoTailingConfig, server.ID)
+		logger.Warnf("%v for server %s", ErrNoTailingConfig, server.Name)
 	}
 
-	if err := checkRouterConfigs(config, server.Routers); err != nil {
+	if err := checkRouterRef(config, server.Routers); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func checkRouterConfigs(config *Config, routers []*RouterConfig) error {
+func checkRouterConfigs(config *Config, routers map[string]*RouterConfig) error {
 	for _, router := range routers {
-		if err := validateRouterConfig(config, router); err != nil {
+		if err := checkRouterConfig(config, router); err != nil {
 			return err
 		}
 	}
@@ -94,31 +99,25 @@ func checkRouterConfigs(config *Config, routers []*RouterConfig) error {
 	return nil
 }
 
-func validateRouterConfig(config *Config, router *RouterConfig) error {
-	if router.ID == "" {
+func checkRouterConfig(config *Config, router *RouterConfig) error {
+	if router.Name == "" {
 		return ErrRouterIDNil
 	}
 
-	if _, ok := config.routerMap[router.ID]; ok {
-		return fmt.Errorf("%w: %s %s", ErrDuplicatedConfig, "router", router.ID)
-	}
-
-	if err := validateMatchers(router.Matchers); err != nil {
+	if err := checkMatchers(router.Matchers); err != nil {
 		return err
 	}
 
-	if err := validateTransferRef(config, router.Transfers); err != nil {
+	if err := checkTransferRef(config, router.Transfers); err != nil {
 		return err
 	}
-
-	config.routerMap[router.ID] = router
 
 	return nil
 }
 
 func checkRouterRef(config *Config, routers []string) error {
 	for _, r := range routers {
-		if _, ok := config.routerMap[r]; !ok {
+		if _, ok := config.Routers[r]; !ok {
 			return fmt.Errorf("%w: %s", ErrRouterNotExist, r)
 		}
 	}
@@ -126,10 +125,10 @@ func checkRouterRef(config *Config, routers []string) error {
 	return nil
 }
 
-func validateMatchers(matchers []*MatcherConfig) error {
+func checkMatchers(matchers []*MatcherConfig) error {
 	if len(matchers) > 0 {
 		for _, filter := range matchers {
-			if err := validateMatchConfig(filter); err != nil {
+			if err := checkMatchConfig(filter); err != nil {
 				return err
 			}
 		}
@@ -138,10 +137,10 @@ func validateMatchers(matchers []*MatcherConfig) error {
 	return nil
 }
 
-func validateTransferRef(config *Config, ids []string) error {
+func checkTransferRef(config *Config, ids []string) error {
 	if len(ids) > 0 {
 		for _, id := range ids {
-			if _, ok := config.transferMap[id]; !ok {
+			if _, ok := config.Transfers[id]; !ok {
 				return fmt.Errorf("%w: %s", ErrTransferNotExist, id)
 			}
 		}
@@ -150,8 +149,8 @@ func validateTransferRef(config *Config, ids []string) error {
 	return nil
 }
 
-func checkTransferConfig(config *Config, transferConfig *TransferConfig) error {
-	if transferConfig.ID == "" {
+func checkTransferConfig(_ *Config, transferConfig *TransferConfig) error {
+	if transferConfig.Name == "" {
 		return ErrTransferIDNil
 	}
 
@@ -174,12 +173,10 @@ func checkTransferConfig(config *Config, transferConfig *TransferConfig) error {
 		return fmt.Errorf("%w: %s", ErrTransTypeInvalid, transferConfig.Type)
 	}
 
-	config.transferMap[transferConfig.ID] = transferConfig
-
 	return nil
 }
 
-func validateMatchConfig(config *MatcherConfig) error {
+func checkMatchConfig(config *MatcherConfig) error {
 	if len(config.Contains) == 0 && len(config.NotContains) == 0 {
 		logger.Debugf("match contains is nil")
 	}

@@ -29,9 +29,9 @@ func routeToTransfer(runner *logtail.Runner, request *http.Request, response htt
 	case "list":
 		listTransfers(runner, response)
 	case "add":
-		addTransfers(runner, request, response)
+		addTransfer(runner, request, response)
 	case "delete":
-		deleteTransfers(runner, request, response)
+		deleteTransfer(runner, request, response)
 	default:
 		routeToNotFound(response)
 	}
@@ -45,7 +45,7 @@ func listTransfers(runner *logtail.Runner, response http.ResponseWriter) {
 	_, _ = response.Write(b)
 }
 
-func addTransfers(runner *logtail.Runner, request *http.Request, response http.ResponseWriter) {
+func addTransfer(runner *logtail.Runner, request *http.Request, response http.ResponseWriter) {
 	config := &logtail.TransferConfig{}
 
 	if err := json.NewDecoder(request.Body).Decode(config); err != nil {
@@ -63,7 +63,7 @@ func addTransfers(runner *logtail.Runner, request *http.Request, response http.R
 	routeToSuccess(response)
 }
 
-func deleteTransfers(runner *logtail.Runner, request *http.Request, response http.ResponseWriter) {
+func deleteTransfer(runner *logtail.Runner, request *http.Request, response http.ResponseWriter) {
 	config := &logtail.TransferConfig{}
 
 	if err := json.NewDecoder(request.Body).Decode(config); err != nil {
@@ -72,7 +72,7 @@ func deleteTransfers(runner *logtail.Runner, request *http.Request, response htt
 		return
 	}
 
-	if err := runner.StopTransfer(config); err != nil {
+	if err := runner.StopTransfer(config.Name); err != nil {
 		routeToError(response, err)
 
 		return
