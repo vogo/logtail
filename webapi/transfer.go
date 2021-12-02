@@ -24,11 +24,16 @@ import (
 	"github.com/vogo/logtail"
 )
 
-func routeToTransfer(runner *logtail.Runner, _ *http.Request, response http.ResponseWriter, router string) {
+func routeToTransfer(runner *logtail.Runner, request *http.Request, response http.ResponseWriter, router string) {
 	switch router {
 	case "list":
 		listTransfers(runner, response)
 	case "add":
+		addTransfers(runner, request, response)
+	case "delete":
+		deleteTransfers(runner, request, response)
+	default:
+		routeToNotFound(response)
 	}
 }
 
@@ -38,4 +43,40 @@ func listTransfers(runner *logtail.Runner, response http.ResponseWriter) {
 	b, _ := json.Marshal(runner.Config.Transfers)
 
 	_, _ = response.Write(b)
+}
+
+func addTransfers(runner *logtail.Runner, request *http.Request, response http.ResponseWriter) {
+	config := &logtail.TransferConfig{}
+
+	if err := json.NewDecoder(request.Body).Decode(config); err != nil {
+		routeToError(response, err)
+
+		return
+	}
+
+	if _, err := runner.StartTransfer(config); err != nil {
+		routeToError(response, err)
+
+		return
+	}
+
+	routeToSuccess(response)
+}
+
+func deleteTransfers(runner *logtail.Runner, request *http.Request, response http.ResponseWriter) {
+	config := &logtail.TransferConfig{}
+
+	if err := json.NewDecoder(request.Body).Decode(config); err != nil {
+		routeToError(response, err)
+
+		return
+	}
+
+	if err := runner.StopTransfer(config); err != nil {
+		routeToError(response, err)
+
+		return
+	}
+
+	routeToSuccess(response)
 }

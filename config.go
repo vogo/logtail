@@ -37,6 +37,7 @@ var (
 	ErrTransferIDNil    = errors.New("transfer id is nil")
 	ErrRouterNotExist   = errors.New("router not exists")
 	ErrTransferNotExist = errors.New("transfer not exists")
+	ErrTransferUsing    = errors.New("transfer is using")
 	ErrNoTailingConfig  = errors.New("no tailing command/file config")
 	ErrTransURLNil      = errors.New("transfer url is nil")
 	ErrTransTypeNil     = errors.New("transfer type is nil")

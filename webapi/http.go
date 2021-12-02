@@ -76,10 +76,6 @@ func Serve(request *http.Request, response http.ResponseWriter, runner *logtail.
 	}
 }
 
-func routeToNotFound(response http.ResponseWriter) {
-	response.WriteHeader(http.StatusNotFound)
-}
-
 func responseServerList(runner *logtail.Runner, response http.ResponseWriter) {
 	buf := bytes.NewBuffer(nil)
 

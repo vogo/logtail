@@ -34,7 +34,7 @@ func (f *Format) String() string {
 	return fmt.Sprintf("format{prefix:%s}", f.Prefix)
 }
 
-// WildcardMatch -  finds whether the bytes matches/satisfies the pattern wildcard.
+// WildcardMatch -  finds whether the bytes match/satisfies the pattern wildcard.
 // supports:
 // - '?' as one byte char
 // - '~' as one alphabet char

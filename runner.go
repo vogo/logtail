@@ -18,6 +18,7 @@
 package logtail
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/vogo/logger"
@@ -64,7 +65,7 @@ func (r *Runner) Start() error {
 
 func (r *Runner) startTransfers() error {
 	for _, c := range r.Config.transferMap {
-		if _, err := r.startTransfer(c); err != nil {
+		if _, err := r.StartTransfer(c); err != nil {
 			return err
 		}
 	}
@@ -73,7 +74,7 @@ func (r *Runner) startTransfers() error {
 }
 
 // nolint:ireturn //ignore this.
-func (r *Runner) startTransfer(c *TransferConfig) (transfer.Transfer, error) {
+func (r *Runner) StartTransfer(c *TransferConfig) (transfer.Transfer, error) {
 	t := buildTransfer(c)
 
 	if err := t.Start(); err != nil {
@@ -108,6 +109,37 @@ func (r *Runner) startTransfer(c *TransferConfig) (transfer.Transfer, error) {
 	}
 
 	return t, nil
+}
+
+func (r *Runner) StopTransfer(c *TransferConfig) error {
+	if existTransfer, exist := r.Transfers[c.ID]; exist {
+		if r.existTransfer(c) {
+			return fmt.Errorf("%w: %s", ErrTransferUsing, c.ID)
+		}
+
+		err := existTransfer.Stop()
+		if err != nil {
+			logger.Warnf("stop transfer error: %v", err)
+		}
+
+		delete(r.Transfers, c.ID)
+	}
+
+	return nil
+}
+
+func (r *Runner) existTransfer(c *TransferConfig) bool {
+	for _, server := range r.Servers {
+		for _, router := range server.routers {
+			for i := range router.transfers {
+				if router.transfers[i].Name() == c.ID {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
 }
 
 // Stop the runner.
