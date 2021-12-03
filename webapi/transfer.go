@@ -22,19 +22,30 @@ import (
 	"net/http"
 
 	"github.com/vogo/logtail"
+	"github.com/vogo/logtail/transfer"
 )
 
 func routeToTransfer(runner *logtail.Runner, request *http.Request, response http.ResponseWriter, router string) {
 	switch router {
-	case "list":
+	case OpTypes:
+		listTransferTypes(runner, response)
+	case OpList:
 		listTransfers(runner, response)
-	case "add":
+	case OpAdd:
 		addTransfer(runner, request, response)
-	case "delete":
+	case OpDelete:
 		deleteTransfer(runner, request, response)
 	default:
 		routeToNotFound(response)
 	}
+}
+
+func listTransferTypes(_ *logtail.Runner, response http.ResponseWriter) {
+	response.Header().Add("content-type", "application/json")
+
+	b, _ := json.Marshal(transfer.Types)
+
+	_, _ = response.Write(b)
 }
 
 func listTransfers(runner *logtail.Runner, response http.ResponseWriter) {
@@ -54,7 +65,7 @@ func addTransfer(runner *logtail.Runner, request *http.Request, response http.Re
 		return
 	}
 
-	if _, err := runner.StartTransfer(config); err != nil {
+	if err := runner.AddTransfer(config); err != nil {
 		routeToError(response, err)
 
 		return

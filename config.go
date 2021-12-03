@@ -22,9 +22,13 @@ import (
 	"errors"
 	"flag"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"github.com/vogo/fwatch"
+	"github.com/vogo/logger"
 	"github.com/vogo/logtail/transfer"
+	"github.com/vogo/vogo/vos"
 )
 
 const DefaultServerPort = 54321
@@ -47,14 +51,15 @@ var (
 )
 
 type Config struct {
-	Port           int                        `json:"port"`
-	LogLevel       string                     `json:"log_level"`
-	DefaultFormat  *Format                    `json:"default_format"`
+	file           string
+	Port           int                        `json:"port,omitempty"`
+	LogLevel       string                     `json:"log_level,omitempty"`
+	DefaultFormat  *Format                    `json:"default_format,omitempty"`
 	Transfers      map[string]*TransferConfig `json:"transfers"`
 	Routers        map[string]*RouterConfig   `json:"routers"`
 	Servers        map[string]*ServerConfig   `json:"servers"`
-	DefaultRouters []string                   `json:"default_routers"`
-	GlobalRouters  []string                   `json:"global_routers"`
+	DefaultRouters []string                   `json:"default_routers,omitempty"`
+	GlobalRouters  []string                   `json:"global_routers,omitempty"`
 }
 
 func (c *Config) AppendDefaultRouters(configs []*RouterConfig) []*RouterConfig {
@@ -89,23 +94,46 @@ func (c *Config) GetRouters(routers []string) []*RouterConfig {
 	return configs
 }
 
+func (c *Config) saveToFile() {
+	if c.file == "" {
+		logger.Warnf("config file is null")
+
+		return
+	}
+
+	b, err := json.Marshal(c)
+	if err != nil {
+		logger.Warnf("config error: %v", err)
+
+		return
+	}
+
+	if err = ioutil.WriteFile(c.file, b, os.ModePerm); err != nil {
+		logger.Warnf("save config to file error: %v", err)
+	}
+}
+
 type ServerConfig struct {
-	Name    string   `json:"name"`
-	Format  *Format  `json:"format"`
+	Name    string   `json:"name,omitempty"`
+	Format  *Format  `json:"format,omitempty"`
 	Routers []string `json:"routers"`
 
 	// single command.
-	Command string `json:"command"`
+	Command string `json:"command,omitempty"`
 
 	// multiple commands split by new line.
-	Commands string `json:"commands"`
+	Commands string `json:"commands,omitempty"`
 
 	// command to generate multiple commands split by new line.
-	CommandGen string `json:"command_gen"`
+	CommandGen string `json:"command_gen,omitempty"`
 
 	// command to generate multiple commands split by new line.
-	File *FileConfig `json:"file"`
+	File *FileConfig `json:"file,omitempty"`
 }
+
+// ServerTypes server types.
+// nolint:gochecknoglobals //ignore this.
+var ServerTypes = []string{"command", "commands", "command_gen", "file"}
 
 // FileConfig tailing file config.
 type FileConfig struct {
@@ -130,21 +158,21 @@ type FileConfig struct {
 }
 
 type RouterConfig struct {
-	Name      string           `json:"name"`
+	Name      string           `json:"name,omitempty"`
 	Matchers  []*MatcherConfig `json:"matchers"`
 	Transfers []string         `json:"transfers"`
 }
 
 type MatcherConfig struct {
-	Contains    []string `json:"contains"`
-	NotContains []string `json:"not_contains"`
+	Contains    []string `json:"contains,omitempty"`
+	NotContains []string `json:"not_contains,omitempty"`
 }
 
 type TransferConfig struct {
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 	Type string `json:"type"`
-	URL  string `json:"url"`
-	Dir  string `json:"dir"`
+	URL  string `json:"url,omitempty"`
+	Dir  string `json:"dir,omitempty"`
 }
 
 func parseConfig() (cfg *Config, parseErr error) {
@@ -166,31 +194,67 @@ func parseConfig() (cfg *Config, parseErr error) {
 	flag.Parse()
 
 	if *file != "" {
-		config := &Config{}
-		data, fileErr := ioutil.ReadFile(*file)
+		return parseFileConfig(*file)
+	}
 
-		if fileErr != nil {
-			return nil, fileErr
-		}
+	f := filepath.Join(vos.CurrUserHome(), ".logtail.json")
 
-		if jsonErr := json.Unmarshal(data, config); jsonErr != nil {
-			return nil, jsonErr
-		}
+	if *command != "" {
+		config := buildCommandLineConfig(*port, *command, *matchContains, *dingURL, *webhookURL)
+
+		config.file = f
 
 		return config, nil
 	}
 
-	return buildCommandLineConfig(*port, *command, *matchContains, *dingURL, *webhookURL), nil
+	logger.Infof("default config file: %s", f)
+	config := buildDefaultConfig(f)
+
+	if *port > 0 {
+		config.Port = *port
+	}
+
+	return config, nil
+}
+
+func parseFileConfig(f string) (*Config, error) {
+	config := &Config{
+		file: f,
+	}
+	data, fileErr := ioutil.ReadFile(f)
+
+	if fileErr != nil {
+		return nil, fileErr
+	}
+
+	if jsonErr := json.Unmarshal(data, config); jsonErr != nil {
+		return nil, jsonErr
+	}
+
+	return config, nil
+}
+
+func buildDefaultConfig(f string) *Config {
+	if _, err := os.Stat(f); err == nil {
+		config, fileErr := parseFileConfig(f)
+		if fileErr == nil {
+			return config
+		}
+	}
+
+	config := buildEmptyConfig()
+	config.file = f
+
+	return config
 }
 
 func buildCommandLineConfig(port int, command, matchContains, dingURL, webhookURL string) *Config {
-	config := &Config{
-		Transfers: make(map[string]*TransferConfig),
-		Routers:   make(map[string]*RouterConfig),
-		Servers:   make(map[string]*ServerConfig),
+	config := buildEmptyConfig()
+
+	if port > 0 {
+		config.Port = port
 	}
 
-	config.Port = port
 	serverConfig := &ServerConfig{
 		Name:    DefaultID,
 		Routers: []string{DefaultID},
@@ -229,4 +293,14 @@ func buildCommandLineConfig(port int, command, matchContains, dingURL, webhookUR
 	}
 
 	return config
+}
+
+func buildEmptyConfig() *Config {
+	return &Config{
+		LogLevel:  "INFO",
+		Port:      DefaultServerPort,
+		Transfers: make(map[string]*TransferConfig),
+		Routers:   make(map[string]*RouterConfig),
+		Servers:   make(map[string]*ServerConfig),
+	}
 }

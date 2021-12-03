@@ -38,14 +38,6 @@ func initialCheckConfig(config *Config) error {
 		config.Port = DefaultServerPort
 	}
 
-	if len(config.Servers) == 0 {
-		return ErrNoServerConfig
-	}
-
-	if len(config.Transfers) == 0 {
-		return ErrTransferNotExist
-	}
-
 	for _, t := range config.Transfers {
 		if transferErr := checkTransferConfig(config, t); transferErr != nil {
 			return transferErr

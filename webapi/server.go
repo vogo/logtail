@@ -26,6 +26,8 @@ import (
 
 func routeToServer(runner *logtail.Runner, request *http.Request, response http.ResponseWriter, router string) {
 	switch router {
+	case OpTypes:
+		listServerTypes(runner, response)
 	case OpList:
 		listServers(runner, response)
 	case OpAdd:
@@ -35,6 +37,14 @@ func routeToServer(runner *logtail.Runner, request *http.Request, response http.
 	default:
 		routeToNotFound(response)
 	}
+}
+
+func listServerTypes(_ *logtail.Runner, response http.ResponseWriter) {
+	response.Header().Add("content-type", "application/json")
+
+	b, _ := json.Marshal(logtail.ServerTypes)
+
+	_, _ = response.Write(b)
 }
 
 func listServers(runner *logtail.Runner, response http.ResponseWriter) {

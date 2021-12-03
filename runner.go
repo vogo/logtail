@@ -76,6 +76,17 @@ func (r *Runner) startTransfers() error {
 	return nil
 }
 
+func (r *Runner) AddTransfer(c *TransferConfig) error {
+	if _, err := r.StartTransfer(c); err != nil {
+		return err
+	}
+
+	r.Config.Transfers[c.Name] = c
+	r.Config.saveToFile()
+
+	return nil
+}
+
 // nolint:ireturn //ignore this.
 func (r *Runner) StartTransfer(c *TransferConfig) (transfer.Transfer, error) {
 	r.lock.Lock()
@@ -132,6 +143,9 @@ func (r *Runner) StopTransfer(name string) error {
 		}
 
 		delete(r.Transfers, name)
+
+		delete(r.Config.Transfers, name)
+		r.Config.saveToFile()
 	}
 
 	return nil
@@ -192,6 +206,7 @@ func (r *Runner) AddRouter(config *RouterConfig) error {
 	}
 
 	r.Config.Routers[config.Name] = config
+	r.Config.saveToFile()
 
 	return err
 }
@@ -206,6 +221,7 @@ func (r *Runner) DeleteRouter(name string) error {
 		}
 
 		delete(r.Config.Routers, name)
+		r.Config.saveToFile()
 	}
 
 	return nil
@@ -253,6 +269,9 @@ func (r *Runner) AddServer(serverConfig *ServerConfig) (*Server, error) {
 
 	server.Start()
 
+	r.Config.Servers[serverConfig.Name] = serverConfig
+	r.Config.saveToFile()
+
 	return server, nil
 }
 
@@ -267,6 +286,7 @@ func (r *Runner) DeleteServer(name string) error {
 		delete(r.Servers, name)
 
 		delete(r.Config.Servers, name)
+		r.Config.saveToFile()
 	}
 
 	return nil

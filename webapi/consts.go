@@ -18,6 +18,7 @@
 package webapi
 
 const (
+	OpTypes  = "types"
 	OpList   = "list"
 	OpAdd    = "add"
 	OpDelete = "delete"

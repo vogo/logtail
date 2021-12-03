@@ -21,11 +21,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/vogo/logger"
 	"github.com/vogo/logtail"
 )
 
 func StartWebAPI(runner *logtail.Runner) {
 	go func() {
+		logger.Infof("serve at port %d", runner.Config.Port)
+
 		if err := http.ListenAndServe(fmt.Sprintf(":%d", runner.Config.Port), &HTTPHandler{
 			runner: runner,
 		}); err != nil {

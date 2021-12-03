@@ -23,3 +23,7 @@ type Transfer interface {
 	Start() error
 	Stop() error
 }
+
+// Types all transfer types.
+// nolint:gochecknoglobals //ignore this.
+var Types = []string{TypeNull, TypeConsole, TypeFile, TypeWebhook, TypeDing, TypeLark}

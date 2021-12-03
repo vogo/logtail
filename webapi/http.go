@@ -27,14 +27,14 @@ import (
 )
 
 const (
-	// URIIndexPrefix uri index prefix.
-	URIIndexPrefix = "/index"
+	// URIRouterIndex uri index router.
+	URIRouterIndex = "index"
 
-	// URITailPrefix uri tail prefix.
-	URITailPrefix = "/tail"
+	// URIRouterTail uri tail router.
+	URIRouterTail = "tail"
 
-	// URIManagePrefix uri manage prefix.
-	URIManagePrefix = "/manage/"
+	// URIRouterManage uri manage router.
+	URIRouterManage = "manage"
 )
 
 type HTTPHandler struct {
@@ -62,14 +62,17 @@ func splitRouter(r string) (first, left string) {
 // - else route to default server list page.
 func Serve(request *http.Request, response http.ResponseWriter, runner *logtail.Runner) {
 	uri := request.RequestURI
+	if uri[0] == '/' {
+		uri = uri[1:]
+	}
 
 	router, leftRouter := splitRouter(uri)
 	switch router {
-	case URIIndexPrefix:
+	case URIRouterIndex:
 		routeToIndexPage(runner, response, leftRouter)
-	case URITailPrefix:
+	case URIRouterTail:
 		routeToTail(runner, request, response, leftRouter)
-	case URIManagePrefix:
+	case URIRouterManage:
 		routeToManage(runner, request, response, leftRouter)
 	default:
 		responseServerList(runner, response)
