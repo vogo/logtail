@@ -43,7 +43,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	//nolint:gosec //ignore this
+	// nolint:gosec //ignore this
 	cmd := exec.Command("/bin/sh", "-c", *command)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 

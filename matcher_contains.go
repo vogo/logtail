@@ -38,7 +38,7 @@ func NewContainsMatcher(pattern string, contains bool) *ContainsMatcher {
 	containsMatcher.kmp = make([]int, containsMatcher.plen+1)
 	containsMatcher.kmp[0] = -1
 
-	//nolint:varnamelen //ignore this
+	// nolint:varnamelen //ignore this
 	for i := 1; i < containsMatcher.plen; i++ {
 		j := containsMatcher.kmp[i-1]
 		for j > -1 && containsMatcher.pattern[j+1] != containsMatcher.pattern[i] {
@@ -62,7 +62,7 @@ func (cm *ContainsMatcher) Match(bytes []byte) bool {
 		return false
 	}
 
-	//nolint:varnamelen //ignore this
+	// nolint:varnamelen //ignore this
 	j := -1
 
 	for i := 0; i < length; i++ {
