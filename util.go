@@ -29,6 +29,7 @@ func isAlphabetChar(b byte) bool {
 	return (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z')
 }
 
+// nolint:varnamelen //ignore this.
 func indexToNextLineStart(format *Format, message []byte) []byte {
 	l := len(message)
 	i := 0

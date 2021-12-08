@@ -172,14 +172,14 @@ func (s *Server) stopWorkers() {
 }
 
 // stopWorkers stop all workers of server, but not for the merging worker.
-func (s *Server) shutdownWorker(w *worker) {
-	delete(s.workers, w.id)
+func (s *Server) shutdownWorker(worker *worker) {
+	delete(s.workers, worker.id)
 
 	// close worker stop chan.
-	w.stopper.Stop()
+	worker.stopper.Stop()
 
 	// call worker stop.
-	w.stop()
+	worker.stop()
 }
 
 // startCommandGenWorkers Start workers using generated commands.
@@ -281,33 +281,33 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 			return
 		case <-s.stopper.C:
 			return
-		case e := <-watcher.Events:
-			switch e.Event {
+		case watchEvent := <-watcher.Events:
+			switch watchEvent.Event {
 			case fwatch.Create, fwatch.Write:
-				logger.Infof("notify active file: %s", e.Name)
+				logger.Infof("notify active file: %s", watchEvent.Name)
 
-				if w, ok := fileWorkerMap[e.Name]; ok {
-					logger.Infof("worker [%s] is already tailing file: %s", w.id, e.Name)
+				if w, ok := fileWorkerMap[watchEvent.Name]; ok {
+					logger.Infof("worker [%s] is already tailing file: %s", w.id, watchEvent.Name)
 				} else {
 					// non-dynamic worker will retry self
-					w := startWorker(s, followRetryTailCommand(e.Name), false)
+					w := startWorker(s, followRetryTailCommand(watchEvent.Name), false)
 					w.stopper = s.stopper.NewChild()
-					fileWorkerMap[e.Name] = w
+					fileWorkerMap[watchEvent.Name] = w
 					s.addWorker(w)
 				}
 			case fwatch.Inactive:
-				logger.Infof("notify inactive file: %s", e.Name)
+				logger.Infof("notify inactive file: %s", watchEvent.Name)
 
-				if w, ok := fileWorkerMap[e.Name]; ok {
+				if w, ok := fileWorkerMap[watchEvent.Name]; ok {
 					w.shutdown()
-					delete(fileWorkerMap, e.Name)
+					delete(fileWorkerMap, watchEvent.Name)
 				}
 			case fwatch.Remove, fwatch.Silence:
-				logger.Infof("notify remove file: %s", e.Name)
+				logger.Infof("notify remove file: %s", watchEvent.Name)
 
-				if w, ok := fileWorkerMap[e.Name]; ok {
+				if w, ok := fileWorkerMap[watchEvent.Name]; ok {
 					w.shutdown()
-					delete(fileWorkerMap, e.Name)
+					delete(fileWorkerMap, watchEvent.Name)
 				}
 			}
 		}
@@ -319,13 +319,13 @@ func (s *Server) addRouter(routerConfig *RouterConfig) error {
 		r.Stop()
 	}
 
-	r := buildRouter(s, routerConfig)
+	router := buildRouter(s, routerConfig)
 
-	if err := r.Start(); err != nil {
+	if err := router.Start(); err != nil {
 		return err
 	}
 
-	s.routers[routerConfig.Name] = r
+	s.routers[routerConfig.Name] = router
 
 	return nil
 }

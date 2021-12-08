@@ -29,29 +29,30 @@ func NewContainsMatcher(pattern string, contains bool) *ContainsMatcher {
 		panic("pattern nil")
 	}
 
-	cm := &ContainsMatcher{
+	containsMatcher := &ContainsMatcher{
 		contains: contains,
 		pattern:  pattern,
 	}
 
-	cm.plen = len(pattern)
-	cm.kmp = make([]int, cm.plen+1)
-	cm.kmp[0] = -1
+	containsMatcher.plen = len(pattern)
+	containsMatcher.kmp = make([]int, containsMatcher.plen+1)
+	containsMatcher.kmp[0] = -1
 
-	for i := 1; i < cm.plen; i++ {
-		j := cm.kmp[i-1]
-		for j > -1 && cm.pattern[j+1] != cm.pattern[i] {
-			j = cm.kmp[j]
+	//nolint:varnamelen //ignore this
+	for i := 1; i < containsMatcher.plen; i++ {
+		j := containsMatcher.kmp[i-1]
+		for j > -1 && containsMatcher.pattern[j+1] != containsMatcher.pattern[i] {
+			j = containsMatcher.kmp[j]
 		}
 
-		if cm.pattern[j+1] == cm.pattern[i] {
+		if containsMatcher.pattern[j+1] == containsMatcher.pattern[i] {
 			j++
 		}
 
-		cm.kmp[i] = j
+		containsMatcher.kmp[i] = j
 	}
 
-	return cm
+	return containsMatcher
 }
 
 func (cm *ContainsMatcher) Match(bytes []byte) bool {
@@ -61,6 +62,7 @@ func (cm *ContainsMatcher) Match(bytes []byte) bool {
 		return false
 	}
 
+	//nolint:varnamelen //ignore this
 	j := -1
 
 	for i := 0; i < length; i++ {

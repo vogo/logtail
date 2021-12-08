@@ -36,7 +36,7 @@ type Filter struct {
 }
 
 func newFilter(worker *worker, router *Router) *Filter {
-	f := &Filter{
+	routerFilter := &Filter{
 		id:      fmt.Sprintf("%s-%s", worker.id, router.id),
 		channel: make(chan []byte, DefaultChannelBufferSize),
 		lock:    sync.Mutex{},
@@ -45,7 +45,7 @@ func newFilter(worker *worker, router *Router) *Filter {
 		router:  router,
 	}
 
-	return f
+	return routerFilter
 }
 
 func (f *Filter) Route(bytes []byte) error {

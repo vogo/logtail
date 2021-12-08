@@ -21,14 +21,36 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
+	"github.com/vogo/logger"
 	"github.com/vogo/logtail"
+	"github.com/vogo/logtail/webapi"
 )
 
 func main() {
+	runner := logtail.Start()
+
+	webapi.StartWebAPI(runner)
+
 	go func() {
 		log.Println(http.ListenAndServe(":6060", nil))
 	}()
 
-	logtail.Start()
+	handleSignal()
+}
+
+func handleSignal() {
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	sig := <-signalChan
+	logger.Infof("signal: %v", sig)
+
+	_ = logtail.StopLogtail()
+
+	// wait all goroutines stopping
+	<-time.After(time.Second)
 }

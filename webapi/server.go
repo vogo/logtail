@@ -42,6 +42,7 @@ func routeToServer(runner *logtail.Runner, request *http.Request, response http.
 func listServerTypes(_ *logtail.Runner, response http.ResponseWriter) {
 	response.Header().Add("content-type", "application/json")
 
+	// nolint:errchkjson //ignore this
 	b, _ := json.Marshal(logtail.ServerTypes)
 
 	_, _ = response.Write(b)
@@ -50,6 +51,7 @@ func listServerTypes(_ *logtail.Runner, response http.ResponseWriter) {
 func listServers(runner *logtail.Runner, response http.ResponseWriter) {
 	response.Header().Add("content-type", "application/json")
 
+	// nolint:errchkjson //ignore this
 	b, _ := json.Marshal(runner.Config.Servers)
 
 	_, _ = response.Write(b)

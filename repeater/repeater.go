@@ -28,14 +28,14 @@ import (
 
 const filePerm = 0o600
 
-func Repeat(f string, c chan []byte) {
+func Repeat(filePath string, bytesChan chan []byte) {
 	var (
 		previousLine []byte
 		line         []byte
 		err          error
 	)
 
-	file, err := os.OpenFile(f, os.O_RDONLY, filePerm)
+	file, err := os.OpenFile(filePath, os.O_RDONLY, filePerm)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "failed open file: %v", err)
 		os.Exit(1)
@@ -46,7 +46,7 @@ func Repeat(f string, c chan []byte) {
 	splitLine := []byte(`----------------`)
 
 	for {
-		var b []byte
+		var dataBuf []byte
 
 		previousLine = nil
 
@@ -54,18 +54,18 @@ func Repeat(f string, c chan []byte) {
 			line = readLine(reader)
 
 			if len(previousLine) == 0 && bytes.Equal(line, splitLine) {
-				b = b[:len(b)-1]
+				dataBuf = dataBuf[:len(dataBuf)-1]
 
 				break
 			}
 
-			b = append(b, line...)
-			b = append(b, '\n')
+			dataBuf = append(dataBuf, line...)
+			dataBuf = append(dataBuf, '\n')
 
 			previousLine = line
 		}
 
-		c <- b
+		bytesChan <- dataBuf
 	}
 }
 

@@ -44,16 +44,16 @@ type worker struct {
 
 func (w *worker) Write(data []byte) (int, error) {
 	// copy data to avoid being update by source
-	d := make([]byte, len(data))
-	copy(d, data)
+	newData := make([]byte, len(data))
+	copy(newData, data)
 
 	for _, r := range w.filters {
-		r.receive(d)
+		r.receive(newData)
 	}
 
-	_, _ = w.server.Write(d)
+	_, _ = w.server.Write(newData)
 
-	return len(d), nil
+	return len(newData), nil
 }
 
 func (w *worker) writeToFilters(bytes []byte) (int, error) {
@@ -101,6 +101,8 @@ func (w *worker) start() {
 				return
 			default:
 				logger.Infof("worker [%s] command: %s", w.id, w.command)
+
+				// nolint:gosec //ignore this.
 				w.cmd = exec.Command("/bin/sh", "-c", w.command)
 
 				setCmdSysProcAttr(w.cmd)
@@ -177,30 +179,30 @@ func (w *worker) stopFilters() {
 }
 
 func startWorker(s *Server, command string, dynamic bool) *worker {
-	w := newWorker(s, command, dynamic)
+	runWorker := newWorker(s, command, dynamic)
 
 	if len(s.routers) > 0 {
 		for _, r := range s.routers {
-			w.StartRouterFilter(r)
+			runWorker.StartRouterFilter(r)
 		}
 	}
 
-	w.start()
+	runWorker.start()
 
-	return w
+	return runWorker
 }
 
-func newWorker(s *Server, command string, dynamic bool) *worker {
-	id := fmt.Sprintf("%s-%d", s.id, len(s.workers))
+func newWorker(workerServer *Server, command string, dynamic bool) *worker {
+	workerID := fmt.Sprintf("%s-%d", workerServer.id, len(workerServer.workers))
 	if command == "" {
-		id = fmt.Sprintf("%s-default", s.id)
+		workerID = fmt.Sprintf("%s-default", workerServer.id)
 	}
 
 	return &worker{
 		mu:      sync.Mutex{},
-		id:      id,
-		server:  s,
-		stopper: s.stopper,
+		id:      workerID,
+		server:  workerServer,
+		stopper: workerServer.stopper,
 		command: command,
 		dynamic: dynamic,
 		filters: make(map[string]*Filter, defaultMapSize),

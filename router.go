@@ -37,19 +37,19 @@ type Router struct {
 	transfers []transfer.Transfer
 }
 
-func NewRouter(s *Server, name string, matchers []Matcher, transfers []transfer.Transfer) *Router {
-	id := fmt.Sprintf("%s-%s", s.id, name)
+func NewRouter(server *Server, name string, matchers []Matcher, transfers []transfer.Transfer) *Router {
+	id := fmt.Sprintf("%s-%s", server.id, name)
 
-	t := &Router{
+	router := &Router{
 		id:        id,
 		Name:      name,
 		lock:      sync.Mutex{},
-		Stopper:   s.stopper.NewChild(),
+		Stopper:   server.stopper.NewChild(),
 		matchers:  matchers,
 		transfers: transfers,
 	}
 
-	return t
+	return router
 }
 
 func (r *Router) SetMatchers(matchers []Matcher) {

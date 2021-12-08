@@ -64,13 +64,13 @@ func (ww *WebsocketTransfer) Trans(_ string, data ...[]byte) (err error) {
 }
 
 func startWebsocketTransfer(runner *logtail.Runner, response http.ResponseWriter, request *http.Request, serverID string) {
-	c, err := websocketUpgrader.Upgrade(response, request, nil)
+	wsConn, err := websocketUpgrader.Upgrade(response, request, nil)
 	if err != nil {
 		logger.Error("web socket error:", err)
 
 		return
 	}
-	defer c.Close()
+	defer wsConn.Close()
 
 	server, ok := runner.Servers[serverID]
 	if !ok {
@@ -79,7 +79,7 @@ func startWebsocketTransfer(runner *logtail.Runner, response http.ResponseWriter
 		return
 	}
 
-	websocketTransfer := &WebsocketTransfer{conn: c}
+	websocketTransfer := &WebsocketTransfer{conn: wsConn}
 	index := fmt.Sprintf("ww-%d", atomic.AddInt64(&wsConnIndex, 1))
 	router := logtail.NewRouter(server, index, nil, []transfer.Transfer{websocketTransfer})
 	server.MergingWorker.StartRouterFilter(router)
@@ -88,7 +88,7 @@ func startWebsocketTransfer(runner *logtail.Runner, response http.ResponseWriter
 
 const MessageTypeMatcherConfig = '1'
 
-func startWebsocketHeartbeat(router *logtail.Router, wt *WebsocketTransfer) {
+func startWebsocketHeartbeat(router *logtail.Router, websocketTransfer *WebsocketTransfer) {
 	defer func() {
 		_ = recover()
 
@@ -101,9 +101,9 @@ func startWebsocketHeartbeat(router *logtail.Router, wt *WebsocketTransfer) {
 		case <-router.Stopper.C:
 			return
 		default:
-			_ = wt.conn.SetReadDeadline(time.Now().Add(WebsocketHeartbeatReadTimeout))
+			_ = websocketTransfer.conn.SetReadDeadline(time.Now().Add(WebsocketHeartbeatReadTimeout))
 
-			_, data, err := wt.conn.ReadMessage()
+			_, data, err := websocketTransfer.conn.ReadMessage()
 			if err != nil {
 				if !isEncodeError(err) {
 					logger.Warnf("router [%s] websocket heartbeat error: %+v", router.Name, err)

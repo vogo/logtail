@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -101,14 +100,14 @@ func (c *Config) saveToFile() {
 		return
 	}
 
-	b, err := json.Marshal(c)
+	fileData, err := json.Marshal(c)
 	if err != nil {
 		logger.Warnf("config error: %v", err)
 
 		return
 	}
 
-	if err = ioutil.WriteFile(c.file, b, os.ModePerm); err != nil {
+	if err = os.WriteFile(c.file, fileData, os.ModePerm); err != nil {
 		logger.Warnf("save config to file error: %v", err)
 	}
 }
@@ -197,18 +196,18 @@ func parseConfig() (cfg *Config, parseErr error) {
 		return parseFileConfig(*file)
 	}
 
-	f := filepath.Join(vos.CurrUserHome(), ".logtail.json")
+	configFile := filepath.Join(vos.CurrUserHome(), ".logtail.json")
 
 	if *command != "" {
 		config := buildCommandLineConfig(*port, *command, *matchContains, *dingURL, *webhookURL)
 
-		config.file = f
+		config.file = configFile
 
 		return config, nil
 	}
 
-	logger.Infof("default config file: %s", f)
-	config := buildDefaultConfig(f)
+	logger.Infof("default config file: %s", configFile)
+	config := buildDefaultConfig(configFile)
 
 	if *port > 0 {
 		config.Port = *port
@@ -221,7 +220,7 @@ func parseFileConfig(f string) (*Config, error) {
 	config := &Config{
 		file: f,
 	}
-	data, fileErr := ioutil.ReadFile(f)
+	data, fileErr := os.ReadFile(f)
 
 	if fileErr != nil {
 		return nil, fileErr
@@ -234,16 +233,16 @@ func parseFileConfig(f string) (*Config, error) {
 	return config, nil
 }
 
-func buildDefaultConfig(f string) *Config {
-	if _, err := os.Stat(f); err == nil {
-		config, fileErr := parseFileConfig(f)
+func buildDefaultConfig(filePath string) *Config {
+	if _, err := os.Stat(filePath); err == nil {
+		config, fileErr := parseFileConfig(filePath)
 		if fileErr == nil {
 			return config
 		}
 	}
 
 	config := buildEmptyConfig()
-	config.file = f
+	config.file = filePath
 
 	return config
 }

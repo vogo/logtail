@@ -19,7 +19,6 @@ package logtail_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -151,11 +150,11 @@ func TestCommands(t *testing.T) {
 	log1 := filepath.Join(workDir, "log1.txt")
 	log2 := filepath.Join(workDir, "log2.txt")
 
-	assert.NoError(t, ioutil.WriteFile(log1, []byte(`2020-11-11 ERROR test1
+	assert.NoError(t, os.WriteFile(log1, []byte(`2020-11-11 ERROR test1
  follow1
  follow2`), 0o600))
 
-	assert.NoError(t, ioutil.WriteFile(log2, []byte(`2020-11-11 ERROR test2 "中文"
+	assert.NoError(t, os.WriteFile(log2, []byte(`2020-11-11 ERROR test2 "中文"
  follow3
  follow4`), 0o600))
 

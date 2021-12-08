@@ -43,6 +43,7 @@ func routeToTransfer(runner *logtail.Runner, request *http.Request, response htt
 func listTransferTypes(_ *logtail.Runner, response http.ResponseWriter) {
 	response.Header().Add("content-type", "application/json")
 
+	// nolint:errchkjson //ignore this
 	b, _ := json.Marshal(transfer.Types)
 
 	_, _ = response.Write(b)
@@ -51,6 +52,7 @@ func listTransferTypes(_ *logtail.Runner, response http.ResponseWriter) {
 func listTransfers(runner *logtail.Runner, response http.ResponseWriter) {
 	response.Header().Add("content-type", "application/json")
 
+	// nolint:errchkjson //ignore this
 	b, _ := json.Marshal(runner.Config.Transfers)
 
 	_, _ = response.Write(b)

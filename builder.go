@@ -43,14 +43,14 @@ func buildTransfers(runner *Runner, ids []string) []transfer.Transfer {
 	transfers := make([]transfer.Transfer, 0, len(ids))
 
 	for _, id := range ids {
-		t, ok := runner.Transfers[id]
+		existTransfer, ok := runner.Transfers[id]
 		if !ok {
 			logger.Errorf("transfer not exists: %s", id)
 
 			continue
 		}
 
-		transfers = append(transfers, t)
+		transfers = append(transfers, existTransfer)
 	}
 
 	return transfers

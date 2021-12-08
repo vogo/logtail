@@ -20,7 +20,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 )
@@ -42,9 +42,9 @@ func (h *handler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		data []byte
 	)
 
-	data, err = ioutil.ReadAll(req.Body)
+	data, err = io.ReadAll(req.Body)
 	if err != nil {
-		_, _ = res.Write([]byte(fmt.Sprintf("error: %v", err)))
+		_, _ = fmt.Fprintf(res, "error: %v", err)
 
 		return
 	}

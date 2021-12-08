@@ -28,22 +28,22 @@ import (
 const readLogInterval = time.Millisecond * 10
 
 func main() {
-	f := flag.String("f", "", "file")
+	filePath := flag.String("f", "", "file")
 
 	flag.Parse()
 
-	if *f == "" {
+	if *filePath == "" {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
-	c := make(chan []byte)
-	go repeater.Repeat(*f, c)
+	bytesChan := make(chan []byte)
+	go repeater.Repeat(*filePath, bytesChan)
 
 	ticker := time.NewTicker(readLogInterval)
 
 	for {
-		b := <-c
+		b := <-bytesChan
 		_, _ = os.Stdout.Write(b)
 
 		<-ticker.C

@@ -88,33 +88,33 @@ func (r *Runner) AddTransfer(c *TransferConfig) error {
 }
 
 // nolint:ireturn //ignore this.
-func (r *Runner) StartTransfer(c *TransferConfig) (transfer.Transfer, error) {
+func (r *Runner) StartTransfer(transferConfig *TransferConfig) (transfer.Transfer, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	t := buildTransfer(c)
+	runTransfer := buildTransfer(transferConfig)
 
-	if err := t.Start(); err != nil {
-		logger.Infof("transfer [%s]%s Start error: %v", c.Type, t.Name(), err)
+	if err := runTransfer.Start(); err != nil {
+		logger.Infof("transfer [%s]%s Start error: %v", transferConfig.Type, runTransfer.Name(), err)
 
 		return nil, err
 	}
 
-	logger.Infof("transfer [%s]%s started", c.Type, t.Name())
+	logger.Infof("transfer [%s]%s started", transferConfig.Type, runTransfer.Name())
 
-	existTransfer, exist := r.Transfers[c.Name]
+	existTransfer, exist := r.Transfers[transferConfig.Name]
 
 	// save or replace transfer
-	r.Transfers[c.Name] = t
+	r.Transfers[transferConfig.Name] = runTransfer
 
 	if exist {
 		for _, server := range r.Servers {
 			for _, router := range server.routers {
 				router.lock.Lock()
 				for i := range router.transfers {
-					if router.transfers[i].Name() == t.Name() {
+					if router.transfers[i].Name() == runTransfer.Name() {
 						// replace transfer
-						router.transfers[i] = t
+						router.transfers[i] = runTransfer
 					}
 				}
 				router.lock.Unlock()
@@ -125,7 +125,7 @@ func (r *Runner) StartTransfer(c *TransferConfig) (transfer.Transfer, error) {
 		_ = existTransfer.Stop()
 	}
 
-	return t, nil
+	return runTransfer, nil
 }
 
 func (r *Runner) StopTransfer(name string) error {

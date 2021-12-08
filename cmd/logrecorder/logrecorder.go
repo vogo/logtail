@@ -34,16 +34,17 @@ func (r *recorder) Write(p []byte) (int, error) {
 }
 
 func main() {
-	c := flag.String("c", "", "command")
+	command := flag.String("c", "", "command")
 
 	flag.Parse()
 
-	if *c == "" {
+	if *command == "" {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
-	cmd := exec.Command("/bin/sh", "-c", *c)
+	//nolint:gosec //ignore this
+	cmd := exec.Command("/bin/sh", "-c", *command)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	cmd.Stdout = &recorder{}

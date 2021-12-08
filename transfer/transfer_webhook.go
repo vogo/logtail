@@ -20,7 +20,7 @@ package transfer
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/vogo/logger"
@@ -65,7 +65,7 @@ func httpTrans(url string, data ...[]byte) error {
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		if body, err := ioutil.ReadAll(res.Body); err == nil {
+		if body, err := io.ReadAll(res.Body); err == nil {
 			logger.Warnf("http alert error: %s", body)
 		}
 

@@ -80,17 +80,17 @@ func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 	idx := 3
 	messageRemainCapacity := dingMessageDataMaxLength
 
-	for _, b := range data {
+	for _, bytes := range data {
 		if messageRemainCapacity <= 0 {
 			break
 		}
 
-		b = EscapeLimitJSONBytes(b, messageRemainCapacity)
+		bytes = EscapeLimitJSONBytes(bytes, messageRemainCapacity)
 
-		list[idx] = b
+		list[idx] = bytes
 		idx++
 
-		messageRemainCapacity -= len(b)
+		messageRemainCapacity -= len(bytes)
 	}
 
 	list[idx] = dingTextMessageDataSuffix
