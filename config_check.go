@@ -100,11 +100,7 @@ func checkRouterConfig(config *Config, router *RouterConfig) error {
 		return err
 	}
 
-	if err := checkTransferRef(config, router.Transfers); err != nil {
-		return err
-	}
-
-	return nil
+	return checkTransferRef(config, router.Transfers)
 }
 
 func checkRouterRef(config *Config, routers []string) error {
