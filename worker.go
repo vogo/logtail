@@ -82,6 +82,7 @@ func (w *worker) StartRouterFilter(router *Router) {
 	}
 }
 
+// nolint:gosec //ignore this.
 func (w *worker) start() {
 	go func() {
 		defer func() {
@@ -102,7 +103,6 @@ func (w *worker) start() {
 			default:
 				logger.Infof("worker [%s] command: %s", w.id, w.command)
 
-				// nolint:gosec //ignore this.
 				w.cmd = exec.Command("/bin/sh", "-c", w.command)
 
 				setCmdSysProcAttr(w.cmd)

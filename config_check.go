@@ -74,11 +74,7 @@ func checkServerConfig(config *Config, server *ServerConfig) error {
 		logger.Warnf("%v for server %s", ErrNoTailingConfig, server.Name)
 	}
 
-	if err := checkRouterRef(config, server.Routers); err != nil {
-		return err
-	}
-
-	return nil
+	return checkRouterRef(config, server.Routers)
 }
 
 func checkRouterConfigs(config *Config, routers map[string]*RouterConfig) error {
