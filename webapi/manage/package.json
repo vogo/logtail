@@ -4,9 +4,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "logtail:sync": "yarn run build && node ./build/sync.js && cd ../../ && go run makestatic/makestatic.go",
+    "logtail:run": "cd ../../ && go run cmd/logtail/logtail.go"
   },
   "dependencies": {
+    "axios": "^0.24.0",
     "element-plus": "^1.2.0-beta.6",
     "vue": "^3.2.23",
     "vue-router": "4"

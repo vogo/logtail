@@ -1,16 +1,17 @@
 <script setup lang="ts">
+import { computed } from '@vue/reactivity';
 import { useRouter } from 'vue-router';
 const router = useRouter()
-console.log(router)
+const initActive = computed(() => router.currentRoute.value.path)
 </script>
 
 <template>
   <div :class="$style.app">
-    <ElMenu mode="horizontal">
-      <ElMenuItem index="1">Home</ElMenuItem>
-      <ElMenuItem index="2">Transfer</ElMenuItem>
-      <ElMenuItem index="3">Router</ElMenuItem>
-      <ElMenuItem index="4">Server</ElMenuItem>
+    <ElMenu :default-active="initActive" mode="horizontal" router>
+      <ElMenuItem index="/">Home</ElMenuItem>
+      <ElMenuItem index="/transfer">Transfer</ElMenuItem>
+      <ElMenuItem index="/router">Router</ElMenuItem>
+      <ElMenuItem index="/server">Server</ElMenuItem>
     </ElMenu>
     <RouterView />
   </div>

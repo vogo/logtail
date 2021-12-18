@@ -4,6 +4,7 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import { viteSingleFile } from "vite-plugin-singlefile"
+import { resolve } from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -17,6 +18,11 @@ export default defineConfig({
         inlineDynamicImports: true,
         manualChunks: undefined,
       }
+    }
+  },
+  server: {
+    proxy: {
+      '/manage': 'http://localhost:54321',
     }
   },
   plugins: [

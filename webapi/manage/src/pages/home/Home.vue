@@ -2,5 +2,13 @@
 </script>
 
 <template>
-  <div>你好世界</div>
+  <div>LOGTAIL MANAGE</div>
 </template>
+
+<style scoped>
+div {
+  text-align: center;
+  margin: 200px;
+  font-size: 38px;
+}
+</style>
