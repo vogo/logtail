@@ -1,11 +1,26 @@
-# Vue 3 + Typescript + Vite
+# logtail manage page front end project
 
-This template should help get you started developing with Vue 3 and Typescript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## Usage
 
-## Recommended IDE Setup
+### install
 
-- [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.volar)
+```bash
+yarn install
+```
 
-## Type Support For `.vue` Imports in TS
+### dev
 
-Since TypeScript cannot handle type information for `.vue` imports, they are shimmed to be a generic Vue component type by default. In most cases this is fine if you don't really care about component prop types outside of templates. However, if you wish to get actual prop types in `.vue` imports (for example to get props validation when using manual `h(...)` calls), you can enable Volar's `.vue` type support plugin by running `Volar: Switch TS Plugin on/off` from VSCode command palette.
+```bash
+yarn run logtail:run # start logtail local server as backend
+yarn run dev # start front end dev server
+```
+
+Front end dev server will running at [http://localhost:3000](http://localhost:3000) by default.
+
+### build
+
+```bash
+yarn run logtail:sync
+```
+
+Above command will build project and then copy output to target. After sync done, you need restart backend server to make it effective. (stop and rerun `yarn run logtail:run`)
