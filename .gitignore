@@ -9,3 +9,5 @@ coverage.txt
 
 *.test
 *.prof
+
+.DS_Store
