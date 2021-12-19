@@ -2,23 +2,13 @@
 import { ref } from '@vue/reactivity'
 import { onMounted } from '@vue/runtime-core'
 import axios from 'axios'
-const createDialogVisible = ref(false)
-const data = ref({} as any)
-const saveLoading = ref(false)
-const listLoading = ref(false)
-const list = ref([])
-function initData() {
-  listLoading.value = true
-  axios.get('/manage/transfer/list')
-    .then(({ data }) => {
-      if (!data) return
-      list.value = Object.values(data)
-    })
-    .finally(() => listLoading.value = false)
-}
-onMounted(() => {
-  initData()
-})
+import { useTransfers } from '../../service/transfer'
+
+const { 
+  loading: listLoading,
+  transfers: list,
+  getTransfers: initData
+} = useTransfers()
 
 const types = ref([] as any[])
 const typeLoading = ref(false)
@@ -33,10 +23,13 @@ function initTypes() {
 }
 onMounted(() => initTypes())
 
+const data = ref({} as any)
+const createDialogVisible = ref(false)
 function showCreateDialog() {
   data.value = {}
   createDialogVisible.value = true
 }
+const saveLoading = ref(false)
 function createTransfer() {
   saveLoading.value = true
   axios.post('/manage/transfer/add', data.value)
@@ -54,7 +47,7 @@ function deleteTransfer({ name = '' } = {}) {
 <template>
   <div style="padding: 0 20px">
     <ElRow style="padding: 12px 0">
-      <ElButton size="small" type="primary" @click="showCreateDialog">New</ElButton>
+      <ElButton type="primary" @click="showCreateDialog">Create</ElButton>
     </ElRow>
     <ElTable :data="list" height="500">
       <ElTableColumn prop="name" label="name" />
@@ -75,6 +68,7 @@ function deleteTransfer({ name = '' } = {}) {
       </ElTableColumn>
     </ElTable>
     <ElDialog 
+      title="Create Transfer"
       v-model="createDialogVisible" 
       :close-on-click-modal="false"
       :close-on-press-escape="false">
@@ -87,7 +81,7 @@ function deleteTransfer({ name = '' } = {}) {
         <ElFormItem
           prop="type"
           label="type">
-          <ElSelect v-model="data.type">
+          <ElSelect v-model="data.type" :loading="typeLoading">
             <ElOption
               v-for="item in types"
               :key="item.value"
