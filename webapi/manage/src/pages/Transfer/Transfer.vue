@@ -49,8 +49,8 @@ function deleteTransfer({ name = '' } = {}) {
     <ElRow style="padding: 12px 0">
       <ElButton type="primary" @click="showCreateDialog">Create</ElButton>
     </ElRow>
-    <ElTable :data="list" height="500">
-      <ElTableColumn prop="name" label="name" />
+    <ElTable :data="list" height="500" :loading="listLoading">
+      <ElTableColumn prop="name" label="name" width="200" />
       <ElTableColumn prop="type" label="type" />
       <ElTableColumn prop="dir" label="dir" />
       <ElTableColumn prop="url" label="url" />

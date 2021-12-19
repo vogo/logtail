@@ -62,7 +62,7 @@ function deleteRouter({ name = '' } = {}) {
     <ElRow style="padding: 12px 0">
       <ElButton type="primary" @click="showCreateDialog">Create</ElButton>
     </ElRow>
-    <ElTable :data="list" height="500">
+    <ElTable :data="list" height="500" :loading="listLoading">
       <ElTableColumn prop="name" label="name" width="200" />
       <ElTableColumn prop="matchers" label="matchers">
         <template #default="{ row }">
