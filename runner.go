@@ -133,7 +133,7 @@ func (r *Runner) StopTransfer(name string) error {
 	defer r.lock.Unlock()
 
 	if existTransfer, exist := r.Transfers[name]; exist {
-		if r.usingTransfer(name) {
+		if r.isTransferUsing(name) {
 			return fmt.Errorf("%w: %s", ErrTransferUsing, name)
 		}
 
@@ -151,7 +151,7 @@ func (r *Runner) StopTransfer(name string) error {
 	return nil
 }
 
-func (r *Runner) usingTransfer(name string) bool {
+func (r *Runner) isTransferUsing(name string) bool {
 	for _, server := range r.Servers {
 		for _, router := range server.routers {
 			for i := range router.transfers {
@@ -216,7 +216,7 @@ func (r *Runner) DeleteRouter(name string) error {
 	defer r.lock.Unlock()
 
 	if _, exist := r.Config.Routers[name]; exist {
-		if r.usingRouter(name) {
+		if r.isRouterUsing(name) {
 			return fmt.Errorf("%w: %s", ErrRouterUsing, name)
 		}
 
@@ -227,7 +227,7 @@ func (r *Runner) DeleteRouter(name string) error {
 	return nil
 }
 
-func (r *Runner) usingRouter(name string) bool {
+func (r *Runner) isRouterUsing(name string) bool {
 	for _, server := range r.Servers {
 		for _, router := range server.routers {
 			if router.Name == name {
