@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/vogo/fwatch"
-	"github.com/vogo/gstop"
+	"github.com/vogo/grunner"
 	"github.com/vogo/logger"
 	"github.com/vogo/vogo/vos"
 )
@@ -38,7 +38,7 @@ const (
 type Server struct {
 	id            string
 	lock          sync.Mutex
-	stopper       *gstop.Stopper
+	gorunner      *grunner.Runner
 	format        *Format
 	runner        *Runner
 	workerError   chan error
@@ -55,11 +55,11 @@ func (s *Server) addWorker(w *worker) {
 // NewServer Start a new server.
 func NewServer(serverConfig *ServerConfig) *Server {
 	server := &Server{
-		id:      serverConfig.Name,
-		lock:    sync.Mutex{},
-		stopper: gstop.New(),
-		routers: make(map[string]*Router, defaultMapSize),
-		workers: make(map[string]*worker, defaultMapSize),
+		id:       serverConfig.Name,
+		lock:     sync.Mutex{},
+		gorunner: grunner.New(),
+		routers:  make(map[string]*Router, defaultMapSize),
+		workers:  make(map[string]*worker, defaultMapSize),
 	}
 
 	return server
@@ -148,7 +148,7 @@ func (s *Server) Stop() error {
 	}()
 
 	logger.Infof("server %s stopping", s.id)
-	s.stopper.Stop()
+	s.gorunner.Stop()
 
 	s.stopWorkers()
 
@@ -176,7 +176,7 @@ func (s *Server) shutdownWorker(worker *worker) {
 	delete(s.workers, worker.id)
 
 	// close worker stop chan.
-	worker.stopper.Stop()
+	worker.gorunner.Stop()
 
 	// call worker stop.
 	worker.stop()
@@ -193,7 +193,7 @@ func (s *Server) startCommandGenWorkers(gen string) {
 
 	for {
 		select {
-		case <-s.stopper.C:
+		case <-s.gorunner.C:
 			return
 		default:
 			commands, err = vos.ExecShell(gen)
@@ -217,7 +217,7 @@ func (s *Server) startCommandGenWorkers(gen string) {
 			}
 
 			select {
-			case <-s.stopper.C:
+			case <-s.gorunner.C:
 				return
 			default:
 				logger.Errorf("server [%s] failed, retry after 10s!", s.id)
@@ -277,9 +277,9 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 		case err := <-s.workerError:
 			// only log worker error
 			logger.Errorf("server [%s] receive worker error: %+v", s.id, err)
-		case <-watcher.Stopper.C:
+		case <-watcher.Runner.C:
 			return
-		case <-s.stopper.C:
+		case <-s.gorunner.C:
 			return
 		case watchEvent := <-watcher.Events:
 			switch watchEvent.Event {
@@ -291,7 +291,7 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 				} else {
 					// non-dynamic worker will retry self
 					w := startWorker(s, followRetryTailCommand(watchEvent.Name), false)
-					w.stopper = s.stopper.NewChild()
+					w.gorunner = s.gorunner.NewChild()
 					fileWorkerMap[watchEvent.Name] = w
 					s.addWorker(w)
 				}

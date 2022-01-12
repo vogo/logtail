@@ -98,7 +98,7 @@ func startWebsocketHeartbeat(router *logtail.Router, websocketTransfer *Websocke
 
 	for {
 		select {
-		case <-router.Stopper.C:
+		case <-router.Runner.C:
 			return
 		default:
 			_ = websocketTransfer.conn.SetReadDeadline(time.Now().Add(WebsocketHeartbeatReadTimeout))

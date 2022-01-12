@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vogo/gstop"
+	"github.com/vogo/grunner"
 	"github.com/vogo/logtail/transfer"
 )
 
@@ -32,7 +32,7 @@ type Router struct {
 	id        string
 	Name      string
 	lock      sync.Mutex
-	Stopper   *gstop.Stopper
+	Runner    *grunner.Runner
 	matchers  []Matcher
 	transfers []transfer.Transfer
 }
@@ -44,7 +44,7 @@ func NewRouter(server *Server, name string, matchers []Matcher, transfers []tran
 		id:        id,
 		Name:      name,
 		lock:      sync.Mutex{},
-		Stopper:   server.stopper.NewChild(),
+		Runner:    server.gorunner.NewChild(),
 		matchers:  matchers,
 		transfers: transfers,
 	}
@@ -61,5 +61,5 @@ func (r *Router) Start() error {
 }
 
 func (r *Router) Stop() {
-	r.Stopper.Stop()
+	r.Runner.Stop()
 }

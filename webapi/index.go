@@ -25,9 +25,8 @@ import (
 
 func routeToIndexPage(runner *logtail.Runner, response http.ResponseWriter, router string) {
 	serverID := router
-	_, ok := runner.Servers[serverID]
 
-	if !ok {
+	if _, ok := runner.Servers[serverID]; !ok {
 		response.WriteHeader(http.StatusNotFound)
 
 		return

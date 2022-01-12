@@ -1,5 +1,9 @@
 # logtail is a log tailing utility.
 
+[![codecov](https://codecov.io/gh/vogo/logtail/branch/master/graph/badge.svg)](https://codecov.io/gh/vogo/logtail)
+[![GoDoc](https://godoc.org/github.com/vogo/logtail?status.svg)](https://godoc.org/github.com/vogo/logtail)
+![license](https://img.shields.io/badge/license-Apache--2.0-green.svg)
+
 ## 1. Features
 - tailing command output
 - support watch files under directory/sub-directories

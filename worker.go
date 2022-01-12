@@ -25,21 +25,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vogo/gstop"
+	"github.com/vogo/grunner"
 	"github.com/vogo/logger"
 )
 
 var ErrWorkerCommandStopped = errors.New("worker command stopped")
 
 type worker struct {
-	mu      sync.Mutex
-	id      string
-	server  *Server
-	stopper *gstop.Stopper
-	dynamic bool      // command generated dynamically
-	command string    // command lines
-	cmd     *exec.Cmd // command object
-	filters map[string]*Filter
+	mu       sync.Mutex
+	id       string
+	server   *Server
+	gorunner *grunner.Runner
+	dynamic  bool      // command generated dynamically
+	command  string    // command lines
+	cmd      *exec.Cmd // command object
+	filters  map[string]*Filter
 }
 
 func (w *worker) Write(data []byte) (int, error) {
@@ -69,7 +69,7 @@ func (w *worker) StartRouterFilter(router *Router) {
 	defer w.mu.Unlock()
 
 	select {
-	case <-w.stopper.C:
+	case <-w.gorunner.C:
 		return
 	default:
 		filter := newFilter(w, router)
@@ -91,14 +91,14 @@ func (w *worker) start() {
 		}()
 
 		if w.command == "" {
-			<-w.stopper.C
+			<-w.gorunner.C
 
 			return
 		}
 
 		for {
 			select {
-			case <-w.stopper.C:
+			case <-w.gorunner.C:
 				return
 			default:
 				logger.Infof("worker [%s] command: %s", w.id, w.command)
@@ -121,7 +121,7 @@ func (w *worker) start() {
 					}
 
 					select {
-					case <-w.stopper.C:
+					case <-w.gorunner.C:
 						return
 					default:
 						logger.Errorf("worker [%s] failed, retry after 10s! command: %s", w.id, w.command)
@@ -141,7 +141,7 @@ func (w *worker) start() {
 }
 
 // stop will stop the current worker, but it may retry to start later.
-// it will not close the Stopper.stop chan.
+// it will not close the Runner.stop chan.
 func (w *worker) stop() {
 	defer func() {
 		if err := recover(); err != nil {
@@ -163,7 +163,7 @@ func (w *worker) stop() {
 }
 
 // shutdown will close the current worker, even may close the server,
-// depending on the effect scope of the Stopper.
+// depending on the effect scope of the Runner.
 func (w *worker) shutdown() {
 	// let server do the worker shutdown.
 	w.server.shutdownWorker(w)
@@ -199,12 +199,12 @@ func newWorker(workerServer *Server, command string, dynamic bool) *worker {
 	}
 
 	return &worker{
-		mu:      sync.Mutex{},
-		id:      workerID,
-		server:  workerServer,
-		stopper: workerServer.stopper,
-		command: command,
-		dynamic: dynamic,
-		filters: make(map[string]*Filter, defaultMapSize),
+		mu:       sync.Mutex{},
+		id:       workerID,
+		server:   workerServer,
+		gorunner: workerServer.gorunner,
+		command:  command,
+		dynamic:  dynamic,
+		filters:  make(map[string]*Filter, defaultMapSize),
 	}
 }
