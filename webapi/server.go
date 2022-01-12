@@ -19,10 +19,13 @@ package webapi
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/vogo/logtail"
 )
+
+var ErrWebAPICommandNotSupported = errors.New("web api not support command source")
 
 func routeToServer(runner *logtail.Runner, request *http.Request, response http.ResponseWriter, router string) {
 	switch router {
@@ -62,6 +65,12 @@ func addServer(runner *logtail.Runner, request *http.Request, response http.Resp
 
 	if err := json.NewDecoder(request.Body).Decode(config); err != nil {
 		routeToError(response, err)
+
+		return
+	}
+
+	if config.Command != "" || config.Commands != "" || config.CommandGen != "" {
+		routeToError(response, ErrWebAPICommandNotSupported)
 
 		return
 	}
