@@ -1,4 +1,4 @@
-version := v1.0.0
+version := v1.4.0
 
 format:
 		goimports -w -l .
