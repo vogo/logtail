@@ -4,6 +4,7 @@
     "ding-alarm": {
       "name": "ding",
       "type": "ding",
+      "prefix": "LOG-ERROR",
       "url": "https://oapi.dingtalk.com/robot/send?access_token=xxxxxx"
     }
   },

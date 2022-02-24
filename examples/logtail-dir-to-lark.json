@@ -4,6 +4,7 @@
     "lark-alarm": {
       "name": "lark",
       "type": "lark",
+      "prefix": "Log Alarm",
       "url": "https://open.feishu.cn/open-apis/bot/v2/hook/6b4d507c-b6ee-46d7-8150-xxxxxxxxx"
     }
   },

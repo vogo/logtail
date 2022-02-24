@@ -28,6 +28,7 @@ import (
 type LarkTransfer struct {
 	id           string
 	url          string
+	prefix       []byte
 	transferring int32 // whether transferring message
 }
 
@@ -42,7 +43,7 @@ const (
 
 var (
 	// nolint:gochecknoglobals // ignore this
-	larkTextMessageDataPrefix = []byte(`{"msg_type":"text","content":{"text":"[logtail-`)
+	larkTextMessageDataPrefix = []byte(`{"msg_type":"text","content":{"text":"[`)
 
 	// nolint:gochecknoglobals // ignore this
 	larkTextMessageDataSuffix = []byte(`"}}`)
@@ -71,10 +72,11 @@ func (d *LarkTransfer) Trans(serverID string, data ...[]byte) error {
 	size := larkMessageDataFixedBytesNum + len(data)
 	list := make([][]byte, size)
 	list[0] = larkTextMessageDataPrefix
-	list[1] = []byte(serverID)
-	list[2] = messageTitleContentSplit
+	list[1] = d.prefix
+	list[2] = []byte(serverID)
+	list[3] = messageTitleContentSplit
 
-	idx := 3
+	idx := 4
 	messageRemainCapacity := larkMessageDataMaxLength
 
 	for _, bytes := range data {
@@ -100,10 +102,18 @@ func (d *LarkTransfer) Trans(serverID string, data ...[]byte) error {
 }
 
 // NewLarkTransfer initialize a lark transfer.
-func NewLarkTransfer(id, url string) *LarkTransfer {
-	return &LarkTransfer{
+func NewLarkTransfer(id, url, prefix string) *LarkTransfer {
+	trans := &LarkTransfer{
 		id:           id,
 		url:          url,
 		transferring: 0,
 	}
+
+	if prefix == "" {
+		prefix = DefaultTransferPrefix
+	}
+
+	trans.prefix = []byte(prefix)
+
+	return trans
 }

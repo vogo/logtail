@@ -168,10 +168,11 @@ type MatcherConfig struct {
 }
 
 type TransferConfig struct {
-	Name string `json:"name,omitempty"`
-	Type string `json:"type"`
-	URL  string `json:"url,omitempty"`
-	Dir  string `json:"dir,omitempty"`
+	Name   string `json:"name,omitempty"`
+	Type   string `json:"type"`
+	URL    string `json:"url,omitempty"`
+	Dir    string `json:"dir,omitempty"`
+	Prefix string `json:"prefix,omitempty"`
 }
 
 func parseConfig() (cfg *Config, parseErr error) {

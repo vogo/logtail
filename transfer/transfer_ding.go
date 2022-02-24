@@ -48,6 +48,7 @@ const dingMessageTransferInterval = time.Second * 5
 type DingTransfer struct {
 	id           string
 	url          string
+	prefix       []byte
 	transferring int32 // whether transferring message
 }
 
@@ -74,10 +75,11 @@ func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 	size := dingMessageDataFixedBytesNum + len(data)
 	list := make([][]byte, size)
 	list[0] = dingTextMessageDataPrefix
-	list[1] = []byte(serverID)
-	list[2] = messageTitleContentSplit
+	list[1] = d.prefix
+	list[2] = []byte(serverID)
+	list[3] = messageTitleContentSplit
 
-	idx := 3
+	idx := 4
 	messageRemainCapacity := dingMessageDataMaxLength
 
 	for _, bytes := range data {
@@ -103,10 +105,18 @@ func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 }
 
 // NewDingTransfer new dingding transfer.
-func NewDingTransfer(id, url string) *DingTransfer {
-	return &DingTransfer{
+func NewDingTransfer(id, url, prefix string) *DingTransfer {
+	trans := &DingTransfer{
 		id:           id,
 		url:          url,
 		transferring: 0,
 	}
+
+	if prefix == "" {
+		prefix = DefaultTransferPrefix
+	}
+
+	trans.prefix = []byte(prefix)
+
+	return trans
 }

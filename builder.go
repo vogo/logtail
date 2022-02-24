@@ -60,11 +60,11 @@ func buildTransfers(runner *Runner, ids []string) []transfer.Transfer {
 func buildTransfer(config *TransferConfig) transfer.Transfer {
 	switch config.Type {
 	case transfer.TypeWebhook:
-		return transfer.NewWebhookTransfer(config.Name, config.URL)
+		return transfer.NewWebhookTransfer(config.Name, config.URL, config.Prefix)
 	case transfer.TypeDing:
-		return transfer.NewDingTransfer(config.Name, config.URL)
+		return transfer.NewDingTransfer(config.Name, config.URL, config.Prefix)
 	case transfer.TypeLark:
-		return transfer.NewLarkTransfer(config.Name, config.URL)
+		return transfer.NewLarkTransfer(config.Name, config.URL, config.Prefix)
 	case transfer.TypeFile:
 		return transfer.NewFileTransfer(config.Name, config.Dir)
 	case transfer.TypeConsole:
