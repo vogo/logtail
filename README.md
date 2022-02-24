@@ -20,25 +20,26 @@
 
 ## 3.2. install logtail
 
-`go get -u github.com/vogo/logtail/cmd/logtail@master`
+`go install github.com/vogo/logtail/cmd/logtail@master`
 
-### 3.2. Start logtail server
+### 3.2. Start logtail server using config file
+
+```bash
+logtail -file <config-file>
+```
+
+config file [examples](examples/README.md).
+
+### 3.3. Start logtail server and config using webapi
 
 usage: `logtail -port=<port>`
 ```bash
 # start at port 54321
 logtail -port=54321
 ```
+Then config using [web api](webapi/README.md) from web page `http://<server-ip>:<port>/manage`.
 
-### 3.3. config logtail
-
-* config from web page `http://<server-ip>:<port>/manage`.
-* config using [web api](webapi/README.md).
-
-### 3.3. view tailing logs from web
-
-browse `http://<server-ip>:<port>` to list all tailing logs.
-
+And you can browse `http://<server-ip>:<port>` to list all tailing logs.
 
 ## 4. log format
 

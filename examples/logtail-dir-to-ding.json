@@ -1,0 +1,37 @@
+{
+  "port": 54321,
+  "transfers": {
+    "ding-alarm": {
+      "name": "ding",
+      "type": "ding",
+      "url": "https://oapi.dingtalk.com/robot/send?access_token=xxxxxx"
+    }
+  },
+  "routers": {
+    "xxx-service-error-router": {
+      "name": "xxx-service-error-router",
+      "matchers": [
+        {
+          "contains": [
+            "ERROR"
+          ],
+          "not_contains": [
+            "Normal-Error"
+          ]
+        }
+      ],
+      "transfers": [
+        "ding-alarm"
+      ]
+    }
+  },
+  "servers": {
+    "xxx-service-log-listener": {
+      "name": "xxx-service-log-listener",
+      "routers": [
+        "xxx-service-error-router"
+      ],
+      "file": "/logs/xxx-service/"
+    }
+  }
+}

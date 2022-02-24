@@ -1,0 +1,37 @@
+{
+  "port": 54321,
+  "transfers": {
+    "logtail-file": {
+      "name": "logtail-file",
+      "type": "file",
+      "dir": "/Users/gelnyang/temp"
+    }
+  },
+  "routers": {
+    "error-router": {
+      "name": "error-router",
+      "matchers": [
+        {
+          "contains": [
+            "ERROR"
+          ],
+          "not_contains": [
+            "Normal-Error"
+          ]
+        }
+      ],
+      "transfers": [
+        "logtail-file"
+      ]
+    }
+  },
+  "servers": {
+    "xxx-service-log": {
+      "name": "xxx-service-log",
+      "routers": [
+        "error-router"
+      ],
+      "command": "tail -f /logs/xxx-service/xxx-service.log"
+    }
+  }
+}

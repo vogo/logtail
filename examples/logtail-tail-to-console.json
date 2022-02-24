@@ -1,0 +1,36 @@
+{
+  "port": 54321,
+  "transfers": {
+    "console": {
+      "name": "console",
+      "type": "console"
+    }
+  },
+  "routers": {
+    "error-router": {
+      "name": "error-router",
+      "matchers": [
+        {
+          "contains": [
+            "ERROR"
+          ],
+          "not_contains": [
+            "Normal-Error"
+          ]
+        }
+      ],
+      "transfers": [
+        "console"
+      ]
+    }
+  },
+  "servers": {
+    "xxx-service-log": {
+      "name": "xxx-service-log",
+      "routers": [
+        "error-router"
+      ],
+      "command": "tail -f /logs/xxx-service/xxx-service.log"
+    }
+  }
+}

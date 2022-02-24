@@ -1,0 +1,38 @@
+{
+  "port": 54321,
+  "transfers": {
+    "lark-alarm": {
+      "name": "lark",
+      "type": "lark",
+      "url": "https://open.feishu.cn/open-apis/bot/v2/hook/6b4d507c-b6ee-46d7-8150-xxxxxxxxx"
+    }
+  },
+  "routers": {
+    "xxx-service-error-router": {
+      "name": "xxx-service-error-router",
+      "matchers": [
+        {
+          "contains": [
+            "ERROR"
+          ],
+          "not_contains": [
+            "Invalid",
+            "NotFound"
+          ]
+        }
+      ],
+      "transfers": [
+        "lark-alarm"
+      ]
+    }
+  },
+  "servers": {
+    "xxx-service-log-listener": {
+      "name": "xxx-service-log-listener",
+      "routers": [
+        "xxx-service-error-router"
+      ],
+      "file": "/logs/xxx-service/"
+    }
+  }
+}
