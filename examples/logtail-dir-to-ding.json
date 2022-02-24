@@ -32,7 +32,12 @@
       "routers": [
         "xxx-service-error-router"
       ],
-      "file": "/logs/xxx-service/"
+      "file": {
+        "path": "/logs/xxx-service/",
+        "recursive": true,
+        "suffix": ".log",
+        "method": "timer"
+      }
     }
   }
 }
