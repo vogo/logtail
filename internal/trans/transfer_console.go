@@ -15,42 +15,38 @@
  * limitations under the License.
  */
 
-package main
+package trans
 
 import (
-	"log"
-	"net/http"
-	_ "net/http/pprof"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
-	"github.com/vogo/logger"
-	"github.com/vogo/logtail/internal/tailer"
-	"github.com/vogo/logtail/internal/webapi"
 )
 
-func main() {
-	runner := tailer.Start()
+const TypeConsole = "console"
 
-	webapi.StartWebAPI(runner)
-
-	go func() {
-		log.Println(http.ListenAndServe(":6060", nil))
-	}()
-
-	handleSignal()
+type ConsoleTransfer struct {
+	ID string
 }
 
-func handleSignal() {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	sig := <-signalChan
-	logger.Infof("signal: %v", sig)
+func (d *ConsoleTransfer) Name() string {
+	return d.ID
+}
 
-	_ = tailer.StopLogtail()
+func (d *ConsoleTransfer) Trans(serverID string, data ...[]byte) error {
+	for _, b := range data {
+		_, _ = os.Stdout.Write(b)
 
-	// wait all goroutines stopping
-	<-time.After(time.Second)
+		n := len(b)
+		if n > 0 && b[n-1] != '\n' {
+			_, _ = os.Stdout.Write([]byte{'\n'})
+		}
+	}
+
+	return nil
+}
+
+func (d *ConsoleTransfer) Start() error { return nil }
+
+func (d *ConsoleTransfer) Stop() error { return nil }
+
+func (d *ConsoleTransfer) Visit(t Transfer) {
 }

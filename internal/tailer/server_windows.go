@@ -15,42 +15,13 @@
  * limitations under the License.
  */
 
-package main
+package tailer
 
-import (
-	"log"
-	"net/http"
-	_ "net/http/pprof"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+import "os/exec"
 
-	"github.com/vogo/logger"
-	"github.com/vogo/logtail/internal/tailer"
-	"github.com/vogo/logtail/internal/webapi"
-)
-
-func main() {
-	runner := tailer.Start()
-
-	webapi.StartWebAPI(runner)
-
-	go func() {
-		log.Println(http.ListenAndServe(":6060", nil))
-	}()
-
-	handleSignal()
+func setCmdSysProcAttr(cmd *exec.Cmd) {
 }
 
-func handleSignal() {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	sig := <-signalChan
-	logger.Infof("signal: %v", sig)
-
-	_ = tailer.StopLogtail()
-
-	// wait all goroutines stopping
-	<-time.After(time.Second)
+func killCmd(cmd *exec.Cmd) error {
+	return cmd.Process.Kill()
 }

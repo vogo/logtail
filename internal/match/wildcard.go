@@ -15,42 +15,49 @@
  * limitations under the License.
  */
 
-package main
+package match
 
-import (
-	"log"
-	"net/http"
-	_ "net/http/pprof"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+import "github.com/vogo/logtail/internal/util"
 
-	"github.com/vogo/logger"
-	"github.com/vogo/logtail/internal/tailer"
-	"github.com/vogo/logtail/internal/webapi"
-)
+// WildcardMatch -  finds whether the bytes match/satisfies the pattern wildcard.
+// supports:
+// - '?' as one byte char
+// - '~' as one alphabet char
+// - '!' as one number char
+// NOT support '*' for none or many char.
+// nolint:varnamelen //ignore this.
+func WildcardMatch(pattern string, data []byte) bool {
+	var p, b byte
 
-func main() {
-	runner := tailer.Start()
+	for i, j := 0, 0; i < len(pattern); i++ {
+		if j >= len(data) {
+			return false
+		}
 
-	webapi.StartWebAPI(runner)
+		p = pattern[i]
+		b = data[j]
 
-	go func() {
-		log.Println(http.ListenAndServe(":6060", nil))
-	}()
+		switch p {
+		case '?':
+			if len(data) == 0 {
+				return false
+			}
+		case '~':
+			if !util.IsAlphabetChar(b) {
+				return false
+			}
+		case '!':
+			if !util.IsNumberChar(b) {
+				return false
+			}
+		default:
+			if len(data) == 0 || b != p {
+				return false
+			}
+		}
 
-	handleSignal()
-}
+		j++
+	}
 
-func handleSignal() {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	sig := <-signalChan
-	logger.Infof("signal: %v", sig)
-
-	_ = tailer.StopLogtail()
-
-	// wait all goroutines stopping
-	<-time.After(time.Second)
+	return true
 }

@@ -20,7 +20,7 @@
 
 ## 3.2. install logtail
 
-`go install github.com/vogo/logtail/cmd/logtail@master`
+`go install github.com/vogo/logtail@master`
 
 ### 3.2. Start logtail server using config file
 

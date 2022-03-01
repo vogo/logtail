@@ -15,54 +15,35 @@
  * limitations under the License.
  */
 
-package logtail
+package main
 
 import (
-	"flag"
-	"fmt"
 	"os"
-	"strings"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/vogo/logger"
-	"github.com/vogo/vogo/vos"
+	"github.com/vogo/logtail/internal/tailer"
+	"github.com/vogo/logtail/internal/webapi"
 )
 
-// Start parse command config, and start logtail servers with http listener.
-func Start() *Runner {
-	config, parseErr := parseConfig()
-	if parseErr != nil {
-		_, _ = fmt.Fprintln(os.Stderr, parseErr)
+func main() {
+	runner := tailer.Start()
 
-		flag.PrintDefaults()
-		os.Exit(1)
-	}
+	webapi.StartWebAPI(runner)
 
-	vos.LoadUserEnv()
-
-	runner, err := NewRunner(config)
-	if err != nil {
-		panic(err)
-	}
-
-	go func() {
-		if startErr := StartRunner(runner); startErr != nil {
-			panic(startErr)
-		}
-	}()
-
-	return runner
+	handleSignal()
 }
 
-func configLogLevel(level string) {
-	level = strings.ToUpper(level)
-	switch level {
-	case "ERROR":
-		logger.SetLevel(logger.LevelError)
-	case "WARN":
-		logger.SetLevel(logger.LevelWarn)
-	case "INFO":
-		logger.SetLevel(logger.LevelInfo)
-	case "DEBUG":
-		logger.SetLevel(logger.LevelDebug)
-	}
+func handleSignal() {
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	sig := <-signalChan
+	logger.Infof("signal: %v", sig)
+
+	_ = tailer.StopLogtail()
+
+	// wait all goroutines stopping
+	<-time.After(time.Second)
 }

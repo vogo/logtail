@@ -18,14 +18,16 @@
 package main
 
 import (
-	"github.com/vogo/logtail"
+	"github.com/vogo/logtail/internal/conf"
+	"github.com/vogo/logtail/internal/match"
+	"github.com/vogo/logtail/internal/tailer"
 	"github.com/vogo/logtail/repeater"
 )
 
 func main() {
-	config := &logtail.Config{
-		DefaultFormat: &logtail.Format{Prefix: "!!!!-!!-!!"},
-		Transfers: map[string]*logtail.TransferConfig{
+	config := &conf.Config{
+		DefaultFormat: &match.Format{Prefix: "!!!!-!!-!!"},
+		Transfers: map[string]*conf.TransferConfig{
 			"console": {
 				Name: "console",
 				Type: "console",
@@ -36,10 +38,10 @@ func main() {
 				URL:  "http://localhost:55321",
 			},
 		},
-		Routers: map[string]*logtail.RouterConfig{
+		Routers: map[string]*conf.RouterConfig{
 			"error-console": {
 				Name: "error-console",
-				Matchers: []*logtail.MatcherConfig{
+				Matchers: []*conf.MatcherConfig{
 					{
 						Contains: []string{"ERROR"},
 					},
@@ -48,14 +50,14 @@ func main() {
 			},
 		},
 		DefaultRouters: []string{"error-console"},
-		Servers: map[string]*logtail.ServerConfig{
+		Servers: map[string]*conf.ServerConfig{
 			"server-test": {
 				Name: "server-test",
 			},
 		},
 	}
 
-	runner, err := logtail.NewRunner(config)
+	runner, err := tailer.NewRunner(config)
 	if err != nil {
 		panic(err)
 	}

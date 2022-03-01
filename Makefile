@@ -18,8 +18,8 @@ test:
 package:
 	mkdir -p dist
 	rm -f dist/*.zip
-	cd dist && GOOS=linux go build ../cmd/logtail/logtail.go && zip logtail-$(version)-linux.zip logtail && rm -f logtail
-	cd dist && GOOS=darwin go build ../cmd/logtail/logtail.go && zip logtail-$(version)-mac.zip logtail && rm -f logtail
+	cd dist && GOOS=linux go build ../logtail.go && zip logtail-$(version)-linux.zip logtail && rm -f logtail
+	cd dist && GOOS=darwin go build ../logtail.go && zip logtail-$(version)-mac.zip logtail && rm -f logtail
 
 build: format check test package
 
@@ -34,5 +34,5 @@ local-tools:
 	cd dist && go build ../cmd/dingmock/dingmock.go
 
 install: format check test static
-	go install cmd/logtail/logtail.go
+	go install logtail.go
 

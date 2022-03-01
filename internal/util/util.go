@@ -15,42 +15,35 @@
  * limitations under the License.
  */
 
-package main
+package util
 
-import (
-	"log"
-	"net/http"
-	_ "net/http/pprof"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+import "fmt"
 
-	"github.com/vogo/logger"
-	"github.com/vogo/logtail/internal/tailer"
-	"github.com/vogo/logtail/internal/webapi"
-)
+const DefaultMapSize = 4
 
-func main() {
-	runner := tailer.Start()
-
-	webapi.StartWebAPI(runner)
-
-	go func() {
-		log.Println(http.ListenAndServe(":6060", nil))
-	}()
-
-	handleSignal()
+func IsNumberChar(b byte) bool {
+	return b >= '0' && b <= '9'
 }
 
-func handleSignal() {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	sig := <-signalChan
-	logger.Infof("signal: %v", sig)
+func IsAlphabetChar(b byte) bool {
+	return (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z')
+}
 
-	_ = tailer.StopLogtail()
+func isLineEnd(b byte) bool {
+	return b == '\n' || b == '\r'
+}
 
-	// wait all goroutines stopping
-	<-time.After(time.Second)
+func IndexLineEnd(bytes []byte, length, index *int) {
+	for ; *index < *length && !isLineEnd(bytes[*index]); *index++ {
+	}
+}
+
+func IgnoreLineEnd(bytes []byte, length, index *int) {
+	for ; *index < *length && isLineEnd(bytes[*index]); *index++ {
+	}
+}
+
+//  flag `-F` is same as `--follow=name --retry`
+func FollowRetryTailCommand(f string) string {
+	return fmt.Sprintf("tail -F %s", f)
 }

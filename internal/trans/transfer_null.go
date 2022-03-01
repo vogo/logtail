@@ -15,42 +15,22 @@
  * limitations under the License.
  */
 
-package main
+package trans
 
-import (
-	"log"
-	"net/http"
-	_ "net/http/pprof"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+const TypeNull = "null"
 
-	"github.com/vogo/logger"
-	"github.com/vogo/logtail/internal/tailer"
-	"github.com/vogo/logtail/internal/webapi"
-)
-
-func main() {
-	runner := tailer.Start()
-
-	webapi.StartWebAPI(runner)
-
-	go func() {
-		log.Println(http.ListenAndServe(":6060", nil))
-	}()
-
-	handleSignal()
+type NullTransfer struct {
+	ID string
 }
 
-func handleSignal() {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	sig := <-signalChan
-	logger.Infof("signal: %v", sig)
-
-	_ = tailer.StopLogtail()
-
-	// wait all goroutines stopping
-	<-time.After(time.Second)
+func (d *NullTransfer) Name() string {
+	return d.ID
 }
+
+func (d *NullTransfer) Trans(serverID string, data ...[]byte) error {
+	return nil
+}
+
+func (d *NullTransfer) Start() error { return nil }
+
+func (d *NullTransfer) Stop() error { return nil }

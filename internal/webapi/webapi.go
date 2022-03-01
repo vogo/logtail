@@ -15,42 +15,24 @@
  * limitations under the License.
  */
 
-package main
+package webapi
 
 import (
-	"log"
+	"fmt"
 	"net/http"
-	_ "net/http/pprof"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/tailer"
-	"github.com/vogo/logtail/internal/webapi"
 )
 
-func main() {
-	runner := tailer.Start()
-
-	webapi.StartWebAPI(runner)
-
+func StartWebAPI(runner *tailer.Runner) {
 	go func() {
-		log.Println(http.ListenAndServe(":6060", nil))
+		logger.Infof("serve at port %d", runner.Config.Port)
+
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", runner.Config.Port), &HTTPHandler{
+			runner: runner,
+		}); err != nil {
+			panic(err)
+		}
 	}()
-
-	handleSignal()
-}
-
-func handleSignal() {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	sig := <-signalChan
-	logger.Infof("signal: %v", sig)
-
-	_ = tailer.StopLogtail()
-
-	// wait all goroutines stopping
-	<-time.After(time.Second)
 }

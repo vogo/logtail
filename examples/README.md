@@ -4,7 +4,7 @@
 
 install logtail binary to current directory:
 ```bash
-GOBIN=$(dir) go install github.com/vogo/logtail/cmd/logtail@master
+GOBIN=$(dir) go install github.com/vogo/logtail@master
 ```
 
 or download the binary from [release page](https://github.com/vogo/logtail/releases/).

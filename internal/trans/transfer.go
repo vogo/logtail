@@ -15,42 +15,17 @@
  * limitations under the License.
  */
 
-package main
+package trans
 
-import (
-	"log"
-	"net/http"
-	_ "net/http/pprof"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
-	"github.com/vogo/logger"
-	"github.com/vogo/logtail/internal/tailer"
-	"github.com/vogo/logtail/internal/webapi"
-)
-
-func main() {
-	runner := tailer.Start()
-
-	webapi.StartWebAPI(runner)
-
-	go func() {
-		log.Println(http.ListenAndServe(":6060", nil))
-	}()
-
-	handleSignal()
+type Transfer interface {
+	Name() string
+	Trans(serverID string, data ...[]byte) error
+	Start() error
+	Stop() error
 }
 
-func handleSignal() {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	sig := <-signalChan
-	logger.Infof("signal: %v", sig)
+// Types all transfer types.
+// nolint:gochecknoglobals //ignore this.
+var Types = []string{TypeNull, TypeConsole, TypeFile, TypeWebhook, TypeDing, TypeLark}
 
-	_ = tailer.StopLogtail()
-
-	// wait all goroutines stopping
-	<-time.After(time.Second)
-}
+const DefaultTransferPrefix = "logtail-"
