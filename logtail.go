@@ -24,12 +24,12 @@ import (
 	"time"
 
 	"github.com/vogo/logger"
-	"github.com/vogo/logtail/internal/tailer"
+	"github.com/vogo/logtail/internal/starter"
 	"github.com/vogo/logtail/internal/webapi"
 )
 
 func main() {
-	runner := tailer.Start()
+	runner := starter.Start()
 
 	webapi.StartWebAPI(runner)
 
@@ -42,7 +42,7 @@ func handleSignal() {
 	sig := <-signalChan
 	logger.Infof("signal: %v", sig)
 
-	_ = tailer.StopLogtail()
+	_ = starter.StopLogtail()
 
 	// wait all goroutines stopping
 	<-time.After(time.Second)

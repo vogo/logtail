@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package tailer
+package starter
 
 import (
 	"flag"
@@ -23,16 +23,13 @@ import (
 	"os"
 
 	"github.com/vogo/logtail/internal/conf"
+	"github.com/vogo/logtail/internal/tailer"
 	"github.com/vogo/vogo/vos"
 )
 
-// DefaultRunner the default runner.
-// nolint:gochecknoglobals // ignore this
-var DefaultRunner *Runner
-
 // StartLogtail Start config servers.
 func StartLogtail(config *conf.Config) error {
-	runner, err := NewRunner(config)
+	runner, err := tailer.NewRunner(config)
 	if err != nil {
 		return err
 	}
@@ -41,28 +38,28 @@ func StartLogtail(config *conf.Config) error {
 }
 
 // StartRunner Start config servers.
-func StartRunner(runner *Runner) error {
-	if DefaultRunner != nil {
-		DefaultRunner.Stop()
+func StartRunner(runner *tailer.Runner) error {
+	if tailer.DefaultRunner != nil {
+		tailer.DefaultRunner.Stop()
 	}
 
-	DefaultRunner = runner
+	tailer.DefaultRunner = runner
 
-	return DefaultRunner.Start()
+	return tailer.DefaultRunner.Start()
 }
 
 // StopLogtail stop logtail.
 func StopLogtail() error {
-	if DefaultRunner != nil {
-		DefaultRunner.Stop()
-		DefaultRunner = nil
+	if tailer.DefaultRunner != nil {
+		tailer.DefaultRunner.Stop()
+		tailer.DefaultRunner = nil
 	}
 
 	return nil
 }
 
 // Start parse command config, and start logtail servers with http listener.
-func Start() *Runner {
+func Start() *tailer.Runner {
 	config, parseErr := conf.ParseConfig()
 	if parseErr != nil {
 		_, _ = fmt.Fprintln(os.Stderr, parseErr)
@@ -73,7 +70,7 @@ func Start() *Runner {
 
 	vos.LoadUserEnv()
 
-	runner, err := NewRunner(config)
+	runner, err := tailer.NewRunner(config)
 	if err != nil {
 		panic(err)
 	}

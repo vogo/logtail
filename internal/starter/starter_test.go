@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package tailer_test
+package starter_test
 
 import (
 	"fmt"
@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
+	"github.com/vogo/logtail/internal/starter"
 	"github.com/vogo/logtail/internal/tailer"
 )
 
@@ -165,22 +166,22 @@ func TestCommands(t *testing.T) {
 
 	config := testCommandConfig(commands)
 
-	assert.Nil(t, tailer.StartLogtail(config))
+	assert.Nil(t, starter.StartLogtail(config))
 
 	<-time.After(time.Second * 2)
 
-	_ = tailer.StopLogtail()
+	_ = starter.StopLogtail()
 
 	<-time.After(time.Second * 2)
 
 	serverID := "server-test"
 	config.Servers[serverID].CommandGen = commandGen
 
-	assert.Nil(t, tailer.StartLogtail(config))
+	assert.Nil(t, starter.StartLogtail(config))
 
 	<-time.After(time.Second * 2)
 
-	_ = tailer.StopLogtail()
+	_ = starter.StopLogtail()
 }
 
 func testCommandConfig(commands string) *conf.Config {

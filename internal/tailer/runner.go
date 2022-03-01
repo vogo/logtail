@@ -27,6 +27,10 @@ import (
 	"github.com/vogo/logtail/internal/util"
 )
 
+// DefaultRunner the default runner.
+// nolint:gochecknoglobals // ignore this
+var DefaultRunner *Runner
+
 // Runner the logtail runner.
 type Runner struct {
 	lock      sync.Mutex
