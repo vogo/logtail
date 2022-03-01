@@ -23,12 +23,12 @@ import (
 	"net/http"
 
 	"github.com/vogo/logtail/internal/conf"
-	"github.com/vogo/logtail/internal/tailer"
+	"github.com/vogo/logtail/internal/tail"
 )
 
 var ErrWebAPICommandNotSupported = errors.New("web api not support command source")
 
-func routeToServer(runner *tailer.Runner, request *http.Request, response http.ResponseWriter, router string) {
+func routeToServer(runner *tail.Tailer, request *http.Request, response http.ResponseWriter, router string) {
 	switch router {
 	case OpTypes:
 		listServerTypes(runner, response)
@@ -43,7 +43,7 @@ func routeToServer(runner *tailer.Runner, request *http.Request, response http.R
 	}
 }
 
-func listServerTypes(_ *tailer.Runner, response http.ResponseWriter) {
+func listServerTypes(_ *tail.Tailer, response http.ResponseWriter) {
 	response.Header().Add("content-type", "application/json")
 
 	// nolint:errchkjson //ignore this
@@ -52,7 +52,7 @@ func listServerTypes(_ *tailer.Runner, response http.ResponseWriter) {
 	_, _ = response.Write(b)
 }
 
-func listServers(runner *tailer.Runner, response http.ResponseWriter) {
+func listServers(runner *tail.Tailer, response http.ResponseWriter) {
 	response.Header().Add("content-type", "application/json")
 
 	// nolint:errchkjson //ignore this
@@ -61,7 +61,7 @@ func listServers(runner *tailer.Runner, response http.ResponseWriter) {
 	_, _ = response.Write(b)
 }
 
-func addServer(runner *tailer.Runner, request *http.Request, response http.ResponseWriter) {
+func addServer(runner *tail.Tailer, request *http.Request, response http.ResponseWriter) {
 	config := &conf.ServerConfig{}
 
 	if err := json.NewDecoder(request.Body).Decode(config); err != nil {
@@ -85,7 +85,7 @@ func addServer(runner *tailer.Runner, request *http.Request, response http.Respo
 	routeToSuccess(response)
 }
 
-func deleteServer(runner *tailer.Runner, request *http.Request, response http.ResponseWriter) {
+func deleteServer(runner *tail.Tailer, request *http.Request, response http.ResponseWriter) {
 	config := &conf.ServerConfig{}
 
 	if err := json.NewDecoder(request.Body).Decode(config); err != nil {

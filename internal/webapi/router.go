@@ -22,10 +22,10 @@ import (
 	"net/http"
 
 	"github.com/vogo/logtail/internal/conf"
-	"github.com/vogo/logtail/internal/tailer"
+	"github.com/vogo/logtail/internal/tail"
 )
 
-func routeToRouter(runner *tailer.Runner, request *http.Request, response http.ResponseWriter, op string) {
+func routeToRouter(runner *tail.Tailer, request *http.Request, response http.ResponseWriter, op string) {
 	switch op {
 	case OpList:
 		listRouters(runner, response)
@@ -38,7 +38,7 @@ func routeToRouter(runner *tailer.Runner, request *http.Request, response http.R
 	}
 }
 
-func listRouters(runner *tailer.Runner, response http.ResponseWriter) {
+func listRouters(runner *tail.Tailer, response http.ResponseWriter) {
 	response.Header().Add("content-type", "application/json")
 
 	// nolint:errchkjson //ignore this
@@ -47,7 +47,7 @@ func listRouters(runner *tailer.Runner, response http.ResponseWriter) {
 	_, _ = response.Write(b)
 }
 
-func addRouter(runner *tailer.Runner, request *http.Request, response http.ResponseWriter) {
+func addRouter(runner *tail.Tailer, request *http.Request, response http.ResponseWriter) {
 	config := &conf.RouterConfig{}
 
 	if err := json.NewDecoder(request.Body).Decode(config); err != nil {
@@ -65,7 +65,7 @@ func addRouter(runner *tailer.Runner, request *http.Request, response http.Respo
 	routeToSuccess(response)
 }
 
-func deleteRouter(runner *tailer.Runner, request *http.Request, response http.ResponseWriter) {
+func deleteRouter(runner *tail.Tailer, request *http.Request, response http.ResponseWriter) {
 	var err error
 
 	config := &conf.RouterConfig{}

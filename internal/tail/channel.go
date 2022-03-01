@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package tailer
+package tail
 
 const DefaultChannelBufferSize = 16
 

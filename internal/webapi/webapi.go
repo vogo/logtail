@@ -22,10 +22,10 @@ import (
 	"net/http"
 
 	"github.com/vogo/logger"
-	"github.com/vogo/logtail/internal/tailer"
+	"github.com/vogo/logtail/internal/tail"
 )
 
-func StartWebAPI(runner *tailer.Runner) {
+func StartWebAPI(runner *tail.Tailer) {
 	go func() {
 		logger.Infof("serve at port %d", runner.Config.Port)
 

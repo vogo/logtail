@@ -23,13 +23,13 @@ import (
 	"os"
 
 	"github.com/vogo/logtail/internal/conf"
-	"github.com/vogo/logtail/internal/tailer"
+	"github.com/vogo/logtail/internal/tail"
 	"github.com/vogo/vogo/vos"
 )
 
 // StartLogtail Start config servers.
 func StartLogtail(config *conf.Config) error {
-	runner, err := tailer.NewRunner(config)
+	runner, err := tail.NewTailer(config)
 	if err != nil {
 		return err
 	}
@@ -38,28 +38,28 @@ func StartLogtail(config *conf.Config) error {
 }
 
 // StartRunner Start config servers.
-func StartRunner(runner *tailer.Runner) error {
-	if tailer.DefaultRunner != nil {
-		tailer.DefaultRunner.Stop()
+func StartRunner(runner *tail.Tailer) error {
+	if tail.DefaultTailer != nil {
+		tail.DefaultTailer.Stop()
 	}
 
-	tailer.DefaultRunner = runner
+	tail.DefaultTailer = runner
 
-	return tailer.DefaultRunner.Start()
+	return tail.DefaultTailer.Start()
 }
 
 // StopLogtail stop logtail.
 func StopLogtail() error {
-	if tailer.DefaultRunner != nil {
-		tailer.DefaultRunner.Stop()
-		tailer.DefaultRunner = nil
+	if tail.DefaultTailer != nil {
+		tail.DefaultTailer.Stop()
+		tail.DefaultTailer = nil
 	}
 
 	return nil
 }
 
 // Start parse command config, and start logtail servers with http listener.
-func Start() *tailer.Runner {
+func Start() *tail.Tailer {
 	config, parseErr := conf.ParseConfig()
 	if parseErr != nil {
 		_, _ = fmt.Fprintln(os.Stderr, parseErr)
@@ -70,7 +70,7 @@ func Start() *tailer.Runner {
 
 	vos.LoadUserEnv()
 
-	runner, err := tailer.NewRunner(config)
+	runner, err := tail.NewTailer(config)
 	if err != nil {
 		panic(err)
 	}

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package tailer
+package tail
 
 import (
 	"fmt"
@@ -45,7 +45,7 @@ func NewRouter(server *Server, name string, matchers []match.Matcher, transfers 
 		ID:        id,
 		Name:      name,
 		Lock:      sync.Mutex{},
-		Runner:    server.Gorunner.NewChild(),
+		Runner:    server.Runner.NewChild(),
 		Matchers:  matchers,
 		Transfers: transfers,
 	}

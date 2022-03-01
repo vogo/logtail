@@ -20,10 +20,10 @@ package webapi
 import (
 	"net/http"
 
-	"github.com/vogo/logtail/internal/tailer"
+	"github.com/vogo/logtail/internal/tail"
 )
 
-func routeToManage(runner *tailer.Runner, request *http.Request, response http.ResponseWriter, router string) {
+func routeToManage(runner *tail.Tailer, request *http.Request, response http.ResponseWriter, router string) {
 	firstRouter, leftRouter := splitRouter(router)
 	switch firstRouter {
 	case "index":
@@ -40,6 +40,6 @@ func routeToManage(runner *tailer.Runner, request *http.Request, response http.R
 }
 
 // nolint:interfacer // ignore this
-func routeToManageIndex(_ *tailer.Runner, _ *http.Request, response http.ResponseWriter, _ string) {
+func routeToManageIndex(_ *tail.Tailer, _ *http.Request, response http.ResponseWriter, _ string) {
 	_, _ = response.Write(manageHTMLContent)
 }

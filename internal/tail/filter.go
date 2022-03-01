@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package tailer
+package tail
 
 import (
 	"fmt"
@@ -42,7 +42,7 @@ func NewFilter(worker *Worker, router *Router) *Filter {
 		id:       fmt.Sprintf("%s-%s", worker.ID, router.ID),
 		channel:  make(chan []byte, DefaultChannelBufferSize),
 		lock:     sync.Mutex{},
-		gorunner: worker.Gorunner.NewChild(),
+		gorunner: worker.Runner.NewChild(),
 		worker:   worker,
 		router:   router,
 	}
@@ -134,7 +134,7 @@ func indexFollowingLines(format *match.Format, bytes []byte, length, index, end 
 
 func IsFollowingLine(format *match.Format, bytes []byte) bool {
 	if format == nil {
-		format = DefaultRunner.Config.DefaultFormat
+		format = DefaultTailer.Config.DefaultFormat
 	}
 
 	if format != nil {

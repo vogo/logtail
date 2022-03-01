@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/vogo/logtail/internal/tailer"
+	"github.com/vogo/logtail/internal/tail"
 )
 
 const (
@@ -38,7 +38,7 @@ const (
 )
 
 type HTTPHandler struct {
-	runner *tailer.Runner
+	runner *tail.Tailer
 }
 
 // ServeHTTP serve http.
@@ -60,7 +60,7 @@ func splitRouter(r string) (first, left string) {
 // - `/tail/<server-id>`: server tailing api
 // - `/manage/<op>`: manage page
 // - else route to default server list page.
-func Serve(request *http.Request, response http.ResponseWriter, runner *tailer.Runner) {
+func Serve(request *http.Request, response http.ResponseWriter, runner *tail.Tailer) {
 	uri := request.RequestURI
 	if uri[0] == '/' {
 		uri = uri[1:]
@@ -79,7 +79,7 @@ func Serve(request *http.Request, response http.ResponseWriter, runner *tailer.R
 	}
 }
 
-func responseServerList(runner *tailer.Runner, response http.ResponseWriter) {
+func responseServerList(runner *tail.Tailer, response http.ResponseWriter) {
 	buf := bytes.NewBuffer(nil)
 
 	buf.WriteString(`<ul>`)

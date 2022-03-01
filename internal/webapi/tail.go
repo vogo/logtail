@@ -21,10 +21,10 @@ import (
 	"net/http"
 
 	"github.com/vogo/logtail/internal"
-	"github.com/vogo/logtail/internal/tailer"
+	"github.com/vogo/logtail/internal/tail"
 )
 
-func routeToTail(runner *tailer.Runner, request *http.Request, response http.ResponseWriter, router string) {
+func routeToTail(runner *tail.Tailer, request *http.Request, response http.ResponseWriter, router string) {
 	tailServerID := getServerID(runner, router)
 	if tailServerID == "" {
 		response.WriteHeader(http.StatusNotFound)
@@ -35,7 +35,7 @@ func routeToTail(runner *tailer.Runner, request *http.Request, response http.Res
 	startWebsocketTransfer(runner, response, request, tailServerID)
 }
 
-func getServerID(runner *tailer.Runner, router string) string {
+func getServerID(runner *tail.Tailer, router string) string {
 	if router == "" {
 		return internal.DefaultID
 	}

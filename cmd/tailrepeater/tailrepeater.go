@@ -20,7 +20,7 @@ package main
 import (
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
-	"github.com/vogo/logtail/internal/tailer"
+	"github.com/vogo/logtail/internal/tail"
 	"github.com/vogo/logtail/repeater"
 )
 
@@ -57,7 +57,7 @@ func main() {
 		},
 	}
 
-	runner, err := tailer.NewRunner(config)
+	runner, err := tail.NewTailer(config)
 	if err != nil {
 		panic(err)
 	}

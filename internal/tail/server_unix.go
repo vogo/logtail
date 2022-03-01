@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-package tailer
+package tail
 
 import (
 	"os/exec"

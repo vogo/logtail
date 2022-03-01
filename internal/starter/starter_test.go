@@ -28,7 +28,7 @@ import (
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
 	"github.com/vogo/logtail/internal/starter"
-	"github.com/vogo/logtail/internal/tailer"
+	"github.com/vogo/logtail/internal/tail"
 )
 
 // nolint:gochecknoglobals // ignore this
@@ -78,7 +78,7 @@ follow9`),
 // nolint:gochecknoglobals // ignore this
 var ticker = time.NewTicker(time.Millisecond)
 
-func fireServer(s *tailer.Server) {
+func fireServer(s *tail.Server) {
 	for _, b := range fireData {
 		<-ticker.C
 
@@ -120,7 +120,7 @@ func TestServer(t *testing.T) {
 		},
 	}
 
-	runner, err := tailer.NewRunner(config)
+	runner, err := tail.NewTailer(config)
 	if err != nil {
 		t.Error(err)
 

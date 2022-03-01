@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package tailer
+package tail
 
 import (
 	"fmt"
@@ -27,35 +27,35 @@ import (
 	"github.com/vogo/logtail/internal/util"
 )
 
-// DefaultRunner the default runner.
+// DefaultTailer the default tailer.
 // nolint:gochecknoglobals // ignore this
-var DefaultRunner *Runner
+var DefaultTailer *Tailer
 
-// Runner the logtail runner.
-type Runner struct {
+// Tailer the logtail tailer.
+type Tailer struct {
 	lock      sync.Mutex
 	Config    *conf.Config
 	Servers   map[string]*Server
 	Transfers map[string]trans.Transfer
 }
 
-// NewRunner new logtail runner.
-func NewRunner(config *conf.Config) (*Runner, error) {
+// NewTailer new logtail tailer.
+func NewTailer(config *conf.Config) (*Tailer, error) {
 	if err := conf.InitialCheckConfig(config); err != nil {
 		return nil, err
 	}
 
-	runner := &Runner{
+	tailer := &Tailer{
 		lock:      sync.Mutex{},
 		Config:    config,
 		Servers:   make(map[string]*Server, util.DefaultMapSize),
 		Transfers: make(map[string]trans.Transfer, util.DefaultMapSize),
 	}
 
-	return runner, nil
+	return tailer, nil
 }
 
-func (r *Runner) Start() error {
+func (r *Tailer) Start() error {
 	conf.ConfigLogLevel(r.Config.LogLevel)
 
 	if err := r.startTransfers(); err != nil {
@@ -72,7 +72,7 @@ func (r *Runner) Start() error {
 	return nil
 }
 
-func (r *Runner) startTransfers() error {
+func (r *Tailer) startTransfers() error {
 	for _, c := range r.Config.Transfers {
 		if _, err := r.StartTransfer(c); err != nil {
 			return err
@@ -82,7 +82,7 @@ func (r *Runner) startTransfers() error {
 	return nil
 }
 
-func (r *Runner) AddTransfer(c *conf.TransferConfig) error {
+func (r *Tailer) AddTransfer(c *conf.TransferConfig) error {
 	if _, err := r.StartTransfer(c); err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (r *Runner) AddTransfer(c *conf.TransferConfig) error {
 }
 
 // nolint:ireturn //ignore this.
-func (r *Runner) StartTransfer(transferConfig *conf.TransferConfig) (trans.Transfer, error) {
+func (r *Tailer) StartTransfer(transferConfig *conf.TransferConfig) (trans.Transfer, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -134,7 +134,7 @@ func (r *Runner) StartTransfer(transferConfig *conf.TransferConfig) (trans.Trans
 	return runTransfer, nil
 }
 
-func (r *Runner) StopTransfer(name string) error {
+func (r *Tailer) StopTransfer(name string) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -157,7 +157,7 @@ func (r *Runner) StopTransfer(name string) error {
 	return nil
 }
 
-func (r *Runner) isTransferUsing(name string) bool {
+func (r *Tailer) isTransferUsing(name string) bool {
 	for _, server := range r.Servers {
 		for _, router := range server.Routers {
 			for i := range router.Transfers {
@@ -172,7 +172,7 @@ func (r *Runner) isTransferUsing(name string) bool {
 }
 
 // Stop the runner.
-func (r *Runner) Stop() {
+func (r *Tailer) Stop() {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -189,7 +189,7 @@ func (r *Runner) Stop() {
 	}
 }
 
-func (r *Runner) AddRouter(config *conf.RouterConfig) error {
+func (r *Tailer) AddRouter(config *conf.RouterConfig) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -217,7 +217,7 @@ func (r *Runner) AddRouter(config *conf.RouterConfig) error {
 	return err
 }
 
-func (r *Runner) DeleteRouter(name string) error {
+func (r *Tailer) DeleteRouter(name string) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -233,7 +233,7 @@ func (r *Runner) DeleteRouter(name string) error {
 	return nil
 }
 
-func (r *Runner) isRouterUsing(name string) bool {
+func (r *Tailer) isRouterUsing(name string) bool {
 	for _, server := range r.Servers {
 		for _, router := range server.Routers {
 			if router.Name == name {
@@ -245,7 +245,7 @@ func (r *Runner) isRouterUsing(name string) bool {
 	return false
 }
 
-func (r *Runner) AddServer(serverConfig *conf.ServerConfig) (*Server, error) {
+func (r *Tailer) AddServer(serverConfig *conf.ServerConfig) (*Server, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -261,7 +261,7 @@ func (r *Runner) AddServer(serverConfig *conf.ServerConfig) (*Server, error) {
 	}
 
 	server.Format = format
-	server.Runner = r
+	server.Tailer = r
 
 	if existsServer, ok := r.Servers[server.ID]; ok {
 		_ = existsServer.Stop()
@@ -281,7 +281,7 @@ func (r *Runner) AddServer(serverConfig *conf.ServerConfig) (*Server, error) {
 	return server, nil
 }
 
-func (r *Runner) DeleteServer(name string) error {
+func (r *Tailer) DeleteServer(name string) error {
 	s, exist := r.Servers[name]
 
 	if exist {

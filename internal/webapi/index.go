@@ -20,10 +20,10 @@ package webapi
 import (
 	"net/http"
 
-	"github.com/vogo/logtail/internal/tailer"
+	"github.com/vogo/logtail/internal/tail"
 )
 
-func routeToIndexPage(runner *tailer.Runner, response http.ResponseWriter, router string) {
+func routeToIndexPage(runner *tail.Tailer, response http.ResponseWriter, router string) {
 	serverID := router
 
 	if _, ok := runner.Servers[serverID]; !ok {

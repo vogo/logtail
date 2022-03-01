@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package tailer
+package tail
 
 import (
 	"bytes"
@@ -41,9 +41,9 @@ const (
 type Server struct {
 	ID            string
 	lock          sync.Mutex
-	Gorunner      *grunner.Runner
+	Runner        *grunner.Runner
 	Format        *match.Format
-	Runner        *Runner
+	Tailer        *Tailer
 	workerError   chan error
 	workerStarter func()
 	MergingWorker *Worker
@@ -58,11 +58,11 @@ func (s *Server) addWorker(w *Worker) {
 // NewServer Start a new server.
 func NewServer(serverConfig *conf.ServerConfig) *Server {
 	server := &Server{
-		ID:       serverConfig.Name,
-		lock:     sync.Mutex{},
-		Gorunner: grunner.New(),
-		Routers:  make(map[string]*Router, util.DefaultMapSize),
-		Workers:  make(map[string]*Worker, util.DefaultMapSize),
+		ID:      serverConfig.Name,
+		lock:    sync.Mutex{},
+		Runner:  grunner.New(),
+		Routers: make(map[string]*Router, util.DefaultMapSize),
+		Workers: make(map[string]*Worker, util.DefaultMapSize),
 	}
 
 	return server
@@ -151,7 +151,7 @@ func (s *Server) Stop() error {
 	}()
 
 	logger.Infof("server %s stopping", s.ID)
-	s.Gorunner.Stop()
+	s.Runner.Stop()
 
 	s.stopWorkers()
 
@@ -174,12 +174,12 @@ func (s *Server) stopWorkers() {
 	}
 }
 
-// stopWorkers stop all workers of server, but not for the merging worker.
+// ShutdownWorker stop all workers of server, but not for the merging worker.
 func (s *Server) ShutdownWorker(worker *Worker) {
 	delete(s.Workers, worker.ID)
 
 	// close worker stop chan.
-	worker.Gorunner.Stop()
+	worker.Runner.Stop()
 
 	// call worker stop.
 	worker.Stop()
@@ -196,7 +196,7 @@ func (s *Server) startCommandGenWorkers(gen string) {
 
 	for {
 		select {
-		case <-s.Gorunner.C:
+		case <-s.Runner.C:
 			return
 		default:
 			commands, err = vos.ExecShell(gen)
@@ -220,7 +220,7 @@ func (s *Server) startCommandGenWorkers(gen string) {
 			}
 
 			select {
-			case <-s.Gorunner.C:
+			case <-s.Runner.C:
 				return
 			default:
 				logger.Errorf("server [%s] failed, retry after 10s!", s.ID)
@@ -282,7 +282,7 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 			logger.Errorf("server [%s] receive worker error: %+v", s.ID, err)
 		case <-watcher.Runner.C:
 			return
-		case <-s.Gorunner.C:
+		case <-s.Runner.C:
 			return
 		case watchEvent := <-watcher.Events:
 			switch watchEvent.Event {
@@ -294,7 +294,7 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 				} else {
 					// non-dynamic worker will retry self
 					w := StartWorker(s, util.FollowRetryTailCommand(watchEvent.Name), false)
-					w.Gorunner = s.Gorunner.NewChild()
+					w.Runner = s.Runner.NewChild()
 					fileWorkerMap[watchEvent.Name] = w
 					s.addWorker(w)
 				}

@@ -22,11 +22,11 @@ import (
 	"net/http"
 
 	"github.com/vogo/logtail/internal/conf"
-	"github.com/vogo/logtail/internal/tailer"
+	"github.com/vogo/logtail/internal/tail"
 	"github.com/vogo/logtail/internal/trans"
 )
 
-func routeToTransfer(runner *tailer.Runner, request *http.Request, response http.ResponseWriter, router string) {
+func routeToTransfer(runner *tail.Tailer, request *http.Request, response http.ResponseWriter, router string) {
 	switch router {
 	case OpTypes:
 		listTransferTypes(runner, response)
@@ -41,7 +41,7 @@ func routeToTransfer(runner *tailer.Runner, request *http.Request, response http
 	}
 }
 
-func listTransferTypes(_ *tailer.Runner, response http.ResponseWriter) {
+func listTransferTypes(_ *tail.Tailer, response http.ResponseWriter) {
 	response.Header().Add("content-type", "application/json")
 
 	// nolint:errchkjson //ignore this
@@ -50,7 +50,7 @@ func listTransferTypes(_ *tailer.Runner, response http.ResponseWriter) {
 	_, _ = response.Write(b)
 }
 
-func listTransfers(runner *tailer.Runner, response http.ResponseWriter) {
+func listTransfers(runner *tail.Tailer, response http.ResponseWriter) {
 	response.Header().Add("content-type", "application/json")
 
 	// nolint:errchkjson //ignore this
@@ -59,7 +59,7 @@ func listTransfers(runner *tailer.Runner, response http.ResponseWriter) {
 	_, _ = response.Write(b)
 }
 
-func addTransfer(runner *tailer.Runner, request *http.Request, response http.ResponseWriter) {
+func addTransfer(runner *tail.Tailer, request *http.Request, response http.ResponseWriter) {
 	config := &conf.TransferConfig{}
 
 	if err := json.NewDecoder(request.Body).Decode(config); err != nil {
@@ -77,7 +77,7 @@ func addTransfer(runner *tailer.Runner, request *http.Request, response http.Res
 	routeToSuccess(response)
 }
 
-func deleteTransfer(runner *tailer.Runner, request *http.Request, response http.ResponseWriter) {
+func deleteTransfer(runner *tail.Tailer, request *http.Request, response http.ResponseWriter) {
 	config := &conf.TransferConfig{}
 
 	if err := json.NewDecoder(request.Body).Decode(config); err != nil {

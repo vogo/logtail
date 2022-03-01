@@ -28,7 +28,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/conf"
-	"github.com/vogo/logtail/internal/tailer"
+	"github.com/vogo/logtail/internal/tail"
 	"github.com/vogo/logtail/internal/trans"
 )
 
@@ -64,7 +64,7 @@ func (ww *WebsocketTransfer) Trans(_ string, data ...[]byte) (err error) {
 	return nil
 }
 
-func startWebsocketTransfer(runner *tailer.Runner, response http.ResponseWriter, request *http.Request, serverID string) {
+func startWebsocketTransfer(runner *tail.Tailer, response http.ResponseWriter, request *http.Request, serverID string) {
 	wsConn, err := websocketUpgrader.Upgrade(response, request, nil)
 	if err != nil {
 		logger.Error("web socket error:", err)
@@ -82,14 +82,14 @@ func startWebsocketTransfer(runner *tailer.Runner, response http.ResponseWriter,
 
 	websocketTransfer := &WebsocketTransfer{conn: wsConn}
 	index := fmt.Sprintf("ww-%d", atomic.AddInt64(&wsConnIndex, 1))
-	router := tailer.NewRouter(server, index, nil, []trans.Transfer{websocketTransfer})
+	router := tail.NewRouter(server, index, nil, []trans.Transfer{websocketTransfer})
 	server.MergingWorker.StartRouterFilter(router)
 	startWebsocketHeartbeat(router, websocketTransfer)
 }
 
 const MessageTypeMatcherConfig = '1'
 
-func startWebsocketHeartbeat(router *tailer.Router, websocketTransfer *WebsocketTransfer) {
+func startWebsocketHeartbeat(router *tail.Router, websocketTransfer *WebsocketTransfer) {
 	defer func() {
 		_ = recover()
 
@@ -127,13 +127,13 @@ func isEncodeError(err error) bool {
 	return strings.Contains(err.Error(), "utf8")
 }
 
-func handleMatcherConfigUpdate(router *tailer.Router, data []byte) error {
+func handleMatcherConfigUpdate(router *tail.Router, data []byte) error {
 	var matcherConfigs []*conf.MatcherConfig
 	if err := json.Unmarshal(data, &matcherConfigs); err != nil {
 		return err
 	}
 
-	matchers, matchErr := tailer.NewMatchers(matcherConfigs)
+	matchers, matchErr := tail.NewMatchers(matcherConfigs)
 	if matchErr != nil {
 		return matchErr
 	}

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package tailer
+package tail
 
 import (
 	"github.com/vogo/logger"
@@ -25,10 +25,10 @@ import (
 )
 
 func BuildRouter(s *Server, config *conf.RouterConfig) *Router {
-	return NewRouter(s, config.Name, BuildMatchers(config.Matchers), buildTransfers(s.Runner, config.Transfers))
+	return NewRouter(s, config.Name, BuildMatchers(config.Matchers), buildTransfers(s.Tailer, config.Transfers))
 }
 
-func buildTransfers(runner *Runner, ids []string) []trans.Transfer {
+func buildTransfers(runner *Tailer, ids []string) []trans.Transfer {
 	transfers := make([]trans.Transfer, 0, len(ids))
 
 	for _, id := range ids {
