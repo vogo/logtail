@@ -2,15 +2,15 @@
   "port": 54321,
   "transfers": {
     "ding-alarm": {
-      "name": "ding",
+      "name": "ding-alarm",
       "type": "ding",
-      "prefix": "LOG-ERROR",
+      "prefix": "LOG ERROR ",
       "url": "https://oapi.dingtalk.com/robot/send?access_token=xxxxxx"
     }
   },
   "routers": {
-    "xxx-service-error-router": {
-      "name": "xxx-service-error-router",
+    "xxx": {
+      "name": "xxx",
       "matchers": [
         {
           "contains": [
@@ -27,10 +27,10 @@
     }
   },
   "servers": {
-    "xxx-service-log-listener": {
-      "name": "xxx-service-log-listener",
+    "xxx-service": {
+      "name": "xxx-service",
       "routers": [
-        "xxx-service-error-router"
+        "xxx"
       ],
       "file": {
         "path": "/logs/xxx-service/",
