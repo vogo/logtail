@@ -2,15 +2,15 @@
   "port": 54321,
   "transfers": {
     "lark-alarm": {
-      "name": "lark",
+      "name": "lark-alarm",
       "type": "lark",
       "prefix": "Log Alarm",
       "url": "https://open.feishu.cn/open-apis/bot/v2/hook/6b4d507c-b6ee-46d7-8150-xxxxxxxxx"
     }
   },
   "routers": {
-    "xxx-service-error-router": {
-      "name": "xxx-service-error-router",
+    "xxx-router": {
+      "name": "xxx-router",
       "matchers": [
         {
           "contains": [
@@ -28,10 +28,10 @@
     }
   },
   "servers": {
-    "xxx-service-log-listener": {
-      "name": "xxx-service-log-listener",
+    "xxx": {
+      "name": "xxx",
       "routers": [
-        "xxx-service-error-router"
+        "xxx-router"
       ],
       "file": {
         "path": "/logs/xxx-service/",
