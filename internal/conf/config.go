@@ -319,5 +319,7 @@ func ConfigLogLevel(level string) {
 		logger.SetLevel(logger.LevelInfo)
 	case "DEBUG":
 		logger.SetLevel(logger.LevelDebug)
+	case "TRACE":
+		logger.SetLevel(logger.LevelTrace)
 	}
 }

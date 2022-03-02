@@ -253,11 +253,12 @@ func (s *Server) startDirWorkers(config *conf.FileConfig) {
 
 	logger.Infof("server [%s] Start watch directory: %s", s.ID, config.Path)
 
+	// start watch loop first
+	go s.startDirWatchWorkers(config.Path, watcher)
+
 	if err = watcher.WatchDir(config.Path, config.Recursive, matcher); err != nil {
 		logger.Fatal(err)
 	}
-
-	go s.startDirWatchWorkers(config.Path, watcher)
 }
 
 // file inactive deadline, default one hour.
@@ -284,6 +285,8 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 			return
 		case <-s.Runner.C:
 			return
+		case watchError := <-watcher.Errors:
+			logger.Errorf("watch error: %v", watchError)
 		case watchEvent := <-watcher.Events:
 			switch watchEvent.Event {
 			case fwatch.Create, fwatch.Write:
@@ -312,6 +315,8 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 					w.Shutdown()
 					delete(fileWorkerMap, watchEvent.Name)
 				}
+			default:
+				logger.Warnf("unknown event: %s, %s", watchEvent.Event, watchEvent.Name)
 			}
 		}
 	}
