@@ -19,6 +19,7 @@ package tail
 
 import (
 	"bytes"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -146,7 +147,7 @@ func (s *Server) Stop() error {
 
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Warnf("server %s close error: %+v", s.ID, err)
+			logger.Warnf("server %s close error: %+v, stack:\n%s", s.ID, err, string(debug.Stack()))
 		}
 	}()
 

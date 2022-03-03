@@ -36,7 +36,8 @@ func InitialCheckConfig(config *Config) error {
 	}
 
 	if config.Port == 0 {
-		config.Port = DefaultServerPort
+		// log for notice
+		logger.Infof("port is zero")
 	}
 
 	for _, t := range config.Transfers {

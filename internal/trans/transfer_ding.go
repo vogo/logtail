@@ -27,7 +27,7 @@ import (
 const TypeDing = "ding"
 
 const (
-	dingMessageDataFixedBytesNum = 4
+	dingMessageDataFixedBytesNum = 5
 	dingMessageDataMaxLength     = 1024
 )
 

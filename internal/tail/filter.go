@@ -19,6 +19,7 @@ package tail
 
 import (
 	"fmt"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -169,7 +170,7 @@ func (f *Filter) Stop() {
 func (f *Filter) Start() {
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Errorf("filter [%s] error: %+v", f.id, err)
+			logger.Errorf("filter [%s] error: %+v, stack:\n%s", f.id, err, string(debug.Stack()))
 		}
 
 		logger.Infof("filter [%s] stopped", f.id)

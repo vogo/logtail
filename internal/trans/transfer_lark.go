@@ -36,7 +36,7 @@ type LarkTransfer struct {
 const TypeLark = "lark"
 
 const (
-	larkMessageDataFixedBytesNum = 4
+	larkMessageDataFixedBytesNum = 5
 	larkMessageDataMaxLength     = 1024
 	larkMessageTransferInterval  = time.Second * 5
 )

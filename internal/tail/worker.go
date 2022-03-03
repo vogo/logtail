@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -146,7 +147,7 @@ func (w *Worker) Start() {
 func (w *Worker) Stop() {
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Warnf("worker [%s] close error: %+v", w.ID, err)
+			logger.Warnf("worker [%s] close error: %+v, stack:\n%s", w.ID, err, string(debug.Stack()))
 		}
 	}()
 

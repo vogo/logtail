@@ -26,6 +26,12 @@ import (
 )
 
 func StartWebAPI(runner *tail.Tailer) {
+	if runner.Config.Port <= 0 {
+		logger.Warn("webapi disabled for no port config")
+
+		return
+	}
+
 	go func() {
 		logger.Infof("serve at port %d", runner.Config.Port)
 

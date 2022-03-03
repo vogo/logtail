@@ -24,15 +24,15 @@ package:
 build: format check test package
 
 linux-tools:
-	cd dist && GOOS=linux go build ../cmd/logrecorder/logrecorder.go
-	cd dist && GOOS=linux go build ../cmd/logrepeater/logrepeater.go
-	cd dist && GOOS=linux go build ../cmd/dingmock/dingmock.go
+	GOOS=linux go build -o dist/logrecorder ../cmd/logrecorder/*.go
+	GOOS=linux go build -o dist/logrepeater ../cmd/logrepeater/*.go
+	GOOS=linux go build -o dist/dingmock ../cmd/dingmock/*.go
 
 local-tools:
-	cd dist && go build ../cmd/logrecorder/logrecorder.go
-	cd dist && go build ../cmd/logrepeater/logrepeater.go
-	cd dist && go build ../cmd/dingmock/dingmock.go
+	go build -o dist/logrecorder ../cmd/logrecorder/*.go
+	go build -o dist/logrepeater ../cmd/logrepeater/*.go
+	go build -o dist/dingmock ../cmd/dingmock/*.go
 
-install: format check test static
+install: format check test
 	go install logtail.go
 
