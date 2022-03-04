@@ -157,6 +157,9 @@ type FileConfig struct {
 
 	// Whether include all files in subdirectories recursively.
 	Recursive bool `json:"recursive"`
+
+	// not tail files in a directory if the count of files under it over the limit.
+	DirFileCountLimit int `json:"dir_file_count_limit"`
 }
 
 type RouterConfig struct {

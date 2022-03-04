@@ -247,15 +247,19 @@ func (s *Server) startDirWorkers(config *conf.FileConfig) {
 		logger.Fatal(err)
 	}
 
+	// start watch loop first
+	go s.startDirWatchWorkers(config.Path, watcher)
+
 	matcher := func(name string) bool {
 		return (config.Prefix == "" || strings.HasPrefix(name, config.Prefix)) &&
 			(config.Suffix == "" || strings.HasSuffix(name, config.Suffix))
 	}
 
-	logger.Infof("server [%s] Start watch directory: %s", s.ID, config.Path)
+	if config.DirFileCountLimit > 0 {
+		watcher.SetDirFileCountLimit(config.DirFileCountLimit)
+	}
 
-	// start watch loop first
-	go s.startDirWatchWorkers(config.Path, watcher)
+	logger.Infof("server [%s] Start watch directory: %s", s.ID, config.Path)
 
 	if err = watcher.WatchDir(config.Path, config.Recursive, matcher); err != nil {
 		logger.Fatal(err)
