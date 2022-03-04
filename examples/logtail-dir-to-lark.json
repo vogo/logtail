@@ -37,7 +37,8 @@
         "path": "/logs/xxx-service/",
         "recursive": true,
         "suffix": ".log",
-        "method": "timer"
+        "method": "timer",
+        "dir_file_count_limit": 256
       }
     }
   }
