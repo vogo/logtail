@@ -43,7 +43,7 @@ func IgnoreLineEnd(bytes []byte, length, index *int) {
 	}
 }
 
-//  flag `-F` is same as `--follow=name --retry`
+// FollowRetryTailCommand flag `-F` is same as `--follow=name --retry`
 func FollowRetryTailCommand(f string) string {
 	return fmt.Sprintf("tail -F %s", f)
 }

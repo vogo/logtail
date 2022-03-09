@@ -1,5 +1,8 @@
 {
   "port": 54321,
+  "default_format": {
+    "prefix": "!!!!-!!-!!"
+  },
   "transfers": {
     "console": {
       "name": "console",
