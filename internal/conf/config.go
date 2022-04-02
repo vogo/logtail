@@ -81,7 +81,7 @@ func (c *Config) SaveToFile() {
 		return
 	}
 
-	fileData, err := json.MarshalIndent(c, "", " ")
+	fileData, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		logger.Warnf("config error: %v", err)
 
