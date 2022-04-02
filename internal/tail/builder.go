@@ -21,11 +21,12 @@ import (
 	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
+	"github.com/vogo/logtail/internal/route"
 	"github.com/vogo/logtail/internal/trans"
 )
 
-func BuildRouter(s *Server, config *conf.RouterConfig) *Router {
-	return NewRouter(s, config.Name, BuildMatchers(config.Matchers), buildTransfers(s.Tailer, config.Transfers))
+func BuildRouter(id string, config *conf.RouterConfig) *route.Router {
+	return route.NewRouter(id, config.Name, BuildMatchers(config.Matchers), buildTransfers(s.Tailer, config.Transfers))
 }
 
 func buildTransfers(runner *Tailer, ids []string) []trans.Transfer {

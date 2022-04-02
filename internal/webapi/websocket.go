@@ -28,6 +28,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/conf"
+	"github.com/vogo/logtail/internal/route"
 	"github.com/vogo/logtail/internal/tail"
 	"github.com/vogo/logtail/internal/trans"
 )
@@ -82,7 +83,7 @@ func startWebsocketTransfer(runner *tail.Tailer, response http.ResponseWriter, r
 
 	websocketTransfer := &WebsocketTransfer{conn: wsConn}
 	index := fmt.Sprintf("ww-%d", atomic.AddInt64(&wsConnIndex, 1))
-	router := tail.NewRouter(server, index, nil, []trans.Transfer{websocketTransfer})
+	router := route.NewRouter(server, index, nil, []trans.Transfer{websocketTransfer})
 	server.MergingWorker.StartRouterFilter(router)
 	startWebsocketHeartbeat(router, websocketTransfer)
 }

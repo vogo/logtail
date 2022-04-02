@@ -60,28 +60,6 @@ type Config struct {
 	Transfers      map[string]*TransferConfig `json:"transfers"`
 	Routers        map[string]*RouterConfig   `json:"routers"`
 	Servers        map[string]*ServerConfig   `json:"servers"`
-	DefaultRouters []string                   `json:"default_routers,omitempty"`
-	GlobalRouters  []string                   `json:"global_routers,omitempty"`
-}
-
-func (c *Config) AppendDefaultRouters(configs []*RouterConfig) []*RouterConfig {
-	for _, id := range c.DefaultRouters {
-		if r, ok := c.Routers[id]; ok {
-			configs = append(configs, r)
-		}
-	}
-
-	return configs
-}
-
-func (c *Config) AppendGlobalRouters(configs []*RouterConfig) []*RouterConfig {
-	for _, id := range c.GlobalRouters {
-		if r, ok := c.Routers[id]; ok {
-			configs = append(configs, r)
-		}
-	}
-
-	return configs
 }
 
 func (c *Config) GetRouters(routers []string) []*RouterConfig {

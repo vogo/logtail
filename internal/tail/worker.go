@@ -28,7 +28,8 @@ import (
 
 	"github.com/vogo/grunner"
 	"github.com/vogo/logger"
-	"github.com/vogo/logtail/internal/util"
+	"github.com/vogo/logtail/internal/conf"
+	"github.com/vogo/logtail/internal/route"
 )
 
 var ErrWorkerCommandStopped = errors.New("worker command stopped")
@@ -41,7 +42,7 @@ type Worker struct {
 	dynamic bool      // command generated dynamically
 	command string    // command lines
 	cmd     *exec.Cmd // command object
-	filters map[string]*Filter
+	Routers []*route.Router
 }
 
 func (w *Worker) Write(data []byte) (int, error) {
@@ -49,7 +50,7 @@ func (w *Worker) Write(data []byte) (int, error) {
 	newData := make([]byte, len(data))
 	copy(newData, data)
 
-	for _, r := range w.filters {
+	for _, r := range w.Routers {
 		r.Receive(newData)
 	}
 
@@ -59,14 +60,14 @@ func (w *Worker) Write(data []byte) (int, error) {
 }
 
 func (w *Worker) WriteToFilters(bytes []byte) (int, error) {
-	for _, r := range w.filters {
+	for _, r := range w.Routers {
 		r.Receive(bytes)
 	}
 
 	return len(bytes), nil
 }
 
-func (w *Worker) StartRouterFilter(router *Router) {
+func (w *Worker) StartRouterFilter(router *route.Router) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -75,10 +76,10 @@ func (w *Worker) StartRouterFilter(router *Router) {
 		return
 	default:
 		filter := NewFilter(w, router)
-		w.filters[router.ID] = filter
+		w.Routers[router.ID] = filter
 
 		go func() {
-			defer delete(w.filters, router.ID)
+			defer delete(w.Routers, router.ID)
 			filter.Start()
 		}()
 	}
@@ -175,9 +176,35 @@ func (w *Worker) stopFilters() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	for _, filter := range w.filters {
+	for _, filter := range w.Routers {
 		filter.Stop()
 	}
+}
+
+func (w *Worker) AddRouter(routerConfig *conf.RouterConfig) error {
+	existRouterIndex := -1
+
+	for i, r := range w.Routers {
+		if r.Name == routerConfig.Name {
+			r.Stop()
+
+			existRouterIndex = i
+
+			break
+		}
+	}
+
+	router := BuildRouter(w.ID, routerConfig)
+
+	router.Start()
+
+	if existRouterIndex > 0 {
+		w.Routers[existRouterIndex] = router
+	} else {
+		w.Routers = append(w.Routers, router)
+	}
+
+	return nil
 }
 
 func StartWorker(s *Server, command string, dynamic bool) *Worker {
@@ -207,6 +234,6 @@ func NewWorker(workerServer *Server, command string, dynamic bool) *Worker {
 		Runner:  workerServer.Runner,
 		command: command,
 		dynamic: dynamic,
-		filters: make(map[string]*Filter, util.DefaultMapSize),
+		Routers: workerServer.BuildRouters(),
 	}
 }

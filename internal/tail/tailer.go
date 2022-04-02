@@ -55,15 +55,15 @@ func NewTailer(config *conf.Config) (*Tailer, error) {
 	return tailer, nil
 }
 
-func (r *Tailer) Start() error {
-	conf.ConfigLogLevel(r.Config.LogLevel)
+func (t *Tailer) Start() error {
+	conf.ConfigLogLevel(t.Config.LogLevel)
 
-	if err := r.startTransfers(); err != nil {
+	if err := t.startTransfers(); err != nil {
 		return err
 	}
 
-	for _, serverConfig := range r.Config.Servers {
-		_, err := r.AddServer(serverConfig)
+	for _, serverConfig := range t.Config.Servers {
+		_, err := t.AddServer(serverConfig)
 		if err != nil {
 			logger.Errorf("add server %s error: %v", serverConfig.Name, err)
 		}
@@ -72,9 +72,9 @@ func (r *Tailer) Start() error {
 	return nil
 }
 
-func (r *Tailer) startTransfers() error {
-	for _, c := range r.Config.Transfers {
-		if _, err := r.StartTransfer(c); err != nil {
+func (t *Tailer) startTransfers() error {
+	for _, c := range t.Config.Transfers {
+		if _, err := t.StartTransfer(c); err != nil {
 			return err
 		}
 	}
@@ -82,21 +82,21 @@ func (r *Tailer) startTransfers() error {
 	return nil
 }
 
-func (r *Tailer) AddTransfer(c *conf.TransferConfig) error {
-	if _, err := r.StartTransfer(c); err != nil {
+func (t *Tailer) AddTransfer(c *conf.TransferConfig) error {
+	if _, err := t.StartTransfer(c); err != nil {
 		return err
 	}
 
-	r.Config.Transfers[c.Name] = c
-	r.Config.SaveToFile()
+	t.Config.Transfers[c.Name] = c
+	t.Config.SaveToFile()
 
 	return nil
 }
 
 // nolint:ireturn //ignore this.
-func (r *Tailer) StartTransfer(transferConfig *conf.TransferConfig) (trans.Transfer, error) {
-	r.lock.Lock()
-	defer r.lock.Unlock()
+func (t *Tailer) StartTransfer(transferConfig *conf.TransferConfig) (trans.Transfer, error) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	runTransfer := BuildTransfer(transferConfig)
 
@@ -108,22 +108,24 @@ func (r *Tailer) StartTransfer(transferConfig *conf.TransferConfig) (trans.Trans
 
 	logger.Infof("transfer [%s]%s started", transferConfig.Type, runTransfer.Name())
 
-	existTransfer, exist := r.Transfers[transferConfig.Name]
+	existTransfer, exist := t.Transfers[transferConfig.Name]
 
 	// save or replace transfer
-	r.Transfers[transferConfig.Name] = runTransfer
+	t.Transfers[transferConfig.Name] = runTransfer
 
 	if exist {
-		for _, server := range r.Servers {
-			for _, router := range server.Routers {
-				router.Lock.Lock()
-				for i := range router.Transfers {
-					if router.Transfers[i].Name() == runTransfer.Name() {
-						// replace transfer
-						router.Transfers[i] = runTransfer
+		for _, server := range t.Servers {
+			for _, worker := range server.Workers {
+				for _, router := range worker.Routers {
+					router.Lock.Lock()
+					for i := range router.Transfers {
+						if router.Transfers[i].Name() == runTransfer.Name() {
+							// replace transfer
+							router.Transfers[i] = runTransfer
+						}
 					}
+					router.Lock.Unlock()
 				}
-				router.Lock.Unlock()
 			}
 		}
 
@@ -134,12 +136,12 @@ func (r *Tailer) StartTransfer(transferConfig *conf.TransferConfig) (trans.Trans
 	return runTransfer, nil
 }
 
-func (r *Tailer) StopTransfer(name string) error {
-	r.lock.Lock()
-	defer r.lock.Unlock()
+func (t *Tailer) StopTransfer(name string) error {
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
-	if existTransfer, exist := r.Transfers[name]; exist {
-		if r.isTransferUsing(name) {
+	if existTransfer, exist := t.Transfers[name]; exist {
+		if t.isTransferUsing(name) {
 			return fmt.Errorf("%w: %s", conf.ErrTransferUsing, name)
 		}
 
@@ -148,95 +150,19 @@ func (r *Tailer) StopTransfer(name string) error {
 			logger.Warnf("stop transfer error: %v", err)
 		}
 
-		delete(r.Transfers, name)
+		delete(t.Transfers, name)
 
-		delete(r.Config.Transfers, name)
-		r.Config.SaveToFile()
+		delete(t.Config.Transfers, name)
+		t.Config.SaveToFile()
 	}
 
 	return nil
 }
 
-func (r *Tailer) isTransferUsing(name string) bool {
-	for _, server := range r.Servers {
-		for _, router := range server.Routers {
-			for i := range router.Transfers {
-				if router.Transfers[i].Name() == name {
-					return true
-				}
-			}
-		}
-	}
-
-	return false
-}
-
-// Stop the runner.
-func (r *Tailer) Stop() {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-
-	for _, s := range r.Servers {
-		if err := s.Stop(); err != nil {
-			logger.Errorf("server %s close error: %+v", s.ID, err)
-		}
-	}
-
-	for _, t := range r.Transfers {
-		if err := t.Stop(); err != nil {
-			logger.Errorf("transfer %s close error: %+v", t.Name(), err)
-		}
-	}
-}
-
-func (r *Tailer) AddRouter(config *conf.RouterConfig) error {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-
-	if err := conf.CheckRouterConfig(r.Config, config); err != nil {
-		return err
-	}
-
-	var err error
-
-	if _, ok := r.Config.Routers[config.Name]; ok {
-		for _, server := range r.Servers {
-			for _, router := range server.Routers {
-				if router.Name == config.Name {
-					if err = server.AddRouter(config); err != nil {
-						logger.Errorf("add router error: %v", err)
-					}
-				}
-			}
-		}
-	}
-
-	r.Config.Routers[config.Name] = config
-	r.Config.SaveToFile()
-
-	return err
-}
-
-func (r *Tailer) DeleteRouter(name string) error {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-
-	if _, exist := r.Config.Routers[name]; exist {
-		if r.isRouterUsing(name) {
-			return fmt.Errorf("%w: %s", conf.ErrRouterUsing, name)
-		}
-
-		delete(r.Config.Routers, name)
-		r.Config.SaveToFile()
-	}
-
-	return nil
-}
-
-func (r *Tailer) isRouterUsing(name string) bool {
-	for _, server := range r.Servers {
-		for _, router := range server.Routers {
-			if router.Name == name {
+func (t *Tailer) isTransferUsing(name string) bool {
+	for _, router := range t.Config.Routers {
+		for i := range router.Transfers {
+			if router.Transfers[i] == name {
 				return true
 			}
 		}
@@ -245,11 +171,87 @@ func (r *Tailer) isRouterUsing(name string) bool {
 	return false
 }
 
-func (r *Tailer) AddServer(serverConfig *conf.ServerConfig) (*Server, error) {
-	r.lock.Lock()
-	defer r.lock.Unlock()
+// Stop the runner.
+func (t *Tailer) Stop() {
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
-	if err := conf.CheckServerConfig(r.Config, serverConfig); err != nil {
+	for _, s := range t.Servers {
+		if err := s.Stop(); err != nil {
+			logger.Errorf("server %s close error: %+v", s.ID, err)
+		}
+	}
+
+	for _, t := range t.Transfers {
+		if err := t.Stop(); err != nil {
+			logger.Errorf("transfer %s close error: %+v", t.Name(), err)
+		}
+	}
+}
+
+func (t *Tailer) AddRouter(config *conf.RouterConfig) error {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	if err := conf.CheckRouterConfig(t.Config, config); err != nil {
+		return err
+	}
+
+	var err error
+
+	if _, ok := t.Config.Routers[config.Name]; ok {
+		for _, server := range t.Servers {
+			for _, worker := range server.Workers {
+				for _, router := range worker.Routers {
+					if router.Name == config.Name {
+						if err = worker.AddRouter(config); err != nil {
+							logger.Errorf("add Routers error: %v", err)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	t.Config.Routers[config.Name] = config
+	t.Config.SaveToFile()
+
+	return err
+}
+
+func (t *Tailer) DeleteRouter(name string) error {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	if _, exist := t.Config.Routers[name]; exist {
+		if t.isRouterUsing(name) {
+			return fmt.Errorf("%w: %s", conf.ErrRouterUsing, name)
+		}
+
+		delete(t.Config.Routers, name)
+		t.Config.SaveToFile()
+	}
+
+	return nil
+}
+
+func (t *Tailer) isRouterUsing(name string) bool {
+	for _, server := range t.Config.Servers {
+		for _, router := range server.Routers {
+			if router == name {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (t *Tailer) AddServer(serverConfig *conf.ServerConfig) (*Server, error) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	if err := conf.CheckServerConfig(t.Config, serverConfig); err != nil {
 		return nil, err
 	}
 
@@ -257,42 +259,57 @@ func (r *Tailer) AddServer(serverConfig *conf.ServerConfig) (*Server, error) {
 
 	format := serverConfig.Format
 	if format == nil {
-		format = r.Config.DefaultFormat
+		format = t.Config.DefaultFormat
 	}
 
 	server.Format = format
-	server.Tailer = r
+	server.TransferMatcher = func(ids []string) []trans.Transfer {
+		transfers := make([]trans.Transfer, 0, len(ids))
 
-	if existsServer, ok := r.Servers[server.ID]; ok {
-		_ = existsServer.Stop()
+		for _, id := range ids {
+			existTransfer, ok := t.Transfers[id]
+			if !ok {
+				logger.Errorf("transfer not exists: %s", id)
 
-		delete(r.Servers, server.ID)
+				continue
+			}
+
+			transfers = append(transfers, existTransfer)
+		}
+
+		return transfers
 	}
 
-	r.Servers[server.ID] = server
+	if existsServer, ok := t.Servers[server.ID]; ok {
+		_ = existsServer.Stop()
 
-	server.Initial(r.Config, serverConfig)
+		delete(t.Servers, server.ID)
+	}
+
+	t.Servers[server.ID] = server
+
+	server.Initial(t.Config, serverConfig)
 
 	server.Start()
 
-	r.Config.Servers[serverConfig.Name] = serverConfig
-	r.Config.SaveToFile()
+	t.Config.Servers[serverConfig.Name] = serverConfig
+	t.Config.SaveToFile()
 
 	return server, nil
 }
 
-func (r *Tailer) DeleteServer(name string) error {
-	s, exist := r.Servers[name]
+func (t *Tailer) DeleteServer(name string) error {
+	s, exist := t.Servers[name]
 
 	if exist {
 		if err := s.Stop(); err != nil {
 			return err
 		}
 
-		delete(r.Servers, name)
+		delete(t.Servers, name)
 
-		delete(r.Config.Servers, name)
-		r.Config.SaveToFile()
+		delete(t.Config.Servers, name)
+		t.Config.SaveToFile()
 	}
 
 	return nil

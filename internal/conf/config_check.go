@@ -50,14 +50,6 @@ func InitialCheckConfig(config *Config) error {
 		return routerErr
 	}
 
-	if refErr := checkRouterRef(config, config.DefaultRouters); refErr != nil {
-		return refErr
-	}
-
-	if globalRefErr := checkRouterRef(config, config.GlobalRouters); globalRefErr != nil {
-		return globalRefErr
-	}
-
 	for _, server := range config.Servers {
 		if serverErr := CheckServerConfig(config, server); serverErr != nil {
 			return serverErr

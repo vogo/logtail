@@ -29,3 +29,5 @@ type Transfer interface {
 var Types = []string{TypeNull, TypeConsole, TypeFile, TypeWebhook, TypeDing, TypeLark}
 
 const DefaultTransferPrefix = "logtail-"
+
+type TransferMatcher func(ids []string) []Transfer

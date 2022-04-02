@@ -29,6 +29,8 @@ import (
 	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
+	"github.com/vogo/logtail/internal/route"
+	"github.com/vogo/logtail/internal/trans"
 	"github.com/vogo/logtail/internal/util"
 	"github.com/vogo/vogo/vos"
 )
@@ -43,13 +45,13 @@ type Server struct {
 	ID            string
 	lock          sync.Mutex
 	Runner        *grunner.Runner
+	Config        *conf.ServerConfig
 	Format        *match.Format
-	Tailer        *Tailer
+	TransferMatcher  trans.TransferMatcher
 	workerError   chan error
 	workerStarter func()
 	MergingWorker *Worker
 	Workers       map[string]*Worker
-	Routers       map[string]*Router
 }
 
 func (s *Server) addWorker(w *Worker) {
@@ -62,7 +64,6 @@ func NewServer(serverConfig *conf.ServerConfig) *Server {
 		ID:      serverConfig.Name,
 		lock:    sync.Mutex{},
 		Runner:  grunner.New(),
-		Routers: make(map[string]*Router, util.DefaultMapSize),
 		Workers: make(map[string]*Worker, util.DefaultMapSize),
 	}
 
@@ -82,7 +83,7 @@ func (s *Server) Initial(config *conf.Config, serverConfig *conf.ServerConfig) {
 	for _, routerConfig := range routerConfigs {
 		err := s.AddRouter(routerConfig)
 		if err != nil {
-			logger.Warnf("add router %s error: %v", routerConfig.Name, err)
+			logger.Warnf("add Routers %s error: %v", routerConfig.Name, err)
 		}
 	}
 
@@ -129,14 +130,8 @@ func (s *Server) Fire(data []byte) error {
 	return nil
 }
 
-// Start the server.
-// First, Start all routers.
-// Then, call the Start func.
+// Start the server. Call the Start func to start worker.
 func (s *Server) Start() {
-	for _, r := range s.Routers {
-		_ = r.Start()
-	}
-
 	s.workerStarter()
 }
 
@@ -157,10 +152,6 @@ func (s *Server) Stop() error {
 	s.stopWorkers()
 
 	s.MergingWorker.Stop()
-
-	for _, r := range s.Routers {
-		r.Stop()
-	}
 
 	return nil
 }
@@ -325,20 +316,4 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 			}
 		}
 	}
-}
-
-func (s *Server) AddRouter(routerConfig *conf.RouterConfig) error {
-	if r, exist := s.Routers[routerConfig.Name]; exist {
-		r.Stop()
-	}
-
-	router := BuildRouter(s, routerConfig)
-
-	if err := router.Start(); err != nil {
-		return err
-	}
-
-	s.Routers[routerConfig.Name] = router
-
-	return nil
 }
