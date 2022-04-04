@@ -86,7 +86,7 @@ func deleteTransfer(runner *tail.Tailer, request *http.Request, response http.Re
 		return
 	}
 
-	if err := runner.StopTransfer(config.Name); err != nil {
+	if err := runner.RemoveTransfer(config.Name); err != nil {
 		routeToError(response, err)
 
 		return

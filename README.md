@@ -22,7 +22,7 @@
 
 `go install github.com/vogo/logtail@master`
 
-### 3.2. Start logtail server using config file
+### 3.2. StartLoop logtail server using config file
 
 ```bash
 logtail -file <config-file>
@@ -30,7 +30,7 @@ logtail -file <config-file>
 
 config file [examples](examples/README.md).
 
-### 3.3. Start logtail server and config using webapi
+### 3.3. StartLoop logtail server and config using webapi
 
 usage: `logtail -port=<port>`
 ```bash
@@ -46,7 +46,7 @@ And you can browse `http://<server-ip>:<port>` to list all tailing logs.
 You can config log format globally, or config it for a server.
 
 The config `prefix` of the format is the wildcard of the prefix of a new log record,
-`logtail` will check whether a new line is the Start of a new log record, or one of the following lines.
+`logtail` will check whether a new line is the StartLoop of a new log record, or one of the following lines.
 
 The wildcard does NOT support '*' for none or many chars, it supports the following tag:
 - '?' as one byte char;
@@ -58,14 +58,14 @@ example:
 ```bash
 {
     "default_format":{
-      "prefix": "!!!!-!!-!!"  # global format config, matches 2020-12-12
+      "prefix": "!!!!-!!-!!"  # global format config, Matches 2020-12-12
     },
     "servers": [
         {
           "name": "app1",
           "command": "tail -f /logs/app/app1.log",
           "format":{
-            "prefix": "!!!!-!!-!!" # server format config, matches 2020-12-12
+            "prefix": "!!!!-!!-!!" # server format config, Matches 2020-12-12
           }
         }
     ]

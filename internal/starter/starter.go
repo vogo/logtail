@@ -29,23 +29,12 @@ import (
 
 // StartLogtail Start config servers.
 func StartLogtail(config *conf.Config) error {
-	runner, err := tail.NewTailer(config)
+	tailer, err := tail.NewTailer(config)
 	if err != nil {
 		return err
 	}
 
-	return StartRunner(runner)
-}
-
-// StartRunner Start config servers.
-func StartRunner(runner *tail.Tailer) error {
-	if tail.DefaultTailer != nil {
-		tail.DefaultTailer.Stop()
-	}
-
-	tail.DefaultTailer = runner
-
-	return tail.DefaultTailer.Start()
+	return StartTailer(tailer)
 }
 
 // StopLogtail stop logtail.
@@ -56,6 +45,17 @@ func StopLogtail() error {
 	}
 
 	return nil
+}
+
+// StartTailer Start config servers.
+func StartTailer(tailer *tail.Tailer) error {
+	if tail.DefaultTailer != nil {
+		tail.DefaultTailer.Stop()
+	}
+
+	tail.DefaultTailer = tailer
+
+	return tail.DefaultTailer.Start()
 }
 
 // Start parse command config, and start logtail servers with http listener.
@@ -70,16 +70,16 @@ func Start() *tail.Tailer {
 
 	vos.LoadUserEnv()
 
-	runner, err := tail.NewTailer(config)
+	tailer, err := tail.NewTailer(config)
 	if err != nil {
 		panic(err)
 	}
 
 	go func() {
-		if startErr := StartRunner(runner); startErr != nil {
+		if startErr := StartTailer(tailer); startErr != nil {
 			panic(startErr)
 		}
 	}()
 
-	return runner
+	return tailer
 }

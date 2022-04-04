@@ -49,7 +49,6 @@ func main() {
 				Transfers: []string{"console", "ding"},
 			},
 		},
-		DefaultRouters: []string{"error-console"},
 		Servers: map[string]*conf.ServerConfig{
 			"server-test": {
 				Name: "server-test",
@@ -74,6 +73,6 @@ func main() {
 
 	for {
 		b := <-c
-		_ = server.Fire(b)
+		_, _ = server.Write(b)
 	}
 }

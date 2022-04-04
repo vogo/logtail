@@ -15,35 +15,13 @@
  * limitations under the License.
  */
 
-package util
+package work
 
-import "fmt"
+import "os/exec"
 
-const DefaultMapSize = 4
-
-func IsNumberChar(b byte) bool {
-	return b >= '0' && b <= '9'
+func SetCmdSysProcAttr(cmd *exec.Cmd) {
 }
 
-func IsAlphabetChar(b byte) bool {
-	return (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z')
-}
-
-func isLineEnd(b byte) bool {
-	return b == '\n' || b == '\r'
-}
-
-func IndexLineEnd(bytes []byte, length, index *int) {
-	for ; *index < *length && !isLineEnd(bytes[*index]); *index++ {
-	}
-}
-
-func IgnoreLineEnd(bytes []byte, length, index *int) {
-	for ; *index < *length && isLineEnd(bytes[*index]); *index++ {
-	}
-}
-
-// FollowRetryTailCommand flag `-F` is same as `--follow=name --retry`.
-func FollowRetryTailCommand(f string) string {
-	return fmt.Sprintf("tail -F %s", f)
+func KillCmd(cmd *exec.Cmd) error {
+	return cmd.Process.Kill()
 }

@@ -15,35 +15,40 @@
  * limitations under the License.
  */
 
-package util
+package route
 
-import "fmt"
+import (
+	"runtime/debug"
 
-const DefaultMapSize = 4
+	"github.com/vogo/logger"
+)
 
-func IsNumberChar(b byte) bool {
-	return b >= '0' && b <= '9'
-}
+func (r *Router) StartLoop() {
+	defer func() {
+		if err := recover(); err != nil {
+			logger.Errorf("Routers [%s] error: %+v, stack:\n%s", r.ID, err, string(debug.Stack()))
+		}
 
-func IsAlphabetChar(b byte) bool {
-	return (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z')
-}
+		logger.Infof("Routers [%s] stopped", r.ID)
+	}()
 
-func isLineEnd(b byte) bool {
-	return b == '\n' || b == '\r'
-}
+	logger.Infof("Routers [%s] StartLoop", r.ID)
 
-func IndexLineEnd(bytes []byte, length, index *int) {
-	for ; *index < *length && !isLineEnd(bytes[*index]); *index++ {
+	for {
+		select {
+		case <-r.Runner.C:
+			return
+		case data := <-r.channel:
+			if data == nil {
+				r.Stop()
+
+				return
+			}
+
+			if err := r.Route(data); err != nil {
+				logger.Warnf("Routers [%s] route error: %+v", r.ID, err)
+				r.Stop()
+			}
+		}
 	}
-}
-
-func IgnoreLineEnd(bytes []byte, length, index *int) {
-	for ; *index < *length && isLineEnd(bytes[*index]); *index++ {
-	}
-}
-
-// FollowRetryTailCommand flag `-F` is same as `--follow=name --retry`.
-func FollowRetryTailCommand(f string) string {
-	return fmt.Sprintf("tail -F %s", f)
 }

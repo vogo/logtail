@@ -27,8 +27,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
+	"github.com/vogo/logtail/internal/serve"
 	"github.com/vogo/logtail/internal/starter"
 	"github.com/vogo/logtail/internal/tail"
+	"github.com/vogo/logtail/internal/trans"
 )
 
 // nolint:gochecknoglobals // ignore this
@@ -78,11 +80,11 @@ follow9`),
 // nolint:gochecknoglobals // ignore this
 var ticker = time.NewTicker(time.Millisecond)
 
-func fireServer(s *tail.Server) {
+func fireServer(s *serve.Server) {
 	for _, b := range fireData {
 		<-ticker.C
 
-		_ = s.Fire(b)
+		_, _ = s.Write(b)
 	}
 }
 
@@ -90,50 +92,51 @@ func TestServer(t *testing.T) {
 	t.Parallel()
 	initFireData()
 
-	serverID := "server-1"
+	serverID := "server"
+	transType := trans.TypeNull
 	config := &conf.Config{
 		LogLevel:      "DEBUG",
 		DefaultFormat: &match.Format{Prefix: "!!!!-!!-!!"},
 		Transfers: map[string]*conf.TransferConfig{
-			"null": {
-				Name: "null",
-				Type: "null",
+			transType: {
+				Name: transType,
+				Type: transType,
 			},
 		},
 		Routers: map[string]*conf.RouterConfig{
-			"error-null": {
-				Name: "error-null",
+			"error-router": {
+				Name: "error-router",
 				Matchers: []*conf.MatcherConfig{
 					{
 						Contains:    []string{"ERROR", "test"},
 						NotContains: []string{"NORMAL"},
 					},
 				},
-				Transfers: []string{"null"},
+				Transfers: []string{transType},
 			},
 		},
-		DefaultRouters: []string{"error-null"},
 		Servers: map[string]*conf.ServerConfig{
 			serverID: {
-				Name: serverID,
+				Name:    serverID,
+				Routers: []string{"error-router"},
 			},
 		},
 	}
 
-	runner, err := tail.NewTailer(config)
+	tailer, err := tail.NewTailer(config)
 	if err != nil {
 		t.Error(err)
 
 		return
 	}
 
-	if err = runner.Start(); err != nil {
+	if err = tailer.Start(); err != nil {
 		t.Error(err)
 
 		return
 	}
 
-	server := runner.Servers[config.Servers[serverID].Name]
+	server := tailer.Servers[config.Servers[serverID].Name]
 
 	for i := 0; i < 1000; i++ {
 		fireServer(server)
@@ -141,6 +144,9 @@ func TestServer(t *testing.T) {
 
 	<-time.After(time.Second)
 }
+
+// nolint:gochecknoglobals //ignore this
+var testServerName = "svr"
 
 func TestCommands(t *testing.T) {
 	t.Parallel()
@@ -174,8 +180,7 @@ func TestCommands(t *testing.T) {
 
 	<-time.After(time.Second * 2)
 
-	serverID := "server-test"
-	config.Servers[serverID].CommandGen = commandGen
+	config.Servers[testServerName].CommandGen = commandGen
 
 	assert.Nil(t, starter.StartLogtail(config))
 
@@ -185,17 +190,19 @@ func TestCommands(t *testing.T) {
 }
 
 func testCommandConfig(commands string) *conf.Config {
+	routerName := "error"
+
 	return &conf.Config{
 		DefaultFormat: &match.Format{Prefix: "!!!!-!!-!!"},
 		Transfers: map[string]*conf.TransferConfig{
 			"console": {
 				Name: "console",
-				Type: "console",
+				Type: trans.TypeConsole,
 			},
 		},
 		Routers: map[string]*conf.RouterConfig{
-			"error-console": {
-				Name: "error-console",
+			routerName: {
+				Name: routerName,
 				Matchers: []*conf.MatcherConfig{
 					{
 						Contains: []string{"ERROR"},
@@ -204,11 +211,11 @@ func testCommandConfig(commands string) *conf.Config {
 				Transfers: []string{"console"},
 			},
 		},
-		DefaultRouters: []string{"error-console"},
 		Servers: map[string]*conf.ServerConfig{
-			"server-test": {
-				Name:     "server-test",
+			testServerName: {
+				Name:     testServerName,
 				Commands: commands,
+				Routers:  []string{routerName},
 			},
 		},
 	}

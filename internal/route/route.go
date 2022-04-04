@@ -18,13 +18,12 @@
 package route
 
 import (
-	"fmt"
-	"runtime/debug"
 	"sync"
 	"time"
 
 	"github.com/vogo/grunner"
 	"github.com/vogo/logger"
+	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
 	"github.com/vogo/logtail/internal/trans"
 	"github.com/vogo/logtail/internal/util"
@@ -32,27 +31,38 @@ import (
 
 const DurationReadNextTimeout = time.Millisecond * 60
 
+type RoutersBuilder func() *[]Router
+
 type Router struct {
-	ID        string
-	Name      string
 	Lock      sync.Mutex
 	Runner    *grunner.Runner
+	ID        string
+	Name      string
 	Format    *match.Format
 	channel   Channel
 	Matchers  []match.Matcher
 	Transfers []trans.Transfer
 }
 
-func NewRouter(serverID string, name string, matchers []match.Matcher, transfers []trans.Transfer) *Router {
-	id := fmt.Sprintf("%s-%s", serverID, name)
+func NewRouter(routerID string, workerRunner *grunner.Runner,
+	routerConfig *conf.RouterConfig, transfersFunc trans.TransferMatcher,
+) *Router {
+	matchers, err := NewMatchers(routerConfig.Matchers)
+	if err != nil {
+		panic(err)
+	}
 
 	router := &Router{
-		ID:        id,
-		Name:      name,
+		ID:        routerID,
+		Name:      routerConfig.Name,
 		Lock:      sync.Mutex{},
+		Runner:    workerRunner.NewChild(),
+		channel:   make(Channel),
 		Matchers:  matchers,
-		Transfers: transfers,
+		Transfers: transfersFunc(routerConfig.Transfers),
 	}
+
+	go router.StartLoop()
 
 	return router
 }
@@ -83,7 +93,7 @@ func (r *Router) Route(bytes []byte) error {
 			list = append(list, matches)
 
 			for length > 0 && idx >= length {
-				r.readMoreFollowingLines(&list, &bytes, &length, &idx)
+				r.ReadMoreFollowingLines(&list, &bytes, &length, &idx)
 			}
 
 			if err := r.Trans(list...); err != nil {
@@ -97,15 +107,15 @@ func (r *Router) Route(bytes []byte) error {
 	return nil
 }
 
-func (r *Router) readMoreFollowingLines(list *[][]byte, bytes *[]byte, length, idx *int) {
-	*bytes = r.nextBytes()
+func (r *Router) ReadMoreFollowingLines(list *[][]byte, bytes *[]byte, length, idx *int) {
+	*bytes = r.NextBytes()
 	*idx = 0
 	*length = len(*bytes)
 
 	if *length > 0 {
 		var end int
 		// append following lines
-		indexFollowingLines(r.Format, *bytes, length, idx, &end)
+		IndexFollowingLines(r.Format, *bytes, length, idx, &end)
 
 		if end > 0 {
 			*list = append(*list, (*bytes)[:end])
@@ -117,7 +127,7 @@ func (r *Router) Match(bytes []byte, length, index *int) []byte {
 	start := *index
 	util.IndexLineEnd(bytes, length, index)
 
-	if !r.matches(bytes[start:*index]) {
+	if !r.Matches(bytes[start:*index]) {
 		util.IgnoreLineEnd(bytes, length, index)
 
 		return nil
@@ -128,12 +138,12 @@ func (r *Router) Match(bytes []byte, length, index *int) []byte {
 	util.IgnoreLineEnd(bytes, length, index)
 
 	// append following lines
-	indexFollowingLines(r.Format, bytes, length, index, &end)
+	IndexFollowingLines(r.Format, bytes, length, index, &end)
 
 	return bytes[start:end]
 }
 
-func indexFollowingLines(format *match.Format, bytes []byte, length, index, end *int) {
+func IndexFollowingLines(format *match.Format, bytes []byte, length, index, end *int) {
 	for *index < *length && IsFollowingLine(format, bytes[*index:]) {
 		util.IndexLineEnd(bytes, length, index)
 
@@ -173,37 +183,7 @@ func (r *Router) Stop() {
 	})
 }
 
-func (r *Router) Start() {
-	defer func() {
-		if err := recover(); err != nil {
-			logger.Errorf("Routers [%s] error: %+v, stack:\n%s", r.ID, err, string(debug.Stack()))
-		}
-
-		logger.Infof("Routers [%s] stopped", r.ID)
-	}()
-
-	logger.Infof("Routers [%s] Start", r.ID)
-
-	for {
-		select {
-		case <-r.Runner.C:
-			return
-		case data := <-r.channel:
-			if data == nil {
-				r.Stop()
-
-				return
-			}
-
-			if err := r.Route(data); err != nil {
-				logger.Warnf("Routers [%s] route error: %+v", r.ID, err)
-				r.Stop()
-			}
-		}
-	}
-}
-
-func (r *Router) nextBytes() []byte {
+func (r *Router) NextBytes() []byte {
 	select {
 	case <-r.Runner.C:
 		return nil
@@ -233,7 +213,7 @@ func (r *Router) Receive(data []byte) {
 	}
 }
 
-func (r *Router) matches(bytes []byte) bool {
+func (r *Router) Matches(bytes []byte) bool {
 	for _, m := range r.Matchers {
 		if !m.Match(bytes) {
 			return false

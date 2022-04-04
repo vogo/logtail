@@ -15,58 +15,12 @@
  * limitations under the License.
  */
 
-package tail
+package route
 
 import (
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
-	"github.com/vogo/logtail/internal/route"
-	"github.com/vogo/logtail/internal/trans"
 )
-
-func BuildRouter(id string, config *conf.RouterConfig) *route.Router {
-	return route.NewRouter(id, config.Name, BuildMatchers(config.Matchers), buildTransfers(s.Tailer, config.Transfers))
-}
-
-func buildTransfers(runner *Tailer, ids []string) []trans.Transfer {
-	transfers := make([]trans.Transfer, 0, len(ids))
-
-	for _, id := range ids {
-		existTransfer, ok := runner.Transfers[id]
-		if !ok {
-			logger.Errorf("transfer not exists: %s", id)
-
-			continue
-		}
-
-		transfers = append(transfers, existTransfer)
-	}
-
-	return transfers
-}
-
-// nolint:ireturn // return diff transfer implementation.
-func BuildTransfer(config *conf.TransferConfig) trans.Transfer {
-	switch config.Type {
-	case trans.TypeWebhook:
-		return trans.NewWebhookTransfer(config.Name, config.URL, config.Prefix)
-	case trans.TypeDing:
-		return trans.NewDingTransfer(config.Name, config.URL, config.Prefix)
-	case trans.TypeLark:
-		return trans.NewLarkTransfer(config.Name, config.URL, config.Prefix)
-	case trans.TypeFile:
-		return trans.NewFileTransfer(config.Name, config.Dir)
-	case trans.TypeConsole:
-		return &trans.ConsoleTransfer{
-			ID: config.Name,
-		}
-	default:
-		return &trans.NullTransfer{
-			ID: config.Name,
-		}
-	}
-}
 
 func NewMatchers(configs []*conf.MatcherConfig) ([]match.Matcher, error) {
 	if err := conf.CheckMatchers(configs); err != nil {
@@ -80,7 +34,7 @@ func BuildMatchers(matcherConfigs []*conf.MatcherConfig) []match.Matcher {
 	var matchers []match.Matcher
 
 	for _, matchConfig := range matcherConfigs {
-		m := buildMatcher(matchConfig)
+		m := BuildMatcher(matchConfig)
 		if len(m) > 0 {
 			matchers = append(matchers, m...)
 		}
@@ -89,7 +43,7 @@ func BuildMatchers(matcherConfigs []*conf.MatcherConfig) []match.Matcher {
 	return matchers
 }
 
-func buildMatcher(config *conf.MatcherConfig) []match.Matcher {
+func BuildMatcher(config *conf.MatcherConfig) []match.Matcher {
 	matchers := make([]match.Matcher, len(config.Contains)+len(config.NotContains))
 
 	for i, contains := range config.Contains {

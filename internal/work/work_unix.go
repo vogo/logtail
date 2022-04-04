@@ -1,3 +1,6 @@
+//go:build aix || darwin || dragonfly || freebsd || linux || netbsd || openbsd || solaris
+// +build aix darwin dragonfly freebsd linux netbsd openbsd solaris
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,13 +18,17 @@
  * limitations under the License.
  */
 
-package tail
+package work
 
-import "os/exec"
+import (
+	"os/exec"
+	"syscall"
+)
 
-func setCmdSysProcAttr(cmd *exec.Cmd) {
+func SetCmdSysProcAttr(cmd *exec.Cmd) {
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 }
 
-func killCmd(cmd *exec.Cmd) error {
-	return cmd.Process.Kill()
+func KillCmd(cmd *exec.Cmd) error {
+	return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
 }

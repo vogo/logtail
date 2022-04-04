@@ -15,35 +15,24 @@
  * limitations under the License.
  */
 
-package util
+package conf
 
-import "fmt"
+import "github.com/vogo/logger"
 
-const DefaultMapSize = 4
+type RouterConfigsFunc func() []*RouterConfig
 
-func IsNumberChar(b byte) bool {
-	return b >= '0' && b <= '9'
-}
+func BuildRouterConfigsFunc(config *Config, serverConfig *ServerConfig) RouterConfigsFunc {
+	return func() []*RouterConfig {
+		var configs []*RouterConfig
 
-func IsAlphabetChar(b byte) bool {
-	return (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z')
-}
+		for _, name := range serverConfig.Routers {
+			if r, ok := config.Routers[name]; ok {
+				configs = append(configs, r)
+			} else {
+				logger.Errorf("router not exists: %s", name)
+			}
+		}
 
-func isLineEnd(b byte) bool {
-	return b == '\n' || b == '\r'
-}
-
-func IndexLineEnd(bytes []byte, length, index *int) {
-	for ; *index < *length && !isLineEnd(bytes[*index]); *index++ {
+		return configs
 	}
-}
-
-func IgnoreLineEnd(bytes []byte, length, index *int) {
-	for ; *index < *length && isLineEnd(bytes[*index]); *index++ {
-	}
-}
-
-// FollowRetryTailCommand flag `-F` is same as `--follow=name --retry`.
-func FollowRetryTailCommand(f string) string {
-	return fmt.Sprintf("tail -F %s", f)
 }

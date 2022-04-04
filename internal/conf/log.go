@@ -1,6 +1,3 @@
-//go:build aix || darwin || dragonfly || freebsd || linux || netbsd || openbsd || solaris
-// +build aix darwin dragonfly freebsd linux netbsd openbsd solaris
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,17 +15,26 @@
  * limitations under the License.
  */
 
-package tail
+package conf
 
 import (
-	"os/exec"
-	"syscall"
+	"strings"
+
+	"github.com/vogo/logger"
 )
 
-func SetCmdSysProcAttr(cmd *exec.Cmd) {
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-}
-
-func KillCmd(cmd *exec.Cmd) error {
-	return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+func ConfigLogLevel(level string) {
+	level = strings.ToUpper(level)
+	switch level {
+	case "ERROR":
+		logger.SetLevel(logger.LevelError)
+	case "WARN":
+		logger.SetLevel(logger.LevelWarn)
+	case "INFO":
+		logger.SetLevel(logger.LevelInfo)
+	case "DEBUG":
+		logger.SetLevel(logger.LevelDebug)
+	case "TRACE":
+		logger.SetLevel(logger.LevelTrace)
+	}
 }

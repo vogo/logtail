@@ -65,7 +65,7 @@ func (ww *WebsocketTransfer) Trans(_ string, data ...[]byte) (err error) {
 	return nil
 }
 
-func startWebsocketTransfer(runner *tail.Tailer, response http.ResponseWriter, request *http.Request, serverID string) {
+func startWebsocketTransfer(tailer *tail.Tailer, response http.ResponseWriter, request *http.Request, serverID string) {
 	wsConn, err := websocketUpgrader.Upgrade(response, request, nil)
 	if err != nil {
 		logger.Error("web socket error:", err)
@@ -74,7 +74,7 @@ func startWebsocketTransfer(runner *tail.Tailer, response http.ResponseWriter, r
 	}
 	defer wsConn.Close()
 
-	server, ok := runner.Servers[serverID]
+	server, ok := tailer.Servers[serverID]
 	if !ok {
 		logger.Warnf("server id not found: %s", serverID)
 
@@ -82,15 +82,20 @@ func startWebsocketTransfer(runner *tail.Tailer, response http.ResponseWriter, r
 	}
 
 	websocketTransfer := &WebsocketTransfer{conn: wsConn}
-	index := fmt.Sprintf("ww-%d", atomic.AddInt64(&wsConnIndex, 1))
-	router := route.NewRouter(server, index, nil, []trans.Transfer{websocketTransfer})
-	server.MergingWorker.StartRouterFilter(router)
-	startWebsocketHeartbeat(router, websocketTransfer)
+
+	routerID := fmt.Sprintf("ww-%d", atomic.AddInt64(&wsConnIndex, 1))
+	router := route.NewRouter(routerID, server.MergingWorker.Runner, &conf.RouterConfig{}, func(ids []string) []trans.Transfer {
+		return []trans.Transfer{websocketTransfer}
+	})
+
+	server.MergingWorker.StartRouter(router)
+
+	startWebsocketHeartbeat(router, websocketTransfer.conn)
 }
 
 const MessageTypeMatcherConfig = '1'
 
-func startWebsocketHeartbeat(router *tail.Router, websocketTransfer *WebsocketTransfer) {
+func startWebsocketHeartbeat(router *route.Router, conn *websocket.Conn) {
 	defer func() {
 		_ = recover()
 
@@ -103,9 +108,9 @@ func startWebsocketHeartbeat(router *tail.Router, websocketTransfer *WebsocketTr
 		case <-router.Runner.C:
 			return
 		default:
-			_ = websocketTransfer.conn.SetReadDeadline(time.Now().Add(WebsocketHeartbeatReadTimeout))
+			_ = conn.SetReadDeadline(time.Now().Add(WebsocketHeartbeatReadTimeout))
 
-			_, data, err := websocketTransfer.conn.ReadMessage()
+			_, data, err := conn.ReadMessage()
 			if err != nil {
 				if !isEncodeError(err) {
 					logger.Warnf("router [%s] websocket heartbeat error: %+v", router.Name, err)
@@ -128,13 +133,13 @@ func isEncodeError(err error) bool {
 	return strings.Contains(err.Error(), "utf8")
 }
 
-func handleMatcherConfigUpdate(router *tail.Router, data []byte) error {
+func handleMatcherConfigUpdate(router *route.Router, data []byte) error {
 	var matcherConfigs []*conf.MatcherConfig
 	if err := json.Unmarshal(data, &matcherConfigs); err != nil {
 		return err
 	}
 
-	matchers, matchErr := tail.NewMatchers(matcherConfigs)
+	matchers, matchErr := route.NewMatchers(matcherConfigs)
 	if matchErr != nil {
 		return matchErr
 	}
