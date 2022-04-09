@@ -46,6 +46,7 @@ var (
 const dingMessageTransferInterval = time.Second * 5
 
 type DingTransfer struct {
+	Counter
 	id           string
 	url          string
 	prefix       []byte
@@ -59,9 +60,12 @@ func (d *DingTransfer) Start() error { return nil }
 
 func (d *DingTransfer) Stop() error { return nil }
 
-// nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
 // Trans transfer data to dingding.
 func (d *DingTransfer) Trans(source string, data ...[]byte) error {
+	if countMessage, ok := d.CountIncr(); ok {
+		_ = d.execTrans(source, []byte(countMessage))
+	}
+
 	if !atomic.CompareAndSwapInt32(&d.transferring, 0, 1) {
 		// ignore message to
 		return nil
@@ -72,6 +76,11 @@ func (d *DingTransfer) Trans(source string, data ...[]byte) error {
 		atomic.StoreInt32(&d.transferring, 0)
 	}()
 
+	return d.execTrans(source, data...)
+}
+
+// nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
+func (d *DingTransfer) execTrans(source string, data ...[]byte) error {
 	size := dingMessageDataFixedBytesNum + len(data)
 	list := make([][]byte, size)
 	list[0] = dingTextMessageDataPrefix

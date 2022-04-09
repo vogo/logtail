@@ -26,6 +26,7 @@ import (
 
 // LarkTransfer transfer to support lark.
 type LarkTransfer struct {
+	Counter
 	id           string
 	url          string
 	prefix       []byte
@@ -57,8 +58,11 @@ func (d *LarkTransfer) Start() error { return nil }
 func (d *LarkTransfer) Stop() error { return nil }
 
 // Trans transfer data to Lark.
-// nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
 func (d *LarkTransfer) Trans(source string, data ...[]byte) error {
+	if countMessage, ok := d.CountIncr(); ok {
+		_ = d.execTrans(source, []byte(countMessage))
+	}
+
 	if !atomic.CompareAndSwapInt32(&d.transferring, 0, 1) {
 		// ignore message to
 		return nil
@@ -69,6 +73,11 @@ func (d *LarkTransfer) Trans(source string, data ...[]byte) error {
 		atomic.StoreInt32(&d.transferring, 0)
 	}()
 
+	return d.execTrans(source, data...)
+}
+
+// nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
+func (d *LarkTransfer) execTrans(source string, data ...[]byte) error {
 	size := larkMessageDataFixedBytesNum + len(data)
 	list := make([][]byte, size)
 	list[0] = larkTextMessageDataPrefix
@@ -114,6 +123,8 @@ func NewLarkTransfer(id, url, prefix string) *LarkTransfer {
 	}
 
 	trans.prefix = []byte(prefix)
+
+	trans.CountReset()
 
 	return trans
 }

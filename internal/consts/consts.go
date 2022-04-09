@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 
-package internal
+package consts
 
 const (
 	// DefaultID default id.
 	DefaultID = "default"
+
+	FormatDateTime = "2006-01-02 15:04:05"
 )

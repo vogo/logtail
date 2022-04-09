@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 
 	"github.com/vogo/logger"
-	"github.com/vogo/logtail/internal"
+	"github.com/vogo/logtail/internal/consts"
 	"github.com/vogo/logtail/internal/trans"
 	"github.com/vogo/vogo/vos"
 )
@@ -110,11 +110,11 @@ func buildCommandLineConfig(port int, command, matchContains, dingURL, webhookUR
 	}
 
 	serverConfig := &ServerConfig{
-		Name:    internal.DefaultID,
-		Routers: []string{internal.DefaultID},
+		Name:    consts.DefaultID,
+		Routers: []string{consts.DefaultID},
 	}
 
-	config.Servers[internal.DefaultID] = serverConfig
+	config.Servers[consts.DefaultID] = serverConfig
 	serverConfig.Command = command
 
 	if dingURL == "" && webhookURL == "" && matchContains == "" {
@@ -122,9 +122,9 @@ func buildCommandLineConfig(port int, command, matchContains, dingURL, webhookUR
 	}
 
 	routerConfig := &RouterConfig{
-		Transfers: []string{internal.DefaultID},
+		Transfers: []string{consts.DefaultID},
 	}
-	config.Routers[internal.DefaultID] = routerConfig
+	config.Routers[consts.DefaultID] = routerConfig
 
 	if matchContains != "" {
 		routerConfig.Matchers = []*MatcherConfig{{
@@ -133,14 +133,14 @@ func buildCommandLineConfig(port int, command, matchContains, dingURL, webhookUR
 	}
 
 	if dingURL != "" {
-		config.Transfers[internal.DefaultID] = &TransferConfig{
-			Name: internal.DefaultID,
+		config.Transfers[consts.DefaultID] = &TransferConfig{
+			Name: consts.DefaultID,
 			Type: trans.TypeDing,
 			URL:  dingURL,
 		}
 	} else if webhookURL != "" {
-		config.Transfers[internal.DefaultID] = &TransferConfig{
-			Name: internal.DefaultID,
+		config.Transfers[consts.DefaultID] = &TransferConfig{
+			Name: consts.DefaultID,
 			Type: trans.TypeWebhook,
 			URL:  webhookURL,
 		}

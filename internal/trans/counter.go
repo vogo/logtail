@@ -15,34 +15,46 @@
  * limitations under the License.
  */
 
-package webapi
+package trans
 
 import (
-	"net/http"
+	"fmt"
+	"time"
 
 	"github.com/vogo/logtail/internal/consts"
-	"github.com/vogo/logtail/internal/tail"
 )
 
-func routeToTail(runner *tail.Tailer, request *http.Request, response http.ResponseWriter, router string) {
-	tailServerID := getServerID(runner, router)
-	if tailServerID == "" {
-		response.WriteHeader(http.StatusNotFound)
+const defaultCountDuration = time.Hour
 
-		return
-	}
-
-	startWebsocketTransfer(runner, response, request, tailServerID)
+// Counter is a utility to count the count of transfer times.
+type Counter struct {
+	count        int
+	countStartAt time.Time
+	countEndAt   time.Time
 }
 
-func getServerID(runner *tail.Tailer, router string) string {
-	if router == "" {
-		return consts.DefaultID
+// CountReset reset the counter and return the statistic message.
+func (c *Counter) CountReset() string {
+	countResult := fmt.Sprintf("Count: %d, Time Range: %s ~ %s",
+		c.count,
+		c.countStartAt.Format(consts.FormatDateTime),
+		time.Now().Format(consts.FormatDateTime))
+
+	c.countStartAt = time.Now()
+	c.countEndAt = c.countStartAt.Add(defaultCountDuration)
+
+	c.count = 0
+
+	return countResult
+}
+
+// CountIncr increase the counter, return statistic message if exceeding the end of the time range.
+func (c *Counter) CountIncr() (string, bool) {
+	c.count++
+
+	if time.Now().Before(c.countEndAt) {
+		return "", false
 	}
 
-	if _, ok := runner.Servers[router]; ok {
-		return router
-	}
-
-	return ""
+	return c.CountReset(), true
 }
