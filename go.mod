@@ -3,13 +3,13 @@ module github.com/vogo/logtail
 go 1.17
 
 require (
-	github.com/gorilla/websocket v1.4.2
+	github.com/gorilla/websocket v1.5.0
 	github.com/stretchr/testify v1.7.0
 	github.com/vogo/fwatch v1.2.2
 	github.com/vogo/grunner v1.0.0
 	github.com/vogo/logger v1.3.0
-	github.com/vogo/vogo v0.0.0-20210123113352-5c0b9fc41f4d
-	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069 // indirect
+	github.com/vogo/vogo v0.0.0-20220303091944-5a05d31f7c45
+	golang.org/x/sys v0.0.0-20220408201424-a24fb2fb8a0f // indirect
 )
 
 require (
