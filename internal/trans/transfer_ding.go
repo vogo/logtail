@@ -127,5 +127,7 @@ func NewDingTransfer(id, url, prefix string) *DingTransfer {
 
 	trans.prefix = []byte(prefix)
 
+	trans.CountReset()
+
 	return trans
 }
