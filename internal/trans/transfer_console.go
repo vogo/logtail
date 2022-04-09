@@ -31,7 +31,7 @@ func (d *ConsoleTransfer) Name() string {
 	return d.ID
 }
 
-func (d *ConsoleTransfer) Trans(serverID string, data ...[]byte) error {
+func (d *ConsoleTransfer) Trans(source string, data ...[]byte) error {
 	for _, b := range data {
 		_, _ = os.Stdout.Write(b)
 

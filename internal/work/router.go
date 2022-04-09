@@ -32,7 +32,7 @@ func (w *Worker) AddRouter(routerConfig *conf.RouterConfig) error {
 
 	routerID := fmt.Sprintf("%s-%s", w.ID, routerName)
 
-	router := route.NewRouter(routerID, w.Runner, routerConfig, w.TransfersFunc)
+	router := route.StartRouter(w.Runner, routerConfig, w.TransfersFunc, routerID, w.Source)
 
 	w.Routers[routerName] = router
 

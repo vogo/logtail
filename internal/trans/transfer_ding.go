@@ -61,7 +61,7 @@ func (d *DingTransfer) Stop() error { return nil }
 
 // nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
 // Trans transfer data to dingding.
-func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
+func (d *DingTransfer) Trans(source string, data ...[]byte) error {
 	if !atomic.CompareAndSwapInt32(&d.transferring, 0, 1) {
 		// ignore message to
 		return nil
@@ -76,7 +76,7 @@ func (d *DingTransfer) Trans(serverID string, data ...[]byte) error {
 	list := make([][]byte, size)
 	list[0] = dingTextMessageDataPrefix
 	list[1] = d.prefix
-	list[2] = []byte(serverID)
+	list[2] = []byte(source)
 	list[3] = messageTitleContentSplit
 
 	idx := 4

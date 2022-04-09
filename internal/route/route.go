@@ -38,14 +38,17 @@ type Router struct {
 	Runner    *grunner.Runner
 	ID        string
 	Name      string
+	Source    string
 	Format    *match.Format
 	channel   Channel
 	Matchers  []match.Matcher
 	Transfers []trans.Transfer
 }
 
-func NewRouter(routerID string, workerRunner *grunner.Runner,
-	routerConfig *conf.RouterConfig, transfersFunc trans.TransferMatcher,
+func StartRouter(workerRunner *grunner.Runner,
+	routerConfig *conf.RouterConfig,
+	transfersFunc trans.TransferMatcher,
+	routerID string, source string,
 ) *Router {
 	matchers, err := NewMatchers(routerConfig.Matchers)
 	if err != nil {
@@ -55,6 +58,7 @@ func NewRouter(routerID string, workerRunner *grunner.Runner,
 	router := &Router{
 		ID:        routerID,
 		Name:      routerConfig.Name,
+		Source:    source,
 		Lock:      sync.Mutex{},
 		Runner:    workerRunner.NewChild(),
 		channel:   make(Channel),
@@ -168,7 +172,7 @@ func (r *Router) Trans(bytes ...[]byte) error {
 	}
 
 	for _, t := range transfers {
-		if err := t.Trans(r.ID, bytes...); err != nil {
+		if err := t.Trans(r.Source, bytes...); err != nil {
 			return err
 		}
 	}

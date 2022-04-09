@@ -141,7 +141,7 @@ func (ft *FileTransfer) Start() error {
 	return nil
 }
 
-func (ft *FileTransfer) Trans(serverID string, data ...[]byte) error {
+func (ft *FileTransfer) Trans(source string, data ...[]byte) error {
 	defer func() {
 		_ = recover()
 	}()

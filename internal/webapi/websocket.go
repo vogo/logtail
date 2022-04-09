@@ -84,9 +84,9 @@ func startWebsocketTransfer(tailer *tail.Tailer, response http.ResponseWriter, r
 	websocketTransfer := &WebsocketTransfer{conn: wsConn}
 
 	routerID := fmt.Sprintf("ww-%d", atomic.AddInt64(&wsConnIndex, 1))
-	router := route.NewRouter(routerID, server.MergingWorker.Runner, &conf.RouterConfig{}, func(ids []string) []trans.Transfer {
+	router := route.StartRouter(server.MergingWorker.Runner, &conf.RouterConfig{}, func(ids []string) []trans.Transfer {
 		return []trans.Transfer{websocketTransfer}
-	})
+	}, routerID, serverID)
 
 	server.MergingWorker.StartRouter(router)
 

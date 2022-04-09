@@ -19,7 +19,7 @@ package trans
 
 type Transfer interface {
 	Name() string
-	Trans(serverID string, data ...[]byte) error
+	Trans(source string, data ...[]byte) error
 	Start() error
 	Stop() error
 }

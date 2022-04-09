@@ -27,7 +27,7 @@ func (d *NullTransfer) Name() string {
 	return d.ID
 }
 
-func (d *NullTransfer) Trans(serverID string, data ...[]byte) error {
+func (d *NullTransfer) Trans(source string, data ...[]byte) error {
 	return nil
 }
 

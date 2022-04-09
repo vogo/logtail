@@ -43,6 +43,7 @@ type Worker struct {
 	cmd     *exec.Cmd // command object
 
 	ID                string
+	Source            string
 	Runner            *grunner.Runner
 	ErrorChan         chan error
 	Routers           map[string]*route.Router

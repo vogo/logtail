@@ -37,6 +37,7 @@ func (s *Server) StartWorker(command string, dynamic bool) *work.Worker {
 
 	worker := work.NewRawWorker(workerID, command, dynamic)
 
+	worker.Source = s.ID
 	worker.Runner = s.Runner.NewChild()
 	worker.ErrorChan = s.workerError
 	worker.TransfersFunc = s.TransferMatcher
