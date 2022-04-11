@@ -19,6 +19,7 @@ package trans
 
 import (
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/vogo/logtail/internal/consts"
@@ -28,14 +29,14 @@ const defaultCountDuration = time.Hour
 
 // Counter is a utility to count the count of transfer times.
 type Counter struct {
-	count        int
+	count        int32
 	countStartAt time.Time
 	countEndAt   time.Time
 }
 
 // CountReset reset the counter and return the statistic message.
 func (c *Counter) CountReset() string {
-	countResult := fmt.Sprintf("Count: %d, Time Range: %s ~ %s",
+	countResult := fmt.Sprintf("Count: %d, Time Peroid: %s ~ %s",
 		c.count,
 		c.countStartAt.Format(consts.FormatDateTime),
 		time.Now().Format(consts.FormatDateTime))
@@ -43,15 +44,18 @@ func (c *Counter) CountReset() string {
 	c.countStartAt = time.Now()
 	c.countEndAt = c.countStartAt.Add(defaultCountDuration)
 
-	c.count = 0
+	atomic.StoreInt32(&c.count, 0)
 
 	return countResult
 }
 
-// CountIncr increase the counter, return statistic message if exceeding the end of the time range.
-func (c *Counter) CountIncr() (string, bool) {
-	c.count++
+// CountIncr increase the counter.
+func (c *Counter) CountIncr() {
+	atomic.AddInt32(&c.count, 1)
+}
 
+// CountStat return statistic message if exceeding the end of the time range.
+func (c *Counter) CountStat() (string, bool) {
 	if time.Now().Before(c.countEndAt) {
 		return "", false
 	}

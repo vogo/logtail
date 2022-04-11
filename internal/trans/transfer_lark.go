@@ -59,9 +59,7 @@ func (d *LarkTransfer) Stop() error { return nil }
 
 // Trans transfer data to Lark.
 func (d *LarkTransfer) Trans(source string, data ...[]byte) error {
-	if countMessage, ok := d.CountIncr(); ok {
-		_ = d.execTrans(source, []byte(countMessage))
-	}
+	d.CountIncr()
 
 	if !atomic.CompareAndSwapInt32(&d.transferring, 0, 1) {
 		// ignore message to
@@ -72,6 +70,10 @@ func (d *LarkTransfer) Trans(source string, data ...[]byte) error {
 		<-time.After(larkMessageTransferInterval)
 		atomic.StoreInt32(&d.transferring, 0)
 	}()
+
+	if countMessage, ok := d.CountStat(); ok {
+		_ = d.execTrans(source, []byte(countMessage))
+	}
 
 	return d.execTrans(source, data...)
 }
