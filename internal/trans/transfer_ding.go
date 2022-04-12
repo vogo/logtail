@@ -71,12 +71,15 @@ func (d *DingTransfer) Trans(source string, data ...[]byte) error {
 
 	go func() {
 		<-time.After(dingMessageTransferInterval)
+
+		if countMessage, ok := d.CountStat(); ok {
+			_ = d.execTrans(source, []byte(countMessage))
+
+			<-time.After(dingMessageTransferInterval)
+		}
+
 		atomic.StoreInt32(&d.transferring, 0)
 	}()
-
-	if countMessage, ok := d.CountStat(); ok {
-		_ = d.execTrans(source, []byte(countMessage))
-	}
 
 	return d.execTrans(source, data...)
 }

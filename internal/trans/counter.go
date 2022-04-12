@@ -36,8 +36,8 @@ type Counter struct {
 
 // CountReset reset the counter and return the statistic message.
 func (c *Counter) CountReset() string {
-	countResult := fmt.Sprintf("Count: %d, Time Peroid: %s ~ %s",
-		c.count,
+	countResult := fmt.Sprintf("[logtail statistics] Count: %d, Time Peroid: %s ~ %s",
+		atomic.LoadInt32(&c.count),
 		c.countStartAt.Format(consts.FormatDateTime),
 		time.Now().Format(consts.FormatDateTime))
 
