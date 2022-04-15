@@ -62,7 +62,7 @@ func (d *LarkTransfer) Trans(source string, data ...[]byte) error {
 	d.CountIncr()
 
 	if !atomic.CompareAndSwapInt32(&d.transferring, 0, 1) {
-		// ignore message to
+		// ignore message when transferring
 		return nil
 	}
 

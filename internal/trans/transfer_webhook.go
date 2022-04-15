@@ -18,6 +18,7 @@
 package trans
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -73,8 +74,8 @@ func httpTrans(url string, data ...[]byte) error {
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		if body, err := io.ReadAll(res.Body); err == nil {
-			logger.Warnf("http alert error: %s", body)
+		if respBody, respErr := io.ReadAll(res.Body); respErr == nil {
+			logger.Warnf("http alert error! response: %s, request: %s", respBody, bytes.Join(data, nil))
 		}
 
 		return fmt.Errorf("http alert error, %w: %d", ErrHTTPStatusNonOK, res.StatusCode)
