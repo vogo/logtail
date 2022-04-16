@@ -19,6 +19,7 @@ package trans
 
 const DoubleSize = 2
 
+// nolint:funlen // ignore this.
 func EscapeLimitJSONBytes(bytes []byte, capacity int) []byte {
 	size := len(bytes)
 	num := capacity
@@ -29,24 +30,52 @@ func EscapeLimitJSONBytes(bytes []byte, capacity int) []byte {
 
 	jsonData := make([]byte, num*DoubleSize)
 
+	srcIndex := 0
 	dstIndex := 0
 	from := 0
 
-	for srcIndex := 0; srcIndex < num; srcIndex++ {
-		for ; srcIndex < num && bytes[srcIndex] != '\n' && bytes[srcIndex] != '\t' && bytes[srcIndex] != '"'; srcIndex++ {
-		}
+	for ; srcIndex < num; srcIndex++ {
+		switch char := bytes[srcIndex]; char {
+		case '\n', '\t', '"':
+			copy(jsonData[dstIndex:], bytes[from:srcIndex])
 
-		copy(jsonData[dstIndex:], bytes[from:srcIndex])
-		dstIndex += srcIndex - from
-		from = srcIndex + 1
+			dstIndex += srcIndex - from
 
-		if srcIndex < num {
-			fillJSONEscape(jsonData, &dstIndex, bytes[srcIndex])
+			if srcIndex < num {
+				jsonData[dstIndex] = '\\'
+				dstIndex++
+
+				jsonData[dstIndex] = toEscapeChar(char)
+				dstIndex++
+			}
+
+			from = srcIndex + 1
+		case '\\':
+			copy(jsonData[dstIndex:], bytes[from:srcIndex])
+
+			dstIndex += srcIndex - from
+
+			for ; srcIndex < num && bytes[srcIndex] == '\\'; srcIndex++ {
+				jsonData[dstIndex] = '\\'
+				dstIndex++
+
+				jsonData[dstIndex] = '\\'
+				dstIndex++
+			}
+
+			jsonData[dstIndex] = bytes[srcIndex]
+
+			dstIndex++
+
+			from = srcIndex + 1
 		}
 	}
 
-	// from <= size means not reach the end of the bytes
-	if from <= size {
+	copy(jsonData[dstIndex:], bytes[from:srcIndex])
+	dstIndex += srcIndex - from
+
+	// srcIndex < size means not reach the end of the bytes
+	if srcIndex < size {
 		// remove uncompleted utf8 bytes
 		for i := dstIndex - 1; i >= 0 && jsonData[i]&0xC0 == 0x80; i-- {
 			dstIndex = i - 1
@@ -56,18 +85,15 @@ func EscapeLimitJSONBytes(bytes []byte, capacity int) []byte {
 	return jsonData[:dstIndex]
 }
 
-func fillJSONEscape(bytes []byte, index *int, b byte) {
-	bytes[*index] = '\\'
-	*index++
-
-	switch b {
+func toEscapeChar(c byte) byte {
+	switch c {
 	case '\n':
-		bytes[*index] = 'n'
+		return 'n'
 	case '\t':
-		bytes[*index] = 't'
+		return 't'
 	case '"':
-		bytes[*index] = '"'
+		return '"'
+	default:
+		return ' '
 	}
-
-	*index++
 }
