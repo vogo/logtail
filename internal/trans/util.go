@@ -19,7 +19,6 @@ package trans
 
 const DoubleSize = 2
 
-// nolint:funlen // ignore this.
 func EscapeLimitJSONBytes(bytes []byte, capacity int) []byte {
 	size := len(bytes)
 	num := capacity
@@ -36,7 +35,7 @@ func EscapeLimitJSONBytes(bytes []byte, capacity int) []byte {
 
 	for ; srcIndex < num; srcIndex++ {
 		switch char := bytes[srcIndex]; char {
-		case '\n', '\t', '"':
+		case '\n', '\t', '"', '\\':
 			copy(jsonData[dstIndex:], bytes[from:srcIndex])
 
 			dstIndex += srcIndex - from
@@ -48,24 +47,6 @@ func EscapeLimitJSONBytes(bytes []byte, capacity int) []byte {
 				jsonData[dstIndex] = toEscapeChar(char)
 				dstIndex++
 			}
-
-			from = srcIndex + 1
-		case '\\':
-			copy(jsonData[dstIndex:], bytes[from:srcIndex])
-
-			dstIndex += srcIndex - from
-
-			for ; srcIndex < num && bytes[srcIndex] == '\\'; srcIndex++ {
-				jsonData[dstIndex] = '\\'
-				dstIndex++
-
-				jsonData[dstIndex] = '\\'
-				dstIndex++
-			}
-
-			jsonData[dstIndex] = bytes[srcIndex]
-
-			dstIndex++
 
 			from = srcIndex + 1
 		}
@@ -93,6 +74,8 @@ func toEscapeChar(c byte) byte {
 		return 't'
 	case '"':
 		return '"'
+	case '\\':
+		return '\\'
 	default:
 		return ' '
 	}
