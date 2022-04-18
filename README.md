@@ -14,7 +14,7 @@
 
 ## 2. Architecture
 
-![](https://github.com/vogo/vogo.github.io/raw/master/logtail/logtail-architecture.png)
+![](https://github.com/vogo/vogo.github.io/raw/master/logtail/logtail-architecture-v2.png)
 
 ## 3. Usage
 
