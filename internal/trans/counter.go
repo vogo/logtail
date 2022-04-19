@@ -25,7 +25,12 @@ import (
 	"github.com/vogo/logtail/internal/consts"
 )
 
-const defaultCountDuration = time.Hour
+// nolint:gochecknoglobals //ignore this
+var statisticDuration = time.Hour
+
+func SetTransStatisticDuration(d time.Duration) {
+	statisticDuration = d
+}
 
 // Counter is a utility to count the count of transfer times.
 type Counter struct {
@@ -44,7 +49,7 @@ func (c *Counter) CountReset() string {
 		time.Now().Format(consts.FormatDateTime))
 
 	c.countStartAt = time.Now()
-	c.countEndAt = c.countStartAt.Add(defaultCountDuration)
+	c.countEndAt = c.countStartAt.Add(statisticDuration)
 
 	return countResult
 }

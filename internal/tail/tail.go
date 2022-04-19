@@ -19,6 +19,7 @@ package tail
 
 import (
 	"sync"
+	"time"
 
 	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/conf"
@@ -57,6 +58,10 @@ func NewTailer(config *conf.Config) (*Tailer, error) {
 
 func (t *Tailer) Start() error {
 	conf.ConfigLogLevel(t.Config.LogLevel)
+
+	if t.Config.StatisticPeriodMinutes > 0 {
+		trans.SetTransStatisticDuration(time.Duration(t.Config.StatisticPeriodMinutes) * time.Minute)
+	}
 
 	if err := t.StartTransfers(); err != nil {
 		return err

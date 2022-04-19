@@ -45,13 +45,14 @@ var (
 )
 
 type Config struct {
-	file          string
-	Port          int                        `json:"port,omitempty"`
-	LogLevel      string                     `json:"log_level,omitempty"`
-	DefaultFormat *match.Format              `json:"default_format,omitempty"`
-	Transfers     map[string]*TransferConfig `json:"transfers"`
-	Routers       map[string]*RouterConfig   `json:"routers"`
-	Servers       map[string]*ServerConfig   `json:"servers"`
+	file                   string
+	Port                   int                        `json:"port,omitempty"`
+	LogLevel               string                     `json:"log_level,omitempty"`
+	DefaultFormat          *match.Format              `json:"default_format,omitempty"`
+	StatisticPeriodMinutes int                        `json:"statistic_period_minutes"`
+	Transfers              map[string]*TransferConfig `json:"transfers"`
+	Routers                map[string]*RouterConfig   `json:"routers"`
+	Servers                map[string]*ServerConfig   `json:"servers"`
 }
 
 func (c *Config) GetRouters(routers []string) []*RouterConfig {

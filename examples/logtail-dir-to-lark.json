@@ -3,6 +3,7 @@
   "default_format": {
     "prefix": "!!!!-!!-!!"
   },
+  "statistic_period_minutes": 120,
   "transfers": {
     "lark-alarm": {
       "name": "lark-alarm",
