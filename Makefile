@@ -24,9 +24,10 @@ package:
 build: format check test package
 
 linux-tools:
-	GOOS=linux go build -o dist/logrecorder ../cmd/logrecorder/*.go
-	GOOS=linux go build -o dist/logrepeater ../cmd/logrepeater/*.go
-	GOOS=linux go build -o dist/dingmock ../cmd/dingmock/*.go
+	GOOS=linux go build -o dist/pstop cmd/pstop/*.go
+	GOOS=linux go build -o dist/logrecorder cmd/logrecorder/*.go
+	GOOS=linux go build -o dist/logrepeater cmd/logrepeater/*.go
+	GOOS=linux go build -o dist/dingmock cmd/dingmock/*.go
 
 local-tools:
 	go build -o dist/logrecorder ../cmd/logrecorder/*.go

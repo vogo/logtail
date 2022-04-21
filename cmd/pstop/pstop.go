@@ -24,19 +24,22 @@ import (
 )
 
 func main() {
-	pid, _ := strconv.Atoi(os.Args[1])
-	if pid <= 1 {
-		panic("invalid pid")
+	for _, arg := range os.Args[1:] {
+		pid, _ := strconv.Atoi(arg)
+		if pid <= 1 {
+			panic("invalid pid: " + arg)
+		}
+
+		process, err := os.FindProcess(pid)
+		if err != nil {
+			panic(err)
+		}
+
+		err = process.Signal(os.Interrupt)
+
+		if err != nil {
+			panic(err)
+		}
 	}
 
-	process, err := os.FindProcess(pid)
-	if err != nil {
-		panic(err)
-	}
-
-	err = process.Signal(os.Interrupt)
-
-	if err != nil {
-		panic(err)
-	}
 }
