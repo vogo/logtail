@@ -19,11 +19,11 @@ package trans
 
 const DoubleSize = 2
 
+// nolint:gomnd //ignore this
 func EscapeLimitJSONBytes(bytes []byte, capacity int) []byte {
-	size := len(bytes)
 	num := capacity
 
-	if size < num {
+	if size := len(bytes); size < num {
 		num = size
 	}
 
@@ -40,13 +40,11 @@ func EscapeLimitJSONBytes(bytes []byte, capacity int) []byte {
 
 			dstIndex += srcIndex - from
 
-			if srcIndex < num {
-				jsonData[dstIndex] = '\\'
-				dstIndex++
+			jsonData[dstIndex] = '\\'
+			dstIndex++
 
-				jsonData[dstIndex] = toEscapeChar(char)
-				dstIndex++
-			}
+			jsonData[dstIndex] = toEscapeChar(char)
+			dstIndex++
 
 			from = srcIndex + 1
 		}
@@ -55,15 +53,42 @@ func EscapeLimitJSONBytes(bytes []byte, capacity int) []byte {
 	copy(jsonData[dstIndex:], bytes[from:srcIndex])
 	dstIndex += srcIndex - from
 
-	// srcIndex < size means not reach the end of the bytes
-	if srcIndex < size {
-		// remove uncompleted utf8 bytes
-		for i := dstIndex - 1; i >= 0 && jsonData[i]&0xC0 == 0x80; i-- {
-			dstIndex = i - 1
+	// remove latest uncompleted utf8 bytes
+UTF8LOOP:
+	for idx, followCount := dstIndex-1, 0; idx >= 0; idx-- {
+		switch jsonData[idx] & 0xC0 {
+		case 0x80:
+			followCount++
+		case 0xC0:
+			if followCount == 0 || utf8FollowSize(jsonData[idx]) != followCount {
+				dstIndex = idx
+			}
+
+			break UTF8LOOP
+		default:
+			break
 		}
 	}
 
 	return jsonData[:dstIndex]
+}
+
+// nolint:gomnd //ignore this
+func utf8FollowSize(utf8LeadByte byte) int {
+	switch {
+	case utf8LeadByte&0x20 == 0:
+		return 1
+	case utf8LeadByte&0x10 == 0:
+		return 2
+	case utf8LeadByte&0x08 == 0:
+		return 3
+	case utf8LeadByte&0x04 == 0:
+		return 4
+	case utf8LeadByte&0x02 == 0:
+		return 5
+	default:
+		return 0
+	}
 }
 
 func toEscapeChar(c byte) byte {
