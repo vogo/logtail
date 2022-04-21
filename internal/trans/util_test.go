@@ -37,6 +37,7 @@ func TestEscapeLimitJsonBytes(t *testing.T) {
 	assert.Equal(t, []byte(`你好世`), trans.EscapeLimitJSONBytes([]byte(`你好世界`), 9))
 	assert.Equal(t, []byte(`你好世`), trans.EscapeLimitJSONBytes([]byte(`你好世界`), 10))
 	assert.Equal(t, []byte(`你好世界`), trans.EscapeLimitJSONBytes([]byte(`你好世界`), 12))
+	assert.Equal(t, []byte(`你好世界abc`), trans.EscapeLimitJSONBytes([]byte(`你好世界abc`), 16))
 
 	assert.Equal(t, []byte(`ab\"cd`), trans.EscapeLimitJSONBytes([]byte(`ab"cd`), 6))
 	assert.Equal(t, []byte(`ab\\\"cd`), trans.EscapeLimitJSONBytes([]byte(`ab\"cd`), 6))

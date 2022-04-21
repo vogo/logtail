@@ -66,7 +66,7 @@ UTF8LOOP:
 
 			break UTF8LOOP
 		default:
-			break
+			break UTF8LOOP
 		}
 	}
 
