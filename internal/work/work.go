@@ -23,7 +23,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vogo/grunner"
+	"github.com/vogo/gorun"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/route"
 	"github.com/vogo/logtail/internal/trans"
@@ -44,7 +44,7 @@ type Worker struct {
 
 	ID                string
 	Source            string
-	Runner            *grunner.Runner
+	Runner            *gorun.Runner
 	ErrorChan         chan error
 	Routers           map[string]*route.Router
 	MergingWorker     *Worker

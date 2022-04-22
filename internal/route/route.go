@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vogo/grunner"
+	"github.com/vogo/gorun"
 	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
@@ -35,7 +35,7 @@ type RoutersBuilder func() *[]Router
 
 type Router struct {
 	Lock      sync.Mutex
-	Runner    *grunner.Runner
+	Runner    *gorun.Runner
 	ID        string
 	Name      string
 	Source    string
@@ -45,7 +45,7 @@ type Router struct {
 	Transfers []trans.Transfer
 }
 
-func StartRouter(workerRunner *grunner.Runner,
+func StartRouter(workerRunner *gorun.Runner,
 	routerConfig *conf.RouterConfig,
 	transfersFunc trans.TransferMatcher,
 	routerID string, source string,

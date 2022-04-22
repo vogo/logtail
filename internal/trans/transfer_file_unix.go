@@ -26,7 +26,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/vogo/grunner"
+	"github.com/vogo/gorun"
 	"github.com/vogo/logger"
 	"github.com/vogo/vogo/vio/vioutil"
 )
@@ -35,7 +35,7 @@ const DefaultChannelBufferSize = 16
 
 type FileTransfer struct {
 	id           string
-	gorunner     *grunner.Runner
+	runner       *gorun.Runner
 	dir          string
 	name         string
 	buffer       chan [][]byte
@@ -51,9 +51,9 @@ func (ft *FileTransfer) Name() string {
 // NewFileTransfer new file trans.
 func NewFileTransfer(id, dir string) *FileTransfer {
 	return &FileTransfer{
-		id:       id,
-		gorunner: grunner.New(),
-		dir:      dir,
+		id:     id,
+		runner: gorun.New(),
+		dir:    dir,
 	}
 }
 
@@ -130,7 +130,7 @@ func (ft *FileTransfer) Start() error {
 
 		for {
 			select {
-			case <-ft.gorunner.C:
+			case <-ft.runner.C:
 				return
 			case data := <-ft.buffer:
 				ft.write(data)
@@ -147,7 +147,7 @@ func (ft *FileTransfer) Trans(source string, data ...[]byte) error {
 	}()
 
 	select {
-	case <-ft.gorunner.C:
+	case <-ft.runner.C:
 		return nil
 	case ft.buffer <- data:
 	default:
@@ -157,7 +157,7 @@ func (ft *FileTransfer) Trans(source string, data ...[]byte) error {
 }
 
 func (ft *FileTransfer) Stop() error {
-	ft.gorunner.Stop()
+	ft.runner.Stop()
 
 	return nil
 }

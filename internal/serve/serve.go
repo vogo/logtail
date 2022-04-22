@@ -20,7 +20,7 @@ package serve
 import (
 	"sync"
 
-	"github.com/vogo/grunner"
+	"github.com/vogo/gorun"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
 	"github.com/vogo/logtail/internal/trans"
@@ -31,7 +31,7 @@ import (
 type Server struct {
 	ID                string
 	lock              sync.Mutex
-	Runner            *grunner.Runner
+	Runner            *gorun.Runner
 	Format            *match.Format
 	TransferMatcher   trans.TransferMatcher
 	RouterConfigsFunc conf.RouterConfigsFunc
@@ -46,7 +46,7 @@ func NewRawServer(id string) *Server {
 	server := &Server{
 		ID:      id,
 		lock:    sync.Mutex{},
-		Runner:  grunner.New(),
+		Runner:  gorun.New(),
 		Workers: make(map[string]*work.Worker, util.DefaultMapSize),
 	}
 
