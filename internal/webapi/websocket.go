@@ -54,9 +54,9 @@ func (ww *WebsocketTransfer) Start() error { return nil }
 
 func (ww *WebsocketTransfer) Stop() error { return nil }
 
-func (ww *WebsocketTransfer) Trans(_ string, data ...[]byte) (err error) {
+func (ww *WebsocketTransfer) Trans(_ string, data ...[]byte) error {
 	for _, d := range data {
-		err = ww.conn.WriteMessage(1, d)
+		err := ww.conn.WriteMessage(1, d)
 		if err != nil {
 			return err
 		}

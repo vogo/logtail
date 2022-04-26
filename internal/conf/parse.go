@@ -29,7 +29,8 @@ import (
 	"github.com/vogo/vogo/vos"
 )
 
-func ParseConfig() (cfg *Config, parseErr error) {
+// nolint:nonamedreturns //ignore this.
+func ParseConfig() (config *Config, parseErr error) {
 	defer func() {
 		if err := recover(); err != nil {
 			parseErr, _ = err.(error)
@@ -54,7 +55,7 @@ func ParseConfig() (cfg *Config, parseErr error) {
 	configFile := filepath.Join(vos.CurrUserHome(), ".logtail.json")
 
 	if *command != "" {
-		config := buildCommandLineConfig(*port, *command, *matchContains, *dingURL, *webhookURL)
+		config = buildCommandLineConfig(*port, *command, *matchContains, *dingURL, *webhookURL)
 
 		config.file = configFile
 
@@ -62,7 +63,7 @@ func ParseConfig() (cfg *Config, parseErr error) {
 	}
 
 	logger.Infof("default config file: %s", configFile)
-	config := buildDefaultConfig(configFile)
+	config = buildDefaultConfig(configFile)
 
 	if *port > 0 {
 		config.Port = *port

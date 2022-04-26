@@ -26,7 +26,8 @@ import (
 )
 
 // nolint:gochecknoglobals //ignore this
-var statisticDuration = time.Hour
+// statistic duration, default one day.
+var statisticDuration = time.Hour * 24
 
 func SetTransStatisticDuration(d time.Duration) {
 	statisticDuration = d
