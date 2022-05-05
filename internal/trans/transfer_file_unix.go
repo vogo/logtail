@@ -37,7 +37,6 @@ type FileTransfer struct {
 	id           string
 	runner       *gorun.Runner
 	dir          string
-	name         string
 	buffer       chan [][]byte
 	writeSize    int
 	memoryBuffer []byte
@@ -67,8 +66,8 @@ func (ft *FileTransfer) resetFile() error {
 		}
 	}
 
-	ft.name = filepath.Join(ft.dir, ft.name+"-"+time.Now().Format(`20060102150405`)+".log")
-	ft.file, err = os.Create(ft.name)
+	fileName := filepath.Join(ft.dir, ft.id+"-"+time.Now().Format(`20060102150405`)+".log")
+	ft.file, err = os.Create(fileName)
 
 	if err != nil {
 		return err
@@ -93,20 +92,19 @@ func (ft *FileTransfer) submitFile() error {
 	defer func() {
 		ft.memoryBuffer = nil
 		ft.file = nil
-		ft.name = ""
 		ft.writeSize = 0
 	}()
 
 	if ft.file != nil {
-		logger.Infof("submit file %s", ft.name)
+		logger.Infof("submit file %s", ft.file.Name())
 
 		_ = syscall.Munmap(ft.memoryBuffer)
 		_ = ft.file.Truncate(int64(ft.writeSize))
 
 		if ft.writeSize == 0 {
-			ft.file.Close()
+			_ = ft.file.Close()
 
-			return os.Remove(ft.name)
+			return os.Remove(ft.file.Name())
 		}
 
 		return ft.file.Close()

@@ -21,37 +21,51 @@ const DoubleSize = 2
 
 // nolint:gomnd //ignore this
 func EscapeLimitJSONBytes(bytes []byte, capacity int) []byte {
-	num := capacity
+	size := len(bytes)
 
-	if size := len(bytes); size < num {
-		num = size
+	if size < capacity {
+		capacity = size
 	}
 
-	jsonData := make([]byte, num*DoubleSize)
+	var jsonData []byte
 
 	srcIndex := 0
 	dstIndex := 0
 	from := 0
 
-	for ; srcIndex < num; srcIndex++ {
+CHECKLOOP:
+	for ; srcIndex < capacity; srcIndex++ {
 		switch char := bytes[srcIndex]; char {
 		case '\n', '\t', '"', '\\':
-			copy(jsonData[dstIndex:], bytes[from:srcIndex])
-
-			dstIndex += srcIndex - from
-
-			jsonData[dstIndex] = '\\'
-			dstIndex++
-
-			jsonData[dstIndex] = toEscapeChar(char)
-			dstIndex++
-
-			from = srcIndex + 1
+			jsonData = make([]byte, capacity+capacity/2)
+			break CHECKLOOP
 		}
 	}
 
-	copy(jsonData[dstIndex:], bytes[from:srcIndex])
-	dstIndex += srcIndex - from
+	if srcIndex < capacity {
+		for ; srcIndex < capacity; srcIndex++ {
+			switch char := bytes[srcIndex]; char {
+			case '\n', '\t', '"', '\\':
+				copy(jsonData[dstIndex:], bytes[from:srcIndex])
+
+				dstIndex += srcIndex - from
+
+				jsonData[dstIndex] = '\\'
+				dstIndex++
+
+				jsonData[dstIndex] = toEscapeChar(char)
+				dstIndex++
+
+				from = srcIndex + 1
+			}
+		}
+
+		copy(jsonData[dstIndex:], bytes[from:srcIndex])
+		dstIndex += srcIndex - from
+	} else {
+		jsonData = bytes[:capacity]
+		dstIndex = capacity
+	}
 
 	// remove latest uncompleted utf8 bytes
 UTF8LOOP:
