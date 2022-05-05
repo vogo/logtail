@@ -25,6 +25,9 @@ import (
 )
 
 func (w *Worker) AddRouter(routerConfig *conf.RouterConfig) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
 	routerName := routerConfig.Name
 	if existRouter, exist := w.Routers[routerName]; exist {
 		existRouter.Stop()
