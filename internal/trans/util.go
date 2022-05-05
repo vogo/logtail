@@ -19,11 +19,9 @@ package trans
 
 const DoubleSize = 2
 
-// nolint:gomnd //ignore this
+// nolint:gomnd,funlen //ignore this
 func EscapeLimitJSONBytes(bytes []byte, capacity int) []byte {
-	size := len(bytes)
-
-	if size < capacity {
+	if size := len(bytes); size < capacity {
 		capacity = size
 	}
 
@@ -38,6 +36,7 @@ CHECKLOOP:
 		switch char := bytes[srcIndex]; char {
 		case '\n', '\t', '"', '\\':
 			jsonData = make([]byte, capacity+capacity/2)
+
 			break CHECKLOOP
 		}
 	}
