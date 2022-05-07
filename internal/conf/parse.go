@@ -86,6 +86,24 @@ func parseFileConfig(f string) (*Config, error) {
 		return nil, jsonErr
 	}
 
+	if config.Transfers != nil {
+		for k, v := range config.Transfers {
+			v.Name = k
+		}
+	}
+
+	if config.Routers != nil {
+		for k, v := range config.Routers {
+			v.Name = k
+		}
+	}
+
+	if config.Servers != nil {
+		for k, v := range config.Servers {
+			v.Name = k
+		}
+	}
+
 	return config, nil
 }
 

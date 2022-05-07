@@ -87,7 +87,7 @@ func (c *Config) SaveToFile() {
 }
 
 type ServerConfig struct {
-	Name    string        `json:"name,omitempty"`
+	Name    string        `json:"-"`
 	Format  *match.Format `json:"format,omitempty"`
 	Routers []string      `json:"routers"`
 
@@ -134,7 +134,7 @@ type FileConfig struct {
 }
 
 type RouterConfig struct {
-	Name      string           `json:"name,omitempty"`
+	Name      string           `json:"-"`
 	Matchers  []*MatcherConfig `json:"matchers"`
 	Transfers []string         `json:"transfers"`
 }
@@ -145,7 +145,7 @@ type MatcherConfig struct {
 }
 
 type TransferConfig struct {
-	Name   string `json:"name,omitempty"`
+	Name   string `json:"-"`
 	Type   string `json:"type"`
 	URL    string `json:"url,omitempty"`
 	Dir    string `json:"dir,omitempty"`
