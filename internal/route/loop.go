@@ -38,7 +38,7 @@ func (r *Router) StartLoop() {
 		select {
 		case <-r.Runner.C:
 			return
-		case data := <-r.channel:
+		case data := <-r.Channel:
 			if data == nil {
 				r.Stop()
 

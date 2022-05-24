@@ -40,7 +40,7 @@ type Router struct {
 	Name      string
 	Source    string
 	Format    *match.Format
-	channel   Channel
+	Channel   Channel
 	Matchers  []match.Matcher
 	Transfers []trans.Transfer
 }
@@ -61,7 +61,7 @@ func StartRouter(workerRunner *gorun.Runner,
 		Source:    source,
 		Lock:      sync.Mutex{},
 		Runner:    workerRunner.NewChild(),
-		channel:   make(Channel),
+		Channel:   make(Channel),
 		Matchers:  matchers,
 		Transfers: transfersFunc(routerConfig.Transfers),
 	}
@@ -91,13 +91,13 @@ func (r *Router) Route(bytes []byte) error {
 	length := len(bytes)
 
 	for idx < length {
-		matches = r.Match(bytes, &length, &idx)
+		matches, idx = r.Match(bytes, length, idx)
 
 		if len(matches) > 0 {
 			list = append(list, matches)
 
 			for length > 0 && idx >= length {
-				r.ReadMoreFollowingLines(&list, &bytes, &length, &idx)
+				length, idx = r.ReadMoreFollowingLines(&list, &bytes)
 			}
 
 			if err := r.Trans(list...); err != nil {
@@ -111,58 +111,57 @@ func (r *Router) Route(bytes []byte) error {
 	return nil
 }
 
-func (r *Router) ReadMoreFollowingLines(list *[][]byte, bytes *[]byte, length, idx *int) {
+// nolint:gocritic //ignore this.
+func (r *Router) ReadMoreFollowingLines(list *[][]byte, bytes *[]byte) (int, int) {
 	*bytes = r.NextBytes()
-	*idx = 0
-	*length = len(*bytes)
+	idx := 0
+	length := len(*bytes)
 
-	if *length > 0 {
+	if length > 0 {
 		var end int
 		// append following lines
-		IndexFollowingLines(r.Format, *bytes, length, idx, &end)
+		idx, end = IndexFollowingLines(r.Format, *bytes, length, idx, end)
 
 		if end > 0 {
 			*list = append(*list, (*bytes)[:end])
 		}
 	}
+
+	return length, idx
 }
 
-func (r *Router) Match(bytes []byte, length, index *int) []byte {
-	start := *index
-	util.IndexLineEnd(bytes, length, index)
+// nolint:gocritic //ignore this.
+func (r *Router) Match(bytes []byte, length, index int) ([]byte, int) {
+	start := index
+	index = util.IndexLineEnd(bytes, length, index)
 
-	if !r.Matches(bytes[start:*index]) {
-		util.IgnoreLineEnd(bytes, length, index)
+	if !r.Matches(bytes[start:index]) {
+		index = util.IgnoreLineEnd(bytes, length, index)
 
-		return nil
+		return nil, index
 	}
 
-	end := *index
+	end := index
 
-	util.IgnoreLineEnd(bytes, length, index)
+	index = util.IgnoreLineEnd(bytes, length, index)
 
 	// append following lines
-	IndexFollowingLines(r.Format, bytes, length, index, &end)
+	index, end = IndexFollowingLines(r.Format, bytes, length, index, end)
 
-	return bytes[start:end]
+	return bytes[start:end], index
 }
 
-func IndexFollowingLines(format *match.Format, bytes []byte, length, index, end *int) {
-	for *index < *length && IsFollowingLine(format, bytes[*index:]) {
-		util.IndexLineEnd(bytes, length, index)
+// nolint:gocritic //ignore this.
+func IndexFollowingLines(format *match.Format, bytes []byte, length, index, end int) (int, int) {
+	for index < length && match.IsFollowingLine(format, bytes[index:]) {
+		index = util.IndexLineEnd(bytes, length, index)
 
-		*end = *index
+		end = index
 
-		util.IgnoreLineEnd(bytes, length, index)
-	}
-}
-
-func IsFollowingLine(format *match.Format, bytes []byte) bool {
-	if format != nil {
-		return !format.PrefixMatch(bytes)
+		index = util.IgnoreLineEnd(bytes, length, index)
 	}
 
-	return bytes[0] == ' ' || bytes[0] == '\t'
+	return index, end
 }
 
 func (r *Router) Trans(bytes ...[]byte) error {
@@ -183,7 +182,7 @@ func (r *Router) Trans(bytes ...[]byte) error {
 func (r *Router) Stop() {
 	r.Runner.StopWith(func() {
 		logger.Infof("Routers [%s] stopping", r.ID)
-		close(r.channel)
+		close(r.Channel)
 	})
 }
 
@@ -191,7 +190,7 @@ func (r *Router) NextBytes() []byte {
 	select {
 	case <-r.Runner.C:
 		return nil
-	case bytes := <-r.channel:
+	case bytes := <-r.Channel:
 		if bytes == nil {
 			r.Stop()
 
@@ -212,7 +211,7 @@ func (r *Router) Receive(data []byte) {
 	select {
 	case <-r.Runner.C:
 		return
-	case r.channel <- data:
+	case r.Channel <- data:
 	default:
 	}
 }

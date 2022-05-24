@@ -44,8 +44,8 @@ func indexToNextLineStart(format *Format, message []byte) []byte {
 	i := 0
 
 	for i < l {
-		util.IndexLineEnd(message, &l, &i)
-		util.IgnoreLineEnd(message, &l, &i)
+		i = util.IndexLineEnd(message, l, i)
+		i = util.IgnoreLineEnd(message, l, i)
 
 		if format == nil || format.PrefixMatch(message[i:]) {
 			return message[i:]
@@ -61,4 +61,12 @@ func IndexToLineStart(format *Format, data []byte) []byte {
 	}
 
 	return indexToNextLineStart(format, data)
+}
+
+func IsFollowingLine(format *Format, bytes []byte) bool {
+	if format != nil {
+		return !format.PrefixMatch(bytes)
+	}
+
+	return bytes[0] == ' ' || bytes[0] == '\t'
 }

@@ -33,14 +33,18 @@ func isLineEnd(b byte) bool {
 	return b == '\n' || b == '\r'
 }
 
-func IndexLineEnd(bytes []byte, length, index *int) {
-	for ; *index < *length && !isLineEnd(bytes[*index]); *index++ {
+func IndexLineEnd(bytes []byte, length, index int) int {
+	for ; index < length && !isLineEnd(bytes[index]); index++ {
 	}
+
+	return index
 }
 
-func IgnoreLineEnd(bytes []byte, length, index *int) {
-	for ; *index < *length && isLineEnd(bytes[*index]); *index++ {
+func IgnoreLineEnd(bytes []byte, length, index int) int {
+	for ; index < length && isLineEnd(bytes[index]); index++ {
 	}
+
+	return index
 }
 
 // FollowRetryTailCommand flag `-F` is same as `--follow=name --retry`.
