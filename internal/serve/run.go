@@ -29,7 +29,12 @@ import (
 
 // Start the server. Call the Start func to start worker.
 func (s *Server) Start(serverConfig *conf.ServerConfig) {
-	s.MergingWorker = s.StartWorker("", false)
+	s.MergingWorker = s.buildWorker("", false)
+	// default no router for merging worker.
+	s.MergingWorker.RouterConfigsFunc = func() []*conf.RouterConfig {
+		return nil
+	}
+	go s.MergingWorker.StartLoop()
 
 	switch {
 	case serverConfig.File != nil:

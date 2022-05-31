@@ -42,14 +42,6 @@ func (w *Worker) AddRouter(routerConfig *conf.RouterConfig) error {
 	return nil
 }
 
-func (w *Worker) WriteToRouters(bytes []byte) (int, error) {
-	for _, r := range w.Routers {
-		r.Receive(bytes)
-	}
-
-	return len(bytes), nil
-}
-
 func (w *Worker) StartRouter(router *route.Router) {
 	w.mu.Lock()
 	defer w.mu.Unlock()

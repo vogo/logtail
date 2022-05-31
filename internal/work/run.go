@@ -21,6 +21,7 @@ import (
 	"runtime/debug"
 
 	"github.com/vogo/logger"
+	"github.com/vogo/logtail/internal/match"
 )
 
 func (w *Worker) NotifyError(err error) {
@@ -32,20 +33,45 @@ func (w *Worker) NotifyError(err error) {
 	w.ErrorChan <- err
 }
 
+// Write data to buffer, flush the buffer if it's full.
+// The buffer may not be flushed if no new data.
 func (w *Worker) Write(data []byte) (int, error) {
-	// copy data to avoid being update by source
-	newData := make([]byte, len(data))
-	copy(newData, data)
+	dataLen := len(data)
+	if dataLen == 0 {
+		return 0, nil
+	}
 
+	bufLen := len(w.buf)
+
+	var firstLog, remain []byte
+	if bufLen > 0 && w.buf[bufLen-1] == '\n' {
+		firstLog, remain = match.SplitFollowingLog(w.Format, data)
+	} else {
+		firstLog, remain = match.SplitFirstLog(w.Format, data)
+	}
+
+	w.buf = append(w.buf, firstLog...)
+
+	if len(remain) > 0 || firstLog[len(firstLog)-1] == '\n' {
+		w.flushBuffer()
+	}
+
+	w.buf = append(w.buf, remain...)
+
+	return dataLen, nil
+}
+
+func (w *Worker) flushBuffer() {
 	for _, r := range w.Routers {
-		r.Receive(newData)
+		r.Receive(w.buf)
 	}
 
 	if w.MergingWorker != nil {
-		_, _ = w.MergingWorker.Write(newData)
+		_, _ = w.MergingWorker.Write(w.buf)
 	}
 
-	return len(newData), nil
+	// reset buffer
+	w.buf = nil
 }
 
 func (w *Worker) StopRouters() {

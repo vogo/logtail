@@ -48,32 +48,37 @@ func initFireData() {
 	fireData = [][]byte{
 		[]byte(`2020-11-11 ERROR test1
  follow1
- follow2`),
+ follow2
+`),
 
 		[]byte(`2020-11-11 ERROR test2 "中文"
  follow3
- follow4`),
+ follow4
+`),
 
-		[]byte(`2020-11-11 INFO ` + longText),
+		[]byte(`2020-11-11 INFO ` + longText + "\n"),
 
-		[]byte(`2020-11-11 ERROR ` + longText),
+		[]byte(`2020-11-11 ERROR ` + longText + "\n"),
 
-		[]byte(`2020-11-11 INFO ` + longText),
+		[]byte(`2020-11-11 INFO ` + longText + "\n"),
 
 		[]byte(`2020-11-11 ERROR test3
  follow5
- follow6`),
+ follow6
+`),
 
 		[]byte(`follow7
  follow8
-2020-11-11 ERROR test4`),
+2020-11-11 ERROR test4
+`),
 
 		[]byte(`follow5
-follow9`),
+follow9
+`),
 
-		[]byte(`2020-11-11 ERROR 6 no TEST should not match`),
+		[]byte(`2020-11-11 ERROR 6 no TEST should not match` + "\n"),
 
-		[]byte(`2020-11-11 ERROR test7 contains NORMAL so should not match`),
+		[]byte(`2020-11-11 ERROR test7 contains NORMAL so should not match` + "\n"),
 	}
 }
 
@@ -161,11 +166,13 @@ func TestCommands(t *testing.T) {
 
 	assert.NoError(t, os.WriteFile(log1, []byte(`2020-11-11 ERROR test1
  follow1
- follow2`), 0o600))
+ follow2
+`), 0o600))
 
 	assert.NoError(t, os.WriteFile(log2, []byte(`2020-11-11 ERROR test2 "中文"
  follow3
- follow4`), 0o600))
+ follow4
+`), 0o600))
 
 	commands := fmt.Sprintf("tail -f %s\ntail -f %s", log1, log2)
 	commandGen := fmt.Sprintf("echo \"tail -f %s\ntail -f %s\"", log1, log2)

@@ -25,6 +25,7 @@ import (
 
 	"github.com/vogo/gorun"
 	"github.com/vogo/logtail/internal/conf"
+	"github.com/vogo/logtail/internal/match"
 	"github.com/vogo/logtail/internal/route"
 	"github.com/vogo/logtail/internal/trans"
 )
@@ -38,18 +39,21 @@ var ErrWorkerCommandStopped = errors.New("worker command stopped")
 
 type Worker struct {
 	mu      sync.Mutex
-	dynamic bool      // command generated dynamically
-	command string    // command lines
-	cmd     *exec.Cmd // command object
+	Source  string
+	ID      string
+	command string
+	cmd     *exec.Cmd
+	buf     []byte
+	Format  *match.Format
 
-	ID                string
-	Source            string
 	Runner            *gorun.Runner
-	ErrorChan         chan error
-	Routers           map[string]*route.Router
-	MergingWorker     *Worker
 	TransfersFunc     trans.TransferMatcher
+	MergingWorker     *Worker
+	Routers           map[string]*route.Router
+	ErrorChan         chan error
 	RouterConfigsFunc conf.RouterConfigsFunc
+
+	dynamic bool
 }
 
 func NewRawWorker(workerID, command string, dynamic bool) *Worker {

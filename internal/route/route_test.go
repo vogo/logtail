@@ -37,8 +37,7 @@ func TestRoute(t *testing.T) {
 		ID:      "test-router",
 		Name:    "test-router",
 		Source:  "",
-		Format:  &match.Format{Prefix: "!!!!-!!-!!"},
-		Channel: make(route.Channel),
+		Channel: make(chan []byte, route.DefaultChannelBufferSize),
 		Matchers: []match.Matcher{
 			match.NewContainsMatcher("ERROR", true),
 			match.NewContainsMatcher("参数错误", false),

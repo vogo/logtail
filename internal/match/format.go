@@ -70,3 +70,32 @@ func IsFollowingLine(format *Format, bytes []byte) bool {
 
 	return bytes[0] == ' ' || bytes[0] == '\t'
 }
+
+//nolint:nonamedreturns //ignore this.
+func SplitFirstLog(format *Format, data []byte) (first, remain []byte) {
+	length := len(data)
+	index := util.IndexLineEnd(data, length, 0)
+	index = util.IgnoreLineEnd(data, length, index)
+
+	if index < length {
+		for index < length && IsFollowingLine(format, data[index:]) {
+			index = util.IndexLineEnd(data, length, index)
+			index = util.IgnoreLineEnd(data, length, index)
+		}
+	}
+
+	return data[:index], data[index:]
+}
+
+//nolint:nonamedreturns //ignore this.
+func SplitFollowingLog(format *Format, data []byte) (following, remain []byte) {
+	length := len(data)
+	index := 0
+
+	for index < length && IsFollowingLine(format, data[index:]) {
+		index = util.IndexLineEnd(data, length, index)
+		index = util.IgnoreLineEnd(data, length, index)
+	}
+
+	return data[:index], data[index:]
+}

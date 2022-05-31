@@ -53,12 +53,7 @@ func NewRawServer(id string) *Server {
 	return server
 }
 
-// Write custom generate bytes data to the first worker of the server.
+// Write custom generate bytes data to the merging worker of the server.
 func (s *Server) Write(data []byte) (int, error) {
-	for _, w := range s.Workers {
-		_, _ = w.Write(data)
-	}
-
-	// Write bytes data to default workers, which will be send to web socket clients.
-	return s.MergingWorker.WriteToRouters(data)
+	return s.MergingWorker.Write(data)
 }

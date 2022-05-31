@@ -31,18 +31,25 @@ func (s *Server) AddWorker(command string, dynamic bool) *work.Worker {
 	return worker
 }
 
-func (s *Server) StartWorker(command string, dynamic bool) *work.Worker {
+func (s *Server) buildWorker(command string, dynamic bool) *work.Worker {
 	s.WorkerIndex++
 	workerID := fmt.Sprintf("%s-%d", s.ID, s.WorkerIndex)
 
 	worker := work.NewRawWorker(workerID, command, dynamic)
 
 	worker.Source = s.ID
+	worker.Format = s.Format
 	worker.Runner = s.Runner.NewChild()
 	worker.ErrorChan = s.workerError
 	worker.TransfersFunc = s.TransferMatcher
 	worker.RouterConfigsFunc = s.RouterConfigsFunc
 	worker.MergingWorker = s.MergingWorker
+
+	return worker
+}
+
+func (s *Server) StartWorker(command string, dynamic bool) *work.Worker {
+	worker := s.buildWorker(command, dynamic)
 
 	go worker.StartLoop()
 

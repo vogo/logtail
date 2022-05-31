@@ -17,7 +17,9 @@
 
 package util
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const DefaultMapSize = 4
 
