@@ -41,22 +41,30 @@ func (w *Worker) Write(data []byte) (int, error) {
 		return 0, nil
 	}
 
-	bufLen := len(w.buf)
+	var firstLog []byte
 
-	var firstLog, remain []byte
-	if bufLen > 0 && w.buf[bufLen-1] == '\n' {
-		firstLog, remain = match.SplitFollowingLog(w.Format, data)
+	if len(w.buf) > 0 && w.buf[len(w.buf)-1] == '\n' {
+		firstLog, data = match.SplitFollowingLog(w.Format, data)
 	} else {
-		firstLog, remain = match.SplitFirstLog(w.Format, data)
+		firstLog, data = match.SplitFirstLog(w.Format, data)
 	}
 
 	w.buf = append(w.buf, firstLog...)
 
-	if len(remain) > 0 || firstLog[len(firstLog)-1] == '\n' {
+	if len(data) > 0 || firstLog[len(firstLog)-1] == '\n' {
 		w.flushBuffer()
 	}
 
-	w.buf = append(w.buf, remain...)
+	// parse remain data.
+	for len(data) > 0 {
+		firstLog, data = match.SplitFirstLog(w.Format, data)
+
+		w.buf = append(w.buf, firstLog...)
+
+		if len(data) > 0 || firstLog[len(firstLog)-1] == '\n' {
+			w.flushBuffer()
+		}
+	}
 
 	return dataLen, nil
 }
