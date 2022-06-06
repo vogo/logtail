@@ -33,7 +33,7 @@ func (w *Worker) NotifyError(err error) {
 	w.ErrorChan <- err
 }
 
-// Write data to buffer, flush the buffer if it's full.
+// Write data to buffer, flush the buffer if it's completed.
 // The buffer may not be flushed if no new data.
 func (w *Worker) Write(data []byte) (int, error) {
 	dataLen := len(data)
@@ -43,43 +43,30 @@ func (w *Worker) Write(data []byte) (int, error) {
 
 	var firstLog []byte
 
-	if len(w.buf) > 0 && w.buf[len(w.buf)-1] == '\n' {
-		firstLog, data = match.SplitFollowingLog(w.Format, data)
-	} else {
-		firstLog, data = match.SplitFirstLog(w.Format, data)
-	}
-
-	w.buf = append(w.buf, firstLog...)
-
-	if len(data) > 0 || firstLog[len(firstLog)-1] == '\n' {
-		w.flushBuffer()
-	}
-
-	// parse remain data.
 	for len(data) > 0 {
 		firstLog, data = match.SplitFirstLog(w.Format, data)
 
 		w.buf = append(w.buf, firstLog...)
 
 		if len(data) > 0 || firstLog[len(firstLog)-1] == '\n' {
-			w.flushBuffer()
+			w.flushData(w.buf)
+
+			// reset buffer
+			w.buf = nil
 		}
 	}
 
 	return dataLen, nil
 }
 
-func (w *Worker) flushBuffer() {
+func (w *Worker) flushData(data []byte) {
 	for _, r := range w.Routers {
-		r.Receive(w.buf)
+		r.Receive(data)
 	}
 
 	if w.MergingWorker != nil {
-		_, _ = w.MergingWorker.Write(w.buf)
+		w.MergingWorker.flushData(data)
 	}
-
-	// reset buffer
-	w.buf = nil
 }
 
 func (w *Worker) StopRouters() {
