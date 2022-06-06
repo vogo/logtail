@@ -70,8 +70,6 @@ func Serve(request *http.Request, response http.ResponseWriter, runner *tail.Tai
 
 	router, leftRouter := splitRouter(uri)
 	switch router {
-	case URIRouterIndex:
-		routeToIndexPage(runner, response, leftRouter)
 	case URIRouterTail:
 		routeToTail(runner, request, response, leftRouter)
 	case URIRouterManage:

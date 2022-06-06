@@ -26,8 +26,6 @@ import (
 func routeToManage(runner *tail.Tailer, request *http.Request, response http.ResponseWriter, router string) {
 	firstRouter, leftRouter := splitRouter(router)
 	switch firstRouter {
-	case "index":
-		routeToManageIndex(runner, request, response, leftRouter)
 	case "transfer":
 		routeToTransfer(runner, request, response, leftRouter)
 	case "router":
@@ -37,9 +35,4 @@ func routeToManage(runner *tail.Tailer, request *http.Request, response http.Res
 	default:
 		routeToNotFound(response)
 	}
-}
-
-// nolint:interfacer // ignore this
-func routeToManageIndex(_ *tail.Tailer, _ *http.Request, response http.ResponseWriter, _ string) {
-	_, _ = response.Write(manageHTMLContent)
 }
