@@ -15,11 +15,15 @@ check: license-check
 test:
 		go test -v ./... -coverprofile=coverage.txt -covermode=atomic
 
-package:
+clean-dist:
 	mkdir -p dist
 	rm -f dist/*.zip
-	cd dist && GOOS=linux go build ../logtail.go && zip logtail-$(version)-linux.zip logtail && rm -f logtail
+
+package: package-linux
 	cd dist && GOOS=darwin go build ../logtail.go && zip logtail-$(version)-mac.zip logtail && rm -f logtail
+
+package-linux: clean-dist
+	cd dist && GOOS=linux go build ../logtail.go && zip logtail-$(version)-linux.zip logtail && rm -f logtail
 
 build: format check test package
 
@@ -37,3 +41,10 @@ local-tools:
 install: format check test
 	go install logtail.go
 
+remote-package: clean-dist
+	rm -f ../logtail.zip
+	zip ../logtail.zip -r *
+	ssh root@$(LINUX_BUILD_SERVER) "rm -rf /go/logtail && rm -f /go/logtail.zip"
+	scp ../logtail.zip root@$(LINUX_BUILD_SERVER):/go/logtail.zip
+	ssh root@$(LINUX_BUILD_SERVER) "source /etc/profile && unzip -d /go/logtail /go/logtail.zip && cd /go/logtail && make package-linux"
+	scp root@$(LINUX_BUILD_SERVER):/go/logtail/dist/logtail-$(version)-linux.zip dist/
