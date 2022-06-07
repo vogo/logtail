@@ -32,10 +32,10 @@ func NewContainsMatcher(pattern string, contains bool) *ContainsMatcher {
 	containsMatcher := &ContainsMatcher{
 		contains: contains,
 		pattern:  pattern,
+		plen:     len(pattern),
+		kmp:      make([]int, len(pattern)+1),
 	}
 
-	containsMatcher.plen = len(pattern)
-	containsMatcher.kmp = make([]int, containsMatcher.plen+1)
 	containsMatcher.kmp[0] = -1
 
 	// nolint:varnamelen //ignore this
