@@ -74,6 +74,8 @@ func Serve(request *http.Request, response http.ResponseWriter, runner *tail.Tai
 		routeToTail(runner, request, response, leftRouter)
 	case URIRouterManage:
 		routeToManage(runner, request, response, leftRouter)
+	case URIRouterIndex:
+		routeToIndex(runner, request, response, leftRouter)
 	default:
 		responseServerList(runner, response)
 	}
@@ -89,5 +91,6 @@ func responseServerList(runner *tail.Tailer, response http.ResponseWriter) {
 	}
 
 	buf.WriteString(`</ul>`)
+	response.Header().Add("Content-Type", "text/html")
 	_, _ = response.Write(buf.Bytes())
 }
