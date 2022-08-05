@@ -46,7 +46,7 @@ func routeToServer(runner *tail.Tailer, request *http.Request, response http.Res
 func listServerTypes(_ *tail.Tailer, response http.ResponseWriter) {
 	response.Header().Add("content-type", "application/json")
 
-	// nolint:errchkjson //ignore this
+	//nolint:errchkjson //ignore this
 	b, _ := json.Marshal(conf.ServerTypes)
 
 	_, _ = response.Write(b)
@@ -55,7 +55,7 @@ func listServerTypes(_ *tail.Tailer, response http.ResponseWriter) {
 func listServers(runner *tail.Tailer, response http.ResponseWriter) {
 	response.Header().Add("content-type", "application/json")
 
-	// nolint:errchkjson //ignore this
+	//nolint:errchkjson //ignore this
 	b, _ := json.Marshal(runner.Config.Servers)
 
 	_, _ = response.Write(b)

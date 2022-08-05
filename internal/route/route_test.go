@@ -46,7 +46,7 @@ func TestRoute(t *testing.T) {
 		Transfers: []trans.Transfer{&trans.ConsoleTransfer{}},
 	}
 
-	// nolint:lll //ignore this.
+	//nolint:lll //ignore this.
 	testLogMessage := `2022-05-20 13:35:53.794 ERROR [ConsumeMessageThread_1] [-] h.t.c.c.i.Service - 发起失败!失败原因msg=订单不存在, 参数postMap={"data":"xxx","open_id":"d99bcfde2e727e5eee7d4b5488741234","open_key":"17b130ef168500054f02b814bf261234","sign":"03f17f6f57235a8e0181aaa71ef51234","timestamp":"1653024953"}, 返回结果result={"errcode":8018,"msg":"\u539f\u59cb\u8ba2\u5355\u4e0d\u5b58\u5728"}`
 
 	err := router.Route([]byte(testLogMessage))

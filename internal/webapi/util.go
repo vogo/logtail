@@ -26,7 +26,7 @@ func routeToNotFound(response http.ResponseWriter) {
 	response.WriteHeader(http.StatusNotFound)
 }
 
-// nolint:interfacer //ignore this
+//nolint:interfacer //ignore this
 func routeToSuccess(response http.ResponseWriter) {
 	_, _ = response.Write([]byte("success"))
 }

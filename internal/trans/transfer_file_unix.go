@@ -78,6 +78,7 @@ func (ft *FileTransfer) resetFile() error {
 		return err
 	}
 
+	//nolint:nosnakecase // ignore snake case.
 	ft.memoryBuffer, err = syscall.Mmap(int(ft.file.Fd()), 0, TransferFileSize, syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
 	if err != nil {
 		return err

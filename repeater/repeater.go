@@ -35,6 +35,7 @@ func Repeat(filePath string, bytesChan chan []byte) {
 		err          error
 	)
 
+	//nolint:nosnakecase // ignore snake case.
 	file, err := os.OpenFile(filePath, os.O_RDONLY, filePerm)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "failed open file: %v", err)

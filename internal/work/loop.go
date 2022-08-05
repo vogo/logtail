@@ -26,7 +26,7 @@ import (
 	"github.com/vogo/logger"
 )
 
-// nolint:gosec //ignore this.
+//nolint:gosec //ignore this.
 func (w *Worker) StartLoop() {
 	defer func() {
 		w.Stop()

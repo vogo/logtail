@@ -46,7 +46,6 @@ func (t *Tailer) AddTransfer(c *conf.TransferConfig) error {
 	return nil
 }
 
-// nolint:ireturn //ignore this.
 func (t *Tailer) StartTransfer(transferConfig *conf.TransferConfig) (trans.Transfer, error) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
@@ -144,7 +143,6 @@ func buildTransferMatcher(t *Tailer) func(ids []string) []trans.Transfer {
 	}
 }
 
-// nolint:ireturn // return diff transfer implementation.
 func BuildTransfer(config *conf.TransferConfig) trans.Transfer {
 	switch config.Type {
 	case trans.TypeWebhook:

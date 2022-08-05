@@ -44,7 +44,7 @@ func routeToTransfer(runner *tail.Tailer, request *http.Request, response http.R
 func listTransferTypes(_ *tail.Tailer, response http.ResponseWriter) {
 	response.Header().Add("content-type", "application/json")
 
-	// nolint:errchkjson //ignore this
+	//nolint:errchkjson //ignore this
 	b, _ := json.Marshal(trans.Types)
 
 	_, _ = response.Write(b)
@@ -53,7 +53,7 @@ func listTransferTypes(_ *tail.Tailer, response http.ResponseWriter) {
 func listTransfers(runner *tail.Tailer, response http.ResponseWriter) {
 	response.Header().Add("content-type", "application/json")
 
-	// nolint:errchkjson //ignore this
+	//nolint:errchkjson //ignore this
 	b, _ := json.Marshal(runner.Config.Transfers)
 
 	_, _ = response.Write(b)

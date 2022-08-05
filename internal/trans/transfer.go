@@ -25,7 +25,7 @@ type Transfer interface {
 }
 
 // Types all transfer types.
-// nolint:gochecknoglobals //ignore this.
+//nolint:gochecknoglobals //ignore this.
 var Types = []string{TypeNull, TypeConsole, TypeFile, TypeWebhook, TypeDing, TypeLark}
 
 const DefaultTransferPrefix = "logtail-"

@@ -19,7 +19,7 @@ package trans
 
 const DoubleSize = 2
 
-// nolint:gomnd,funlen //ignore this
+//nolint:gomnd,funlen //ignore this
 func EscapeLimitJSONBytes(bytes []byte, capacity int) []byte {
 	if size := len(bytes); size < capacity {
 		capacity = size
@@ -86,7 +86,7 @@ UTF8LOOP:
 	return jsonData[:dstIndex]
 }
 
-// nolint:gomnd //ignore this
+//nolint:gomnd //ignore this
 func utf8FollowSize(utf8LeadByte byte) int {
 	switch {
 	case utf8LeadByte&0x20 == 0:

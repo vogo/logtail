@@ -41,7 +41,7 @@ func routeToRouter(runner *tail.Tailer, request *http.Request, response http.Res
 func listRouters(runner *tail.Tailer, response http.ResponseWriter) {
 	response.Header().Add("content-type", "application/json")
 
-	// nolint:errchkjson //ignore this
+	//nolint:errchkjson //ignore this
 	b, _ := json.Marshal(runner.Config.Routers)
 
 	_, _ = response.Write(b)

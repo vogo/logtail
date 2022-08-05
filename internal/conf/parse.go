@@ -29,7 +29,7 @@ import (
 	"github.com/vogo/vogo/vos"
 )
 
-// nolint:nonamedreturns //ignore this.
+//nolint:nonamedreturns //ignore this.
 func ParseConfig() (config *Config, parseErr error) {
 	defer func() {
 		if err := recover(); err != nil {

@@ -33,7 +33,7 @@ import (
 	"github.com/vogo/logtail/internal/trans"
 )
 
-// nolint:gochecknoglobals // ignore this
+//nolint:gochecknoglobals // ignore this
 var fireData [][]byte
 
 func initFireData() {
@@ -82,7 +82,7 @@ follow9
 	}
 }
 
-// nolint:gochecknoglobals // ignore this
+//nolint:gochecknoglobals // ignore this
 var ticker = time.NewTicker(time.Millisecond)
 
 func fireServer(s *serve.Server) {
@@ -150,7 +150,7 @@ func TestServer(t *testing.T) {
 	<-time.After(time.Second)
 }
 
-// nolint:gochecknoglobals //ignore this
+//nolint:gochecknoglobals //ignore this
 var testServerName = "svr"
 
 func TestCommands(t *testing.T) {

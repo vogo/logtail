@@ -31,6 +31,7 @@ linters:
     - cyclop
     - tagliatelle
     - exhaustruct
+    - ireturn
 
 run:
   skip-files:

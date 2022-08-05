@@ -47,7 +47,7 @@ func (l *HTTPHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 }
 
 // split with / into two part.
-// nolint:nonamedreturns //ignore this.
+//nolint:nonamedreturns //ignore this.
 func splitRouter(r string) (first, left string) {
 	if i := strings.Index(r, "/"); i > 0 {
 		return r[:i], r[i+1:]

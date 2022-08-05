@@ -25,7 +25,7 @@ import "github.com/vogo/logtail/internal/util"
 // - '~' as one alphabet char
 // - '!' as one number char
 // NOT support '*' for none or many char.
-// nolint:varnamelen //ignore this.
+//nolint:varnamelen //ignore this.
 func WildcardMatch(pattern string, data []byte) bool {
 	var p, b byte
 

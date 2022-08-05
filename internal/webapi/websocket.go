@@ -35,10 +35,10 @@ import (
 
 const WebsocketHeartbeatReadTimeout = 15 * time.Second
 
-// nolint:gochecknoglobals // ignore this
+//nolint:gochecknoglobals // ignore this
 var websocketUpgrader = websocket.Upgrader{}
 
-// nolint:gochecknoglobals // ignore this
+//nolint:gochecknoglobals // ignore this
 var wsConnIndex int64
 
 type WebsocketTransfer struct {

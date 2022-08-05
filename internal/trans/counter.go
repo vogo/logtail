@@ -25,7 +25,7 @@ import (
 	"github.com/vogo/logtail/internal/consts"
 )
 
-// nolint:gochecknoglobals //ignore this
+//nolint:gochecknoglobals //ignore this
 // statistic duration, default one day.
 var statisticDuration = time.Hour * 24
 

@@ -32,13 +32,13 @@ const (
 )
 
 var (
-	// nolint:gochecknoglobals // ignore this
+	//nolint:gochecknoglobals // ignore this
 	dingTextMessageDataPrefix = []byte(`{"msgtype":"text","text":{"content":"[logtail-`)
 
-	// nolint:gochecknoglobals // ignore this
+	//nolint:gochecknoglobals // ignore this
 	dingTextMessageDataSuffix = []byte(`"}}`)
 
-	// nolint:gochecknoglobals // ignore this
+	//nolint:gochecknoglobals // ignore this
 	messageTitleContentSplit = []byte("]: ")
 )
 
@@ -84,7 +84,7 @@ func (d *DingTransfer) Trans(source string, data ...[]byte) error {
 	return d.execTrans(source, data...)
 }
 
-// nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
+//nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
 func (d *DingTransfer) execTrans(source string, data ...[]byte) error {
 	size := dingMessageDataFixedBytesNum + len(data)
 	list := make([][]byte, size)

@@ -33,7 +33,7 @@ func (r *recorder) Write(p []byte) (int, error) {
 	return os.Stdout.Write(p)
 }
 
-// nolint:gosec //ignore this
+//nolint:gosec //ignore this
 func main() {
 	command := flag.String("c", "", "command")
 

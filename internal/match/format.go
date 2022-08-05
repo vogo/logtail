@@ -38,7 +38,7 @@ func (f *Format) String() string {
 	return fmt.Sprintf("format{prefix:%s}", f.Prefix)
 }
 
-// nolint:varnamelen //ignore this.
+//nolint:varnamelen //ignore this.
 func indexToNextLineStart(format *Format, message []byte) []byte {
 	l := len(message)
 	i := 0

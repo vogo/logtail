@@ -43,10 +43,10 @@ const (
 )
 
 var (
-	// nolint:gochecknoglobals // ignore this
+	//nolint:gochecknoglobals // ignore this
 	larkTextMessageDataPrefix = []byte(`{"msg_type":"text","content":{"text":"[`)
 
-	// nolint:gochecknoglobals // ignore this
+	//nolint:gochecknoglobals // ignore this
 	larkTextMessageDataSuffix = []byte(`"}}`)
 )
 
@@ -81,7 +81,7 @@ func (d *LarkTransfer) Trans(source string, data ...[]byte) error {
 	return d.execTrans(source, data...)
 }
 
-// nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
+//nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
 func (d *LarkTransfer) execTrans(source string, data ...[]byte) error {
 	size := larkMessageDataFixedBytesNum + len(data)
 	list := make([][]byte, size)

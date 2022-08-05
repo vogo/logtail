@@ -29,7 +29,7 @@ import (
 )
 
 // DefaultTailer the default tailer.
-// nolint:gochecknoglobals // ignore this
+//nolint:gochecknoglobals // ignore this
 var DefaultTailer *Tailer
 
 // Tailer the logtail tailer.
