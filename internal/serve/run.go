@@ -18,7 +18,6 @@
 package serve
 
 import (
-	"runtime/debug"
 	"strings"
 
 	"github.com/vogo/fwatch"
@@ -65,7 +64,7 @@ func (s *Server) Stop() error {
 
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Warnf("server %s close error: %+v, stack:\n%s", s.ID, err, string(debug.Stack()))
+			logger.Warnf("server %s close error: %+v, stack:\n%s", s.ID, err, util.AllStacks())
 		}
 	}()
 

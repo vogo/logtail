@@ -18,10 +18,9 @@
 package work
 
 import (
-	"runtime/debug"
-
 	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/match"
+	"github.com/vogo/logtail/internal/util"
 )
 
 func (w *Worker) NotifyError(err error) {
@@ -93,7 +92,7 @@ func (w *Worker) Shutdown() {
 func (w *Worker) Stop() {
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Warnf("worker [%s] close error: %+v, stack:\n%s", w.ID, err, string(debug.Stack()))
+			logger.Warnf("worker [%s] close error: %+v, stack:\n%s", w.ID, err, util.AllStacks())
 		}
 	}()
 

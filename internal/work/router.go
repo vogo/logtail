@@ -35,14 +35,16 @@ func (w *Worker) AddRouter(routerConfig *conf.RouterConfig) error {
 
 	routerID := fmt.Sprintf("%s-%s", w.ID, routerName)
 
-	router := route.StartRouter(w.Runner, routerConfig, w.TransfersFunc, routerID, w.Source)
+	router := route.BuildRouter(w.Runner, routerConfig, w.TransfersFunc, routerID, w.Source)
+
+	go router.StartLoop()
 
 	w.Routers[routerName] = router
 
 	return nil
 }
 
-func (w *Worker) StartRouter(router *route.Router) {
+func (w *Worker) JoinRouter(router *route.Router) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 

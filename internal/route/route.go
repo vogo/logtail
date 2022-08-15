@@ -42,7 +42,7 @@ type Router struct {
 	Transfers []trans.Transfer
 }
 
-func StartRouter(workerRunner *gorun.Runner,
+func BuildRouter(workerRunner *gorun.Runner,
 	routerConfig *conf.RouterConfig,
 	transfersFunc trans.TransferMatcher,
 	routerID string, source string,
@@ -62,8 +62,6 @@ func StartRouter(workerRunner *gorun.Runner,
 		Matchers:  matchers,
 		Transfers: transfersFunc(routerConfig.Transfers),
 	}
-
-	go router.StartLoop()
 
 	return router
 }

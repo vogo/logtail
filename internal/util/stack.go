@@ -15,39 +15,17 @@
  * limitations under the License.
  */
 
-package route
+package util
 
 import (
-	"github.com/vogo/logger"
-	"github.com/vogo/logtail/internal/util"
+	"runtime"
 )
 
-func (r *Router) StartLoop() {
-	defer func() {
-		if err := recover(); err != nil {
-			logger.Errorf("Routers [%s] error: %+v, stack:\n%s", r.ID, err, util.AllStacks())
-		}
+const stackBufSize = 102400
 
-		logger.Infof("Routers [%s] stopped", r.ID)
-	}()
+func AllStacks() []byte {
+	b := make([]byte, stackBufSize)
+	runtime.Stack(b, true)
 
-	logger.Infof("Routers [%s] StartLoop", r.ID)
-
-	for {
-		select {
-		case <-r.Runner.C:
-			return
-		case data := <-r.Channel:
-			if data == nil {
-				r.Stop()
-
-				return
-			}
-
-			if err := r.Route(data); err != nil {
-				logger.Warnf("Routers [%s] route error: %+v", r.ID, err)
-				r.Stop()
-			}
-		}
-	}
+	return b
 }
