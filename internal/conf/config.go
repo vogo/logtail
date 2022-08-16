@@ -105,6 +105,7 @@ type ServerConfig struct {
 }
 
 // ServerTypes server types.
+//
 //nolint:gochecknoglobals //ignore this.
 var ServerTypes = []string{"command", "commands", "command_gen", "file"}
 

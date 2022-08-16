@@ -29,6 +29,7 @@ import (
 )
 
 // DefaultTailer the default tailer.
+//
 //nolint:gochecknoglobals // ignore this
 var DefaultTailer *Tailer
 

@@ -25,8 +25,9 @@ import (
 	"github.com/vogo/logtail/internal/consts"
 )
 
-//nolint:gochecknoglobals //ignore this
 // statistic duration, default one day.
+//
+//nolint:gochecknoglobals //ignore this
 var statisticDuration = time.Hour * 24
 
 func SetTransStatisticDuration(d time.Duration) {
