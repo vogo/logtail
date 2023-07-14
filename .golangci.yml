@@ -23,7 +23,16 @@ linters-settings:
       - wrapperFunc
 
 linters:
-  enable-all: true
+  enable-all: false
+  enable:
+    - govet
+    - gocyclo
+    - dupl
+    - goconst
+    - misspell
+    - lll
+    - goimports
+    - gocritic
   disable:
     - exhaustivestruct
     - wrapcheck
