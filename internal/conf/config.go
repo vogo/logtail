@@ -18,13 +18,13 @@
 package conf
 
 import (
-	"encoding/json"
 	"errors"
 	"os"
 
 	"github.com/vogo/fwatch"
 	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/match"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -74,7 +74,7 @@ func (c *Config) SaveToFile() {
 		return
 	}
 
-	fileData, err := json.MarshalIndent(c, "", "  ")
+	fileData, err := yaml.Marshal(c)
 	if err != nil {
 		logger.Warnf("config error: %v", err)
 

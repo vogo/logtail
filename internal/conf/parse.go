@@ -18,7 +18,6 @@
 package conf
 
 import (
-	"encoding/json"
 	"flag"
 	"os"
 	"path/filepath"
@@ -27,6 +26,7 @@ import (
 	"github.com/vogo/logtail/internal/consts"
 	"github.com/vogo/logtail/internal/trans"
 	"github.com/vogo/vogo/vos"
+	"gopkg.in/yaml.v3"
 )
 
 //nolint:nonamedreturns //ignore this.
@@ -82,7 +82,7 @@ func parseFileConfig(f string) (*Config, error) {
 		return nil, fileErr
 	}
 
-	if jsonErr := json.Unmarshal(data, config); jsonErr != nil {
+	if jsonErr := yaml.Unmarshal(data, config); jsonErr != nil {
 		return nil, jsonErr
 	}
 
