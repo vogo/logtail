@@ -35,7 +35,7 @@ jobs:
       # If you want to matrix build , you can append the following list.
       matrix:
         go_version:
-          - 1.18
+          - 1.20
 
         os:
           - ubuntu-latest
@@ -80,3 +80,6 @@ jobs:
 
       - name: Coverage
         run: bash <(curl -s https://codecov.io/bash)
+
+      - id: govulncheck
+        uses: golang/govulncheck-action@v1
