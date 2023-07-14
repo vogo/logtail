@@ -88,7 +88,7 @@ func responseServerList(runner *tail.Tailer, response http.ResponseWriter) {
 	buf.WriteString(`<ul>`)
 
 	for k := range runner.Servers {
-		buf.WriteString(fmt.Sprintf(`<li><a href="/index/%s" target=_blank>%s</a></li>`, k, k))
+		_, _ = fmt.Fprintf(buf, `<li><a href="/index/%s" target=_blank>%s</a></li>`, k, k)
 	}
 
 	buf.WriteString(`</ul>`)
