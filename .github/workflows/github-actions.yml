@@ -35,7 +35,7 @@ jobs:
       # If you want to matrix build , you can append the following list.
       matrix:
         go_version:
-          - '1.20.6'
+          - '1.25'
 
         os:
           - ubuntu-latest
@@ -43,7 +43,7 @@ jobs:
     steps:
 
       - name: Set up Go 1.x
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go_version }}
         id: go
@@ -53,13 +53,13 @@ jobs:
           go install golang.org/x/tools/cmd/goimports@latest
           go install mvdan.cc/gofumpt@latest
           go install github.com/vogo/license-header-checker/cmd/license-header-checker@latest
-          go install github.com/golangci/golangci-lint/...@latest
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           # Cache
           path: ~/go/pkg/mod
