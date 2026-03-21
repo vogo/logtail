@@ -21,19 +21,19 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/tail"
+	"github.com/vogo/vogo/vlog"
 )
 
 func StartWebAPI(runner *tail.Tailer) {
 	if runner.Config.Port <= 0 {
-		logger.Warn("webapi disabled for no port config")
+		vlog.Warn("webapi disabled for no port config")
 
 		return
 	}
 
 	go func() {
-		logger.Infof("serve at port %d", runner.Config.Port)
+		vlog.Infof("serve at port %d", runner.Config.Port)
 
 		if err := http.ListenAndServe(fmt.Sprintf(":%d", runner.Config.Port), &HTTPHandler{
 			runner: runner,

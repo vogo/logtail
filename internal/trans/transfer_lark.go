@@ -21,7 +21,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/vogo/logger"
+	"github.com/vogo/vogo/vlog"
 )
 
 // LarkTransfer transfer to support lark.
@@ -109,7 +109,7 @@ func (d *LarkTransfer) execTrans(source string, data ...[]byte) error {
 	list[idx] = larkTextMessageDataSuffix
 
 	if err := httpTrans(d.url, list[:idx+1]...); err != nil {
-		logger.Errorf("lark error: %v", err)
+		vlog.Errorf("lark error: %v", err)
 	}
 
 	return nil

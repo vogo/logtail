@@ -21,11 +21,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/serve"
 	"github.com/vogo/logtail/internal/trans"
 	"github.com/vogo/logtail/internal/util"
+	"github.com/vogo/vogo/vlog"
 )
 
 // DefaultTailer the default tailer.
@@ -71,7 +71,7 @@ func (t *Tailer) Start() error {
 	for _, serverConfig := range t.Config.Servers {
 		_, err := t.AddServer(serverConfig)
 		if err != nil {
-			logger.Errorf("add server %s error: %v", serverConfig.Name, err)
+			vlog.Errorf("add server %s error: %v", serverConfig.Name, err)
 		}
 	}
 
@@ -85,13 +85,13 @@ func (t *Tailer) Stop() {
 
 	for _, s := range t.Servers {
 		if err := s.Stop(); err != nil {
-			logger.Errorf("server %s close error: %+v", s.ID, err)
+			vlog.Errorf("server %s close error: %+v", s.ID, err)
 		}
 	}
 
 	for _, t := range t.Transfers {
 		if err := t.Stop(); err != nil {
-			logger.Errorf("transfer %s close error: %+v", t.Name(), err)
+			vlog.Errorf("transfer %s close error: %+v", t.Name(), err)
 		}
 	}
 }

@@ -22,8 +22,8 @@ import (
 	"os"
 
 	"github.com/vogo/fwatch"
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/match"
+	"github.com/vogo/vogo/vlog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -69,20 +69,20 @@ func (c *Config) GetRouters(routers []string) []*RouterConfig {
 
 func (c *Config) SaveToFile() {
 	if c.file == "" {
-		logger.Debug("not save config changes for config file is null")
+		vlog.Debug("not save config changes for config file is null")
 
 		return
 	}
 
 	fileData, err := yaml.Marshal(c)
 	if err != nil {
-		logger.Warnf("config error: %v", err)
+		vlog.Warnf("config error: %v", err)
 
 		return
 	}
 
 	if err = os.WriteFile(c.file, fileData, os.ModePerm); err != nil {
-		logger.Warnf("save config to file error: %v", err)
+		vlog.Warnf("save config to file error: %v", err)
 	}
 }
 

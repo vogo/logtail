@@ -27,8 +27,8 @@ import (
 	"time"
 
 	"github.com/vogo/gorun"
-	"github.com/vogo/logger"
 	"github.com/vogo/vogo/vio/vioutil"
+	"github.com/vogo/vogo/vlog"
 )
 
 const DefaultChannelBufferSize = 16
@@ -68,7 +68,6 @@ func (ft *FileTransfer) resetFile() error {
 
 	fileName := filepath.Join(ft.dir, ft.id+"-"+time.Now().Format(`20060102150405`)+".log")
 	ft.file, err = os.Create(fileName)
-
 	if err != nil {
 		return err
 	}
@@ -97,7 +96,7 @@ func (ft *FileTransfer) submitFile() error {
 	}()
 
 	if ft.file != nil {
-		logger.Infof("submit file %s", ft.file.Name())
+		vlog.Infof("submit file %s", ft.file.Name())
 
 		_ = syscall.Munmap(ft.memoryBuffer)
 		_ = ft.file.Truncate(int64(ft.writeSize))
@@ -164,7 +163,7 @@ func (ft *FileTransfer) Stop() error {
 func (ft *FileTransfer) write(data [][]byte) {
 	if ft.file == nil {
 		if err := ft.resetFile(); err != nil {
-			logger.Errorf("reset file error: %v", err)
+			vlog.Errorf("reset file error: %v", err)
 
 			return
 		}
@@ -177,11 +176,11 @@ func (ft *FileTransfer) write(data [][]byte) {
 
 	if TransferFileSize-ft.writeSize < length {
 		if err := ft.submitFile(); err != nil {
-			logger.Errorf("submit file error: %v", err)
+			vlog.Errorf("submit file error: %v", err)
 		}
 
 		if err := ft.resetFile(); err != nil {
-			logger.Errorf("reset file error: %v", err)
+			vlog.Errorf("reset file error: %v", err)
 
 			return
 		}

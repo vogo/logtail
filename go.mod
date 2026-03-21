@@ -1,15 +1,15 @@
 module github.com/vogo/logtail
 
-go 1.20
+go 1.25.0
 
 require (
-	github.com/gorilla/websocket v1.5.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/stretchr/testify v1.7.1
 	github.com/vogo/fwatch v1.3.0
 	github.com/vogo/gorun v1.1.0
-	github.com/vogo/logger v1.5.1
-	github.com/vogo/vogo v0.0.0-20221102073728-4e693f429440
-	golang.org/x/sys v0.10.0 // indirect
+	github.com/vogo/logger v1.5.1 // indirect
+	github.com/vogo/vogo v0.0.0-20260219094625-1e3cccd1958b
+	golang.org/x/sys v0.42.0 // indirect
 )
 
 require gopkg.in/yaml.v3 v3.0.1

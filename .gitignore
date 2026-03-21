@@ -1,4 +1,7 @@
 .idea
+.vscode
+.claude
+/doc/changes
 
 server.crt
 server.key
@@ -6,8 +9,11 @@ server.key
 dist
 
 coverage.txt
+coverage.out
 
 *.test
 *.prof
 
 .DS_Store
+CLAUDE.md
+

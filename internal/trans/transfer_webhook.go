@@ -24,8 +24,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/vogo/logger"
 	"github.com/vogo/vogo/vio"
+	"github.com/vogo/vogo/vlog"
 )
 
 const TypeWebhook = "webhook"
@@ -71,11 +71,11 @@ func httpTrans(url string, data ...[]byte) error {
 		return err
 	}
 
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	if res.StatusCode != http.StatusOK {
 		if respBody, respErr := io.ReadAll(res.Body); respErr == nil {
-			logger.Warnf("http alert error! response: %s, request: %s", respBody, bytes.Join(data, nil))
+			vlog.Warnf("http alert error! response: %s, request: %s", respBody, bytes.Join(data, nil))
 		}
 
 		return fmt.Errorf("http alert error, %w: %d", ErrHTTPStatusNonOK, res.StatusCode)

@@ -18,20 +18,20 @@
 package route
 
 import (
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/util"
+	"github.com/vogo/vogo/vlog"
 )
 
 func (r *Router) StartLoop() {
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Errorf("Routers [%s] error: %+v, stack:\n%s", r.ID, err, util.AllStacks())
+			vlog.Errorf("Routers [%s] error: %+v, stack:\n%s", r.ID, err, util.AllStacks())
 		}
 
-		logger.Infof("Routers [%s] stopped", r.ID)
+		vlog.Infof("Routers [%s] stopped", r.ID)
 	}()
 
-	logger.Infof("Routers [%s] StartLoop", r.ID)
+	vlog.Infof("Routers [%s] StartLoop", r.ID)
 
 	for {
 		select {
@@ -45,7 +45,7 @@ func (r *Router) StartLoop() {
 			}
 
 			if err := r.Route(data); err != nil {
-				logger.Warnf("Routers [%s] route error: %+v", r.ID, err)
+				vlog.Warnf("Routers [%s] route error: %+v", r.ID, err)
 				r.Stop()
 			}
 		}

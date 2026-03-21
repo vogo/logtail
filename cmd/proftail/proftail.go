@@ -26,9 +26,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/starter"
 	"github.com/vogo/logtail/internal/webapi"
+	"github.com/vogo/vogo/vlog"
 )
 
 func main() {
@@ -47,7 +47,7 @@ func handleSignal() {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	sig := <-signalChan
-	logger.Infof("signal: %v", sig)
+	vlog.Infof("signal: %v", sig)
 
 	_ = starter.StopLogtail()
 

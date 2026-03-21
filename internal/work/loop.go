@@ -23,21 +23,21 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/vogo/logger"
+	"github.com/vogo/vogo/vlog"
 )
 
 //nolint:gosec //ignore this.
 func (w *Worker) StartLoop() {
 	defer func() {
 		w.Stop()
-		logger.Infof("worker [%s] stopped", w.ID)
+		vlog.Infof("worker [%s] stopped", w.ID)
 	}()
 
 	routerConfigs := w.RouterConfigsFunc()
 
 	for _, rc := range routerConfigs {
 		if err := w.AddRouter(rc); err != nil {
-			logger.Errorf("add router error: %v", err)
+			vlog.Errorf("add router error: %v", err)
 		}
 	}
 
@@ -52,7 +52,7 @@ func (w *Worker) StartLoop() {
 		case <-w.Runner.C:
 			return
 		default:
-			logger.Infof("worker [%s] command: %s", w.ID, w.command)
+			vlog.Infof("worker [%s] command: %s", w.ID, w.command)
 
 			w.cmd = exec.Command("/bin/sh", "-c", w.command)
 
@@ -62,7 +62,7 @@ func (w *Worker) StartLoop() {
 			w.cmd.Stderr = os.Stderr
 
 			if err := w.cmd.Run(); err != nil {
-				logger.Errorf("worker [%s] command error: %+v, command: %s", w.ID, err, w.command)
+				vlog.Errorf("worker [%s] command error: %+v, command: %s", w.ID, err, w.command)
 
 				// if the command is generated dynamic, should not restart by self, send error instead.
 				if w.dynamic {
@@ -75,7 +75,7 @@ func (w *Worker) StartLoop() {
 				case <-w.Runner.C:
 					return
 				default:
-					logger.Errorf("worker [%s] failed, retry after 10s! command: %s", w.ID, w.command)
+					vlog.Errorf("worker [%s] failed, retry after 10s! command: %s", w.ID, w.command)
 					time.Sleep(CommandFailRetryInterval)
 				}
 			}

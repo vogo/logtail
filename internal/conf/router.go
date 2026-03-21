@@ -17,7 +17,7 @@
 
 package conf
 
-import "github.com/vogo/logger"
+import "github.com/vogo/vogo/vlog"
 
 type RouterConfigsFunc func() []*RouterConfig
 
@@ -29,7 +29,7 @@ func BuildRouterConfigsFunc(config *Config, serverConfig *ServerConfig) RouterCo
 			if r, ok := config.Routers[name]; ok {
 				configs = append(configs, r)
 			} else {
-				logger.Errorf("router not exists: %s", name)
+				vlog.Errorf("router not exists: %s", name)
 			}
 		}
 

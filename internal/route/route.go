@@ -21,10 +21,10 @@ import (
 	"sync"
 
 	"github.com/vogo/gorun"
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
 	"github.com/vogo/logtail/internal/trans"
+	"github.com/vogo/vogo/vlog"
 )
 
 const DefaultChannelBufferSize = 16
@@ -100,7 +100,7 @@ func (r *Router) Trans(data []byte) error {
 
 func (r *Router) Stop() {
 	r.Runner.StopWith(func() {
-		logger.Infof("Routers [%s] stopping", r.ID)
+		vlog.Infof("Routers [%s] stopping", r.ID)
 		close(r.Channel)
 	})
 }

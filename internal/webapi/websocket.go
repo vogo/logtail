@@ -26,11 +26,11 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/route"
 	"github.com/vogo/logtail/internal/tail"
 	"github.com/vogo/logtail/internal/trans"
+	"github.com/vogo/vogo/vlog"
 )
 
 const WebsocketHeartbeatReadTimeout = 15 * time.Second
@@ -68,15 +68,15 @@ func (ww *WebsocketTransfer) Trans(_ string, data ...[]byte) error {
 func startWebsocketTransfer(tailer *tail.Tailer, response http.ResponseWriter, request *http.Request, serverID string) {
 	wsConn, err := websocketUpgrader.Upgrade(response, request, nil)
 	if err != nil {
-		logger.Error("web socket error:", err)
+		vlog.Error("web socket error:", err)
 
 		return
 	}
-	defer wsConn.Close()
+	defer func() { _ = wsConn.Close() }()
 
 	server, ok := tailer.Servers[serverID]
 	if !ok {
-		logger.Warnf("server id not found: %s", serverID)
+		vlog.Warnf("server id not found: %s", serverID)
 
 		return
 	}
@@ -100,7 +100,7 @@ func startWebsocketHeartbeat(router *route.Router, conn *websocket.Conn) {
 		_ = recover()
 
 		router.Stop()
-		logger.Infof("router [%s] websocket heartbeat stopped", router.Name)
+		vlog.Infof("router [%s] websocket heartbeat stopped", router.Name)
 	}()
 
 	for {
@@ -113,7 +113,7 @@ func startWebsocketHeartbeat(router *route.Router, conn *websocket.Conn) {
 			_, data, err := conn.ReadMessage()
 			if err != nil {
 				if !isEncodeError(err) {
-					logger.Warnf("router [%s] websocket heartbeat error: %+v", router.Name, err)
+					vlog.Warnf("router [%s] websocket heartbeat error: %+v", router.Name, err)
 					router.Stop()
 				}
 
@@ -122,7 +122,7 @@ func startWebsocketHeartbeat(router *route.Router, conn *websocket.Conn) {
 
 			if len(data) > 0 && data[0] == MessageTypeMatcherConfig {
 				if configErr := handleMatcherConfigUpdate(router, data[1:]); configErr != nil {
-					logger.Warnf("router [%s] websocket matcher config error: %+v", router.Name, configErr)
+					vlog.Warnf("router [%s] websocket matcher config error: %+v", router.Name, configErr)
 				}
 			}
 		}

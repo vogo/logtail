@@ -20,21 +20,21 @@ package conf
 import (
 	"strings"
 
-	"github.com/vogo/logger"
+	"github.com/vogo/vogo/vlog"
 )
 
 func ConfigLogLevel(level string) {
 	level = strings.ToUpper(level)
 	switch level {
 	case "ERROR":
-		logger.SetLevel(logger.LevelError)
+		vlog.SetLevel(vlog.LevelError)
 	case "WARN":
-		logger.SetLevel(logger.LevelWarn)
+		vlog.SetLevel(vlog.LevelWarn)
 	case "INFO":
-		logger.SetLevel(logger.LevelInfo)
+		vlog.SetLevel(vlog.LevelInfo)
 	case "DEBUG":
-		logger.SetLevel(logger.LevelDebug)
+		vlog.SetLevel(vlog.LevelDebug)
 	case "TRACE":
-		logger.SetLevel(logger.LevelTrace)
+		vlog.SetLevel(vlog.LevelTrace)
 	}
 }

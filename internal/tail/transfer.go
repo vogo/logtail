@@ -20,9 +20,9 @@ package tail
 import (
 	"fmt"
 
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/trans"
+	"github.com/vogo/vogo/vlog"
 )
 
 func (t *Tailer) StartTransfers() error {
@@ -53,12 +53,12 @@ func (t *Tailer) StartTransfer(transferConfig *conf.TransferConfig) (trans.Trans
 	runTransfer := BuildTransfer(transferConfig)
 
 	if err := runTransfer.Start(); err != nil {
-		logger.Infof("transfer [%s]%s StartLoop error: %v", transferConfig.Type, runTransfer.Name(), err)
+		vlog.Infof("transfer [%s]%s StartLoop error: %v", transferConfig.Type, runTransfer.Name(), err)
 
 		return nil, err
 	}
 
-	logger.Infof("transfer [%s]%s started", transferConfig.Type, runTransfer.Name())
+	vlog.Infof("transfer [%s]%s started", transferConfig.Type, runTransfer.Name())
 
 	existTransfer, exist := t.Transfers[transferConfig.Name]
 
@@ -99,7 +99,7 @@ func (t *Tailer) RemoveTransfer(name string) error {
 
 		err := existTransfer.Stop()
 		if err != nil {
-			logger.Warnf("stop transfer error: %v", err)
+			vlog.Warnf("stop transfer error: %v", err)
 		}
 
 		delete(t.Transfers, name)
@@ -131,7 +131,7 @@ func buildTransferMatcher(t *Tailer) func(ids []string) []trans.Transfer {
 		for _, id := range ids {
 			existTransfer, ok := t.Transfers[id]
 			if !ok {
-				logger.Errorf("transfer not exists: %s", id)
+				vlog.Errorf("transfer not exists: %s", id)
 
 				continue
 			}

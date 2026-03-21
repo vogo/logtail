@@ -21,9 +21,9 @@ import (
 	"bytes"
 	"time"
 
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/work"
-	"github.com/vogo/vogo/vos"
+	"github.com/vogo/vogo/vlog"
+	"github.com/vogo/vogo/vos/vexec"
 )
 
 // StartCommandGenLoop Start Workers using generated commands.
@@ -40,9 +40,9 @@ func (s *Server) StartCommandGenLoop(gen string) {
 		case <-s.Runner.C:
 			return
 		default:
-			commands, err = vos.ExecShell(gen)
+			commands, err = vexec.ExecShell(gen)
 			if err != nil {
-				logger.Errorf("server [%s] command error: %+v, command: %s", s.ID, err, gen)
+				vlog.Errorf("server [%s] command error: %+v, command: %s", s.ID, err, gen)
 			} else {
 				// create a new chan everytime
 				s.workerError = make(chan error)
@@ -54,7 +54,7 @@ func (s *Server) StartCommandGenLoop(gen string) {
 
 				// wait any error from one of worker
 				err = <-s.workerError
-				logger.Errorf("server [%s] receive worker error: %+v", s.ID, err)
+				vlog.Errorf("server [%s] receive worker error: %+v", s.ID, err)
 				close(s.workerError)
 
 				s.StopWorkers()
@@ -64,7 +64,7 @@ func (s *Server) StartCommandGenLoop(gen string) {
 			case <-s.Runner.C:
 				return
 			default:
-				logger.Errorf("server [%s] failed, retry after 10s!", s.ID)
+				vlog.Errorf("server [%s] failed, retry after 10s!", s.ID)
 				time.Sleep(work.CommandFailRetryInterval)
 			}
 		}

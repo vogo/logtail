@@ -20,9 +20,9 @@ package conf
 import (
 	"fmt"
 
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/trans"
 	"github.com/vogo/logtail/internal/util"
+	"github.com/vogo/vogo/vlog"
 )
 
 // check the config and fill some default values.
@@ -37,7 +37,7 @@ func InitialCheckConfig(config *Config) error {
 
 	if config.Port == 0 {
 		// log for notice
-		logger.Infof("port is zero")
+		vlog.Infof("port is zero")
 	}
 
 	for _, t := range config.Transfers {
@@ -65,7 +65,7 @@ func CheckServerConfig(config *Config, server *ServerConfig) error {
 	}
 
 	if server.Command == "" && server.Commands == "" && server.CommandGen == "" && server.File == nil {
-		logger.Warnf("%v for server %s", ErrNoTailingConfig, server.Name)
+		vlog.Warnf("%v for server %s", ErrNoTailingConfig, server.Name)
 	}
 
 	return checkRouterRef(config, server.Routers)
@@ -156,7 +156,7 @@ func checkTransferConfig(_ *Config, transferConfig *TransferConfig) error {
 
 func checkMatchConfig(config *MatcherConfig) error {
 	if len(config.Contains) == 0 && len(config.NotContains) == 0 {
-		logger.Debugf("match contains is nil")
+		vlog.Debugf("match contains is nil")
 	}
 
 	return nil

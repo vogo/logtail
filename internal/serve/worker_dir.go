@@ -22,17 +22,17 @@ import (
 	"time"
 
 	"github.com/vogo/fwatch"
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/util"
 	"github.com/vogo/logtail/internal/work"
+	"github.com/vogo/vogo/vlog"
 )
 
 // startDirWorkers Start Workers using file config.
 func (s *Server) startDirWorkers(config *conf.FileConfig) {
 	watcher, err := fwatch.New(config.Method, fileInactiveDeadline, fileSilenceDeadline)
 	if err != nil {
-		logger.Fatal(err)
+		vlog.Fatal(err)
 	}
 
 	// start watch loop first
@@ -47,10 +47,10 @@ func (s *Server) startDirWorkers(config *conf.FileConfig) {
 		watcher.SetDirFileCountLimit(config.DirFileCountLimit)
 	}
 
-	logger.Infof("server [%s] StartLoop watch directory: %s", s.ID, config.Path)
+	vlog.Infof("server [%s] StartLoop watch directory: %s", s.ID, config.Path)
 
 	if err = watcher.WatchDir(config.Path, config.Recursive, matcher); err != nil {
-		logger.Fatal(err)
+		vlog.Fatal(err)
 	}
 }
 
@@ -64,7 +64,7 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 	defer func() {
 		_ = watcher.Stop()
 
-		logger.Infof("server [%s] stop watch directory: %s", s.ID, path)
+		vlog.Infof("server [%s] stop watch directory: %s", s.ID, path)
 	}()
 
 	fileWorkerMap := make(map[string]*work.Worker, util.DefaultMapSize)
@@ -73,41 +73,41 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 		select {
 		case err := <-s.workerError:
 			// only log worker error
-			logger.Errorf("server [%s] receive worker error: %+v", s.ID, err)
+			vlog.Errorf("server [%s] receive worker error: %+v", s.ID, err)
 		case <-watcher.Runner.C:
 			return
 		case <-s.Runner.C:
 			return
 		case watchError := <-watcher.Errors:
-			logger.Errorf("watch error: %v", watchError)
+			vlog.Errorf("watch error: %v", watchError)
 		case watchEvent := <-watcher.Events:
 			switch watchEvent.Event {
 			case fwatch.Create, fwatch.Write:
-				logger.Infof("notify active file: %s", watchEvent.Name)
+				vlog.Infof("notify active file: %s", watchEvent.Name)
 
 				if w, ok := fileWorkerMap[watchEvent.Name]; ok {
-					logger.Infof("worker [%s] is already tailing file: %s", w.ID, watchEvent.Name)
+					vlog.Infof("worker [%s] is already tailing file: %s", w.ID, watchEvent.Name)
 				} else {
 					// non-dynamic worker will retry self
 					w = s.AddWorker(util.FollowRetryTailCommand(watchEvent.Name), false)
 					fileWorkerMap[watchEvent.Name] = w
 				}
 			case fwatch.Inactive:
-				logger.Infof("notify inactive file: %s", watchEvent.Name)
+				vlog.Infof("notify inactive file: %s", watchEvent.Name)
 
 				if w, ok := fileWorkerMap[watchEvent.Name]; ok {
 					w.Shutdown()
 					delete(fileWorkerMap, watchEvent.Name)
 				}
 			case fwatch.Remove, fwatch.Silence:
-				logger.Infof("notify remove file: %s", watchEvent.Name)
+				vlog.Infof("notify remove file: %s", watchEvent.Name)
 
 				if w, ok := fileWorkerMap[watchEvent.Name]; ok {
 					w.Shutdown()
 					delete(fileWorkerMap, watchEvent.Name)
 				}
 			default:
-				logger.Warnf("unknown event: %s, %s", watchEvent.Event, watchEvent.Name)
+				vlog.Warnf("unknown event: %s, %s", watchEvent.Event, watchEvent.Name)
 			}
 		}
 	}

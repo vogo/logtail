@@ -21,9 +21,9 @@ import (
 	"strings"
 
 	"github.com/vogo/fwatch"
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/util"
+	"github.com/vogo/vogo/vlog"
 )
 
 // Start the server. Call the Start func to start worker.
@@ -53,7 +53,7 @@ func (s *Server) Start(serverConfig *conf.ServerConfig) {
 	case serverConfig.Command != "":
 		s.AddWorker(serverConfig.Command, false)
 	default:
-		logger.Warnf("no external stream for server %s, call server.Write([]byte) to send data", s.ID)
+		vlog.Warnf("no external stream for server %s, call server.Write([]byte) to send data", s.ID)
 	}
 }
 
@@ -64,11 +64,11 @@ func (s *Server) Stop() error {
 
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Warnf("server %s close error: %+v, stack:\n%s", s.ID, err, util.AllStacks())
+			vlog.Warnf("server %s close error: %+v, stack:\n%s", s.ID, err, util.AllStacks())
 		}
 	}()
 
-	logger.Infof("server %s stopping", s.ID)
+	vlog.Infof("server %s stopping", s.ID)
 	s.Runner.Stop()
 
 	s.StopWorkers()

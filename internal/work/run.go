@@ -18,9 +18,9 @@
 package work
 
 import (
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/match"
 	"github.com/vogo/logtail/internal/util"
+	"github.com/vogo/vogo/vlog"
 )
 
 func (w *Worker) NotifyError(err error) {
@@ -92,15 +92,15 @@ func (w *Worker) Shutdown() {
 func (w *Worker) Stop() {
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Warnf("worker [%s] close error: %+v, stack:\n%s", w.ID, err, util.AllStacks())
+			vlog.Warnf("worker [%s] close error: %+v, stack:\n%s", w.ID, err, util.AllStacks())
 		}
 	}()
 
 	if w.cmd != nil {
-		logger.Infof("worker [%s] command stopping: %s", w.ID, w.command)
+		vlog.Infof("worker [%s] command stopping: %s", w.ID, w.command)
 
 		if err := KillCmd(w.cmd); err != nil {
-			logger.Warnf("worker [%s] kill command error: %+v", w.ID, err)
+			vlog.Warnf("worker [%s] kill command error: %+v", w.ID, err)
 		}
 
 		w.cmd = nil

@@ -159,7 +159,7 @@ func TestCommands(t *testing.T) {
 	workDir := filepath.Join(os.TempDir(), "test_logtail_dir")
 	assert.NoError(t, os.MkdirAll(workDir, os.ModePerm))
 
-	defer os.RemoveAll(workDir)
+	defer func() { _ = os.RemoveAll(workDir) }()
 
 	log1 := filepath.Join(workDir, "log1.txt")
 	log2 := filepath.Join(workDir, "log2.txt")

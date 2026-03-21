@@ -22,10 +22,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/consts"
 	"github.com/vogo/logtail/internal/trans"
-	"github.com/vogo/vogo/vos"
+	"github.com/vogo/vogo/vlog"
+	"github.com/vogo/vogo/vos/vuser"
 	"gopkg.in/yaml.v3"
 )
 
@@ -52,7 +52,7 @@ func ParseConfig() (config *Config, parseErr error) {
 		return parseFileConfig(*file)
 	}
 
-	configFile := filepath.Join(vos.CurrUserHome(), ".logtail.json")
+	configFile := filepath.Join(vuser.CurrUserHome(), ".logtail.json")
 
 	if *command != "" {
 		config = buildCommandLineConfig(*port, *command, *matchContains, *dingURL, *webhookURL)
@@ -62,7 +62,7 @@ func ParseConfig() (config *Config, parseErr error) {
 		return config, nil
 	}
 
-	logger.Infof("default config file: %s", configFile)
+	vlog.Infof("default config file: %s", configFile)
 	config = buildDefaultConfig(configFile)
 
 	if *port > 0 {

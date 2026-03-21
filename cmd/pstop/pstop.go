@@ -36,7 +36,6 @@ func main() {
 		}
 
 		err = process.Signal(os.Interrupt)
-
 		if err != nil {
 			panic(err)
 		}

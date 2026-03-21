@@ -21,7 +21,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/vogo/logger"
+	"github.com/vogo/vogo/vlog"
 )
 
 const TypeDing = "ding"
@@ -112,7 +112,7 @@ func (d *DingTransfer) execTrans(source string, data ...[]byte) error {
 	list[idx] = dingTextMessageDataSuffix
 
 	if err := httpTrans(d.url, list[:idx+1]...); err != nil {
-		logger.Errorf("ding error: %v", err)
+		vlog.Errorf("ding error: %v", err)
 	}
 
 	return nil

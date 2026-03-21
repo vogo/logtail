@@ -20,8 +20,8 @@ package tail
 import (
 	"fmt"
 
-	"github.com/vogo/logger"
 	"github.com/vogo/logtail/internal/conf"
+	"github.com/vogo/vogo/vlog"
 )
 
 func (t *Tailer) AddRouter(config *conf.RouterConfig) error {
@@ -40,7 +40,7 @@ func (t *Tailer) AddRouter(config *conf.RouterConfig) error {
 				for _, router := range worker.Routers {
 					if router.Name == config.Name {
 						if err = worker.AddRouter(config); err != nil {
-							logger.Errorf("add Routers error: %v", err)
+							vlog.Errorf("add Routers error: %v", err)
 						}
 					}
 				}
