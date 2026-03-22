@@ -19,6 +19,7 @@ package tail
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/trans"
@@ -146,11 +147,17 @@ func buildTransferMatcher(t *Tailer) func(ids []string) []trans.Transfer {
 func BuildTransfer(config *conf.TransferConfig) trans.Transfer {
 	switch config.Type {
 	case trans.TypeWebhook:
-		return trans.NewWebhookTransfer(config.Name, config.URL, config.Prefix)
+		opts := parseHTTPTransferOptions(config)
+
+		return trans.NewWebhookTransfer(config.Name, config.URL, config.Prefix, opts)
 	case trans.TypeDing:
-		return trans.NewDingTransfer(config.Name, config.URL, config.Prefix)
+		opts := parseHTTPTransferOptions(config)
+
+		return trans.NewDingTransfer(config.Name, config.URL, config.Prefix, opts)
 	case trans.TypeLark:
-		return trans.NewLarkTransfer(config.Name, config.URL, config.Prefix)
+		opts := parseHTTPTransferOptions(config)
+
+		return trans.NewLarkTransfer(config.Name, config.URL, config.Prefix, opts)
 	case trans.TypeFile:
 		return trans.NewFileTransfer(config.Name, config.Dir)
 	case trans.TypeConsole:
@@ -162,4 +169,31 @@ func BuildTransfer(config *conf.TransferConfig) trans.Transfer {
 			ID: config.Name,
 		}
 	}
+}
+
+func parseHTTPTransferOptions(config *conf.TransferConfig) trans.HTTPTransferOptions {
+	opts := trans.HTTPTransferOptions{
+		MaxIdleConnsPerHost: config.MaxIdleConns,
+		RateLimit:           config.RateLimit,
+		RateBurst:           config.RateBurst,
+		BatchSize:           config.BatchSize,
+	}
+
+	if config.IdleConnTimeout != "" {
+		if d, err := time.ParseDuration(config.IdleConnTimeout); err == nil {
+			opts.IdleConnTimeout = d
+		} else {
+			vlog.Warnf("invalid idle_conn_timeout %q for transfer %s: %v", config.IdleConnTimeout, config.Name, err)
+		}
+	}
+
+	if config.BatchTimeout != "" {
+		if d, err := time.ParseDuration(config.BatchTimeout); err == nil {
+			opts.BatchTimeout = d
+		} else {
+			vlog.Warnf("invalid batch_timeout %q for transfer %s: %v", config.BatchTimeout, config.Name, err)
+		}
+	}
+
+	return opts
 }

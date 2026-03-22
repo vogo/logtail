@@ -31,3 +31,16 @@ Used by: `TransferConfig.Type`
 | `file` | File/directory watching |
 
 Used by: `ServerConfig`
+
+## Transfer HTTP Config Defaults (2026-03-22-001)
+
+| Parameter | Default Value | Description |
+|-----------|---------------|-------------|
+| `max_idle_conns` | 2 | Max idle connections per host in HTTP transport |
+| `idle_conn_timeout` | `"90s"` | Duration before idle connections are closed |
+| `rate_limit` | 0 (disabled) | Requests per second; 0 means no rate limiting |
+| `rate_burst` | 1 | Token bucket burst allowance |
+| `batch_size` | 1 (disabled) | Lines per batch; 1 means send individually |
+| `batch_timeout` | `"1s"` | Max wait before flushing a partial batch |
+
+Used by: `TransferConfig`

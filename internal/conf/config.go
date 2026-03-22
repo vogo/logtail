@@ -148,9 +148,15 @@ type MatcherConfig struct {
 }
 
 type TransferConfig struct {
-	Name   string `json:"-"`
-	Type   string `json:"type"`
-	URL    string `json:"url,omitempty"`
-	Dir    string `json:"dir,omitempty"`
-	Prefix string `json:"prefix,omitempty"`
+	Name            string  `json:"-"`
+	Type            string  `json:"type"`
+	URL             string  `json:"url,omitempty"`
+	Dir             string  `json:"dir,omitempty"`
+	Prefix          string  `json:"prefix,omitempty"`
+	MaxIdleConns    int     `json:"max_idle_conns,omitempty"`
+	IdleConnTimeout string  `json:"idle_conn_timeout,omitempty"`
+	RateLimit       float64 `json:"rate_limit,omitempty"`
+	RateBurst       int     `json:"rate_burst,omitempty"`
+	BatchSize       int     `json:"batch_size,omitempty"`
+	BatchTimeout    string  `json:"batch_timeout,omitempty"`
 }

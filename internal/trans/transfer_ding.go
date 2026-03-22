@@ -18,6 +18,7 @@
 package trans
 
 import (
+	"net/http"
 	"sync/atomic"
 	"time"
 
@@ -51,14 +52,25 @@ type DingTransfer struct {
 	url          string
 	prefix       []byte
 	transferring int32 // whether transferring message
+	client       *http.Client
+	limiter      *rateLimiter // nil when rate limiting disabled
 }
 
 func (d *DingTransfer) Name() string {
 	return d.id
 }
+
 func (d *DingTransfer) Start() error { return nil }
 
-func (d *DingTransfer) Stop() error { return nil }
+func (d *DingTransfer) Stop() error {
+	if d.limiter != nil {
+		d.limiter.Stop()
+	}
+
+	closeHTTPClient(d.client)
+
+	return nil
+}
 
 // Trans transfer data to dingding.
 func (d *DingTransfer) Trans(source string, data ...[]byte) error {
@@ -86,6 +98,12 @@ func (d *DingTransfer) Trans(source string, data ...[]byte) error {
 
 //nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
 func (d *DingTransfer) execTrans(source string, data ...[]byte) error {
+	if d.limiter != nil && !d.limiter.Allow() {
+		vlog.Warnf("ding transfer %s: rate limit exceeded, dropping message", d.id)
+
+		return nil
+	}
+
 	size := dingMessageDataFixedBytesNum + len(data)
 	list := make([][]byte, size)
 	list[0] = dingTextMessageDataPrefix
@@ -111,7 +129,7 @@ func (d *DingTransfer) execTrans(source string, data ...[]byte) error {
 
 	list[idx] = dingTextMessageDataSuffix
 
-	if err := httpTrans(d.url, list[:idx+1]...); err != nil {
+	if err := httpTransWithClient(d.client, d.url, list[:idx+1]...); err != nil {
 		vlog.Errorf("ding error: %v", err)
 	}
 
@@ -119,20 +137,28 @@ func (d *DingTransfer) execTrans(source string, data ...[]byte) error {
 }
 
 // NewDingTransfer new dingding trans.
-func NewDingTransfer(id, url, prefix string) *DingTransfer {
-	trans := &DingTransfer{
+func NewDingTransfer(id, url, prefix string, opts HTTPTransferOptions) *DingTransfer {
+	t := &DingTransfer{
 		id:           id,
 		url:          url,
 		transferring: 0,
+		client: NewHTTPClient(HTTPClientConfig{
+			MaxIdleConnsPerHost: opts.MaxIdleConnsPerHost,
+			IdleConnTimeout:     opts.IdleConnTimeout,
+		}),
 	}
 
 	if prefix == "" {
 		prefix = DefaultTransferPrefix
 	}
 
-	trans.prefix = []byte(prefix)
+	t.prefix = []byte(prefix)
 
-	trans.CountReset()
+	t.CountReset()
 
-	return trans
+	if opts.RateLimit > 0 {
+		t.limiter = newRateLimiter(opts.RateLimit, opts.RateBurst)
+	}
+
+	return t
 }

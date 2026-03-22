@@ -18,14 +18,8 @@
 package trans
 
 import (
-	"bytes"
 	"errors"
-	"fmt"
-	"io"
 	"net/http"
-
-	"github.com/vogo/vogo/vio"
-	"github.com/vogo/vogo/vlog"
 )
 
 const TypeWebhook = "webhook"
@@ -33,53 +27,62 @@ const TypeWebhook = "webhook"
 var ErrHTTPStatusNonOK = errors.New("http status non ok")
 
 type WebhookTransfer struct {
-	id     string
-	url    string
-	prefix string
+	id      string
+	url     string
+	prefix  string
+	client  *http.Client
+	batcher *Batcher // nil when batch_size <= 1
 }
 
 func (d *WebhookTransfer) Name() string {
 	return d.id
 }
 
-func (d *WebhookTransfer) Trans(_ string, data ...[]byte) error {
-	return httpTrans(d.url, data...)
+func (d *WebhookTransfer) Trans(source string, data ...[]byte) error {
+	if d.batcher != nil {
+		for _, b := range data {
+			d.batcher.Add(source, b)
+		}
+
+		return nil
+	}
+
+	return httpTransWithClient(d.client, d.url, data...)
 }
 
 func (d *WebhookTransfer) Start() error { return nil }
 
-func (d *WebhookTransfer) Stop() error { return nil }
+func (d *WebhookTransfer) Stop() error {
+	if d.batcher != nil {
+		d.batcher.Stop()
+	}
+
+	closeHTTPClient(d.client)
+
+	return nil
+}
 
 // NewWebhookTransfer new webhook trans.
-func NewWebhookTransfer(id, url, prefix string) *WebhookTransfer {
-	trans := &WebhookTransfer{
+func NewWebhookTransfer(id, url, prefix string, opts HTTPTransferOptions) *WebhookTransfer {
+	t := &WebhookTransfer{
 		id:     id,
 		url:    url,
 		prefix: prefix,
+		client: NewHTTPClient(HTTPClientConfig{
+			MaxIdleConnsPerHost: opts.MaxIdleConnsPerHost,
+			IdleConnTimeout:     opts.IdleConnTimeout,
+		}),
 	}
 
-	if trans.prefix == "" {
-		trans.prefix = DefaultTransferPrefix
+	if t.prefix == "" {
+		t.prefix = DefaultTransferPrefix
 	}
 
-	return trans
-}
-
-func httpTrans(url string, data ...[]byte) error {
-	res, err := http.Post(url, "application/json", vio.NewBytesReader(data...))
-	if err != nil {
-		return err
+	if opts.BatchSize > 1 {
+		t.batcher = NewBatcher(opts.BatchSize, opts.BatchTimeout, func(source string, data []byte) error {
+			return httpTransWithClient(t.client, t.url, data)
+		})
 	}
 
-	defer func() { _ = res.Body.Close() }()
-
-	if res.StatusCode != http.StatusOK {
-		if respBody, respErr := io.ReadAll(res.Body); respErr == nil {
-			vlog.Warnf("http alert error! response: %s, request: %s", respBody, bytes.Join(data, nil))
-		}
-
-		return fmt.Errorf("http alert error, %w: %d", ErrHTTPStatusNonOK, res.StatusCode)
-	}
-
-	return nil
+	return t
 }

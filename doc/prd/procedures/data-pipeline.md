@@ -68,3 +68,64 @@ routers:
 Drop counts are exposed:
 - Via web API: `GET /manage/stats` returns per-router drop counts
 - Via periodic logging: when `statistic_period_minutes > 0`, drop counts are included in the statistics output
+
+---
+
+## Changes (2026-03-22-001): HTTP Transfer Optimization
+
+### Transfer Stage — Current Flow
+
+```
+Router.Route(data)
+  |-> Transfer.Trans(source, data)
+       |-> httpTrans(url, data...)        // uses http.Post (default client)
+            |-> http.Post(url, ...)       // new connection possible each time
+```
+
+**Problems:**
+1. `httpTrans()` uses `http.Post()` without a configured transport — no explicit connection pool tuning
+2. No client-side rate limiting for DingTalk/Lark APIs that enforce server-side rate limits
+3. WebhookTransfer sends one HTTP request per matched log line, causing excessive network calls under high throughput
+
+### Transfer Stage — Target Flow
+
+```
+Router.Route(data)
+  |-> Transfer.Trans(source, data)
+       |-> [webhook with batching] Batcher.Add(source, data)
+       |     |-> [on count threshold or timeout] Batcher.Flush()
+       |          |-> httpTransWithClient(client, url, batchedData)
+       |-> [ding/lark with rate limit] limiter.Allow() check
+       |     |-> if denied: drop + warn log
+       |-> httpTransWithClient(client, url, data...)
+            |-> client.Post(url, ...)     // reuses connections via configured transport
+```
+
+### New Component: Batcher
+
+```
+Batcher.Add(source, data):
+  -> append to internal buffer
+  -> if len(buffer) >= batchSize: Flush()
+  -> if timer not started: start timer(batchTimeout)
+
+Batcher timer fires:
+  -> Flush()
+
+Batcher.Flush():
+  -> if buffer empty: return
+  -> combine buffer entries into single payload
+  -> call transferFunc(source, combinedData)
+  -> reset buffer and timer
+
+Batcher.Stop():
+  -> Flush() (drain remaining)
+  -> stop timer
+```
+
+### Key Design Decisions
+
+- **Client per transfer**: Each transfer instance gets its own `http.Client` to isolate connection pools
+- **Backward compatible defaults**: Batching disabled (batch_size=1), rate limiting disabled (rate_limit=0), transport defaults match Go stdlib
+- **Non-blocking rate limiting**: Rate-exceeded messages are dropped with a warning log, not queued (preserves pipeline throughput)
+- **Flush on stop**: Pending batches are flushed during `Transfer.Stop()` before closing the HTTP client

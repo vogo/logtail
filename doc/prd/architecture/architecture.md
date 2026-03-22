@@ -29,7 +29,7 @@ Receives log data from Workers. Applies Matchers to filter lines. Dispatches mat
 Log line filtering: contains-match and wildcard-based format matching. Custom wildcard syntax: `?`=any byte, `~`=alpha, `!`=digit.
 
 ### Transfer (`internal/trans`)
-Interface for log output destinations. Implementations: console, file, webhook, DingTalk (`ding`), Lark. Includes transfer statistics counting.
+Interface for log output destinations. Implementations: console, file, webhook, DingTalk (`ding`), Lark. Includes transfer statistics counting. HTTP-based transfers (webhook, ding, lark) use dedicated `http.Client` instances with configurable transport pooling. DingTalk and Lark transfers support token-bucket rate limiting. Webhook transfers support optional batch aggregation via the `Batcher` component to reduce HTTP request volume.
 
 ### Web API (`internal/webapi`)
 HTTP API for runtime configuration management and websocket log streaming. Receives Tailer instance via dependency injection.

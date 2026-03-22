@@ -18,6 +18,7 @@
 package trans
 
 import (
+	"net/http"
 	"sync/atomic"
 	"time"
 
@@ -31,6 +32,8 @@ type LarkTransfer struct {
 	url          string
 	prefix       []byte
 	transferring int32 // whether transferring message
+	client       *http.Client
+	limiter      *rateLimiter // nil when rate limiting disabled
 }
 
 // TypeLark transfer type lark.
@@ -53,9 +56,18 @@ var (
 func (d *LarkTransfer) Name() string {
 	return d.id
 }
+
 func (d *LarkTransfer) Start() error { return nil }
 
-func (d *LarkTransfer) Stop() error { return nil }
+func (d *LarkTransfer) Stop() error {
+	if d.limiter != nil {
+		d.limiter.Stop()
+	}
+
+	closeHTTPClient(d.client)
+
+	return nil
+}
 
 // Trans transfer data to Lark.
 func (d *LarkTransfer) Trans(source string, data ...[]byte) error {
@@ -83,6 +95,12 @@ func (d *LarkTransfer) Trans(source string, data ...[]byte) error {
 
 //nolint:dupl // ignore duplicated code for easy maintenance for diff transfers.
 func (d *LarkTransfer) execTrans(source string, data ...[]byte) error {
+	if d.limiter != nil && !d.limiter.Allow() {
+		vlog.Warnf("lark transfer %s: rate limit exceeded, dropping message", d.id)
+
+		return nil
+	}
+
 	size := larkMessageDataFixedBytesNum + len(data)
 	list := make([][]byte, size)
 	list[0] = larkTextMessageDataPrefix
@@ -108,7 +126,7 @@ func (d *LarkTransfer) execTrans(source string, data ...[]byte) error {
 
 	list[idx] = larkTextMessageDataSuffix
 
-	if err := httpTrans(d.url, list[:idx+1]...); err != nil {
+	if err := httpTransWithClient(d.client, d.url, list[:idx+1]...); err != nil {
 		vlog.Errorf("lark error: %v", err)
 	}
 
@@ -116,20 +134,28 @@ func (d *LarkTransfer) execTrans(source string, data ...[]byte) error {
 }
 
 // NewLarkTransfer initialize a lark trans.
-func NewLarkTransfer(id, url, prefix string) *LarkTransfer {
-	trans := &LarkTransfer{
+func NewLarkTransfer(id, url, prefix string, opts HTTPTransferOptions) *LarkTransfer {
+	t := &LarkTransfer{
 		id:           id,
 		url:          url,
 		transferring: 0,
+		client: NewHTTPClient(HTTPClientConfig{
+			MaxIdleConnsPerHost: opts.MaxIdleConnsPerHost,
+			IdleConnTimeout:     opts.IdleConnTimeout,
+		}),
 	}
 
 	if prefix == "" {
 		prefix = DefaultTransferPrefix
 	}
 
-	trans.prefix = []byte(prefix)
+	t.prefix = []byte(prefix)
 
-	trans.CountReset()
+	t.CountReset()
 
-	return trans
+	if opts.RateLimit > 0 {
+		t.limiter = newRateLimiter(opts.RateLimit, opts.RateBurst)
+	}
+
+	return t
 }
