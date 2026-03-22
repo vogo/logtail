@@ -135,9 +135,11 @@ type FileConfig struct {
 }
 
 type RouterConfig struct {
-	Name      string           `json:"-"`
-	Matchers  []*MatcherConfig `json:"matchers"`
-	Transfers []string         `json:"transfers"`
+	Name         string           `json:"-"`
+	Matchers     []*MatcherConfig `json:"matchers"`
+	Transfers    []string         `json:"transfers"`
+	BufferSize   int              `json:"buffer_size,omitempty"`
+	BlockingMode bool             `json:"blocking_mode,omitempty"`
 }
 
 type MatcherConfig struct {

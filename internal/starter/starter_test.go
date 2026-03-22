@@ -179,21 +179,126 @@ func TestCommands(t *testing.T) {
 
 	config := testCommandConfig(commands)
 
-	assert.Nil(t, starter.StartLogtail(config))
+	tailer1, err := starter.StartLogtail(config)
+	assert.Nil(t, err)
+	assert.NotNil(t, tailer1)
 
 	<-time.After(time.Second * 2)
 
-	_ = starter.StopLogtail()
+	tailer1.Stop()
 
 	<-time.After(time.Second * 2)
 
 	config.Servers[testServerName].CommandGen = commandGen
 
-	assert.Nil(t, starter.StartLogtail(config))
+	tailer2, err := starter.StartLogtail(config)
+	assert.Nil(t, err)
+	assert.NotNil(t, tailer2)
 
 	<-time.After(time.Second * 2)
 
-	_ = starter.StopLogtail()
+	tailer2.Stop()
+}
+
+func TestStartLogtailInvalidConfig(t *testing.T) {
+	t.Parallel()
+
+	// Config with server referencing non-existent router should fail validation
+	config := &conf.Config{
+		Servers: map[string]*conf.ServerConfig{
+			"s1": {
+				Name:    "s1",
+				Command: "echo test",
+				Routers: []string{"nonexistent-router"},
+			},
+		},
+	}
+
+	tailer, err := starter.StartLogtail(config)
+	assert.Nil(t, tailer)
+	assert.NotNil(t, err)
+}
+
+func TestStartLogtailValidConfig(t *testing.T) {
+	t.Parallel()
+
+	config := &conf.Config{
+		Transfers: map[string]*conf.TransferConfig{
+			"null": {
+				Name: "null",
+				Type: trans.TypeNull,
+			},
+		},
+		Routers: map[string]*conf.RouterConfig{
+			"r1": {
+				Name:      "r1",
+				Transfers: []string{"null"},
+			},
+		},
+		Servers: map[string]*conf.ServerConfig{
+			"s1": {
+				Name:    "s1",
+				Command: "echo hello",
+				Routers: []string{"r1"},
+			},
+		},
+	}
+
+	tailer, err := starter.StartLogtail(config)
+	assert.Nil(t, err)
+	assert.NotNil(t, tailer)
+
+	<-time.After(200 * time.Millisecond)
+
+	tailer.Stop()
+}
+
+func TestMultipleIndependentTailers(t *testing.T) {
+	t.Parallel()
+
+	makeConfig := func(serverName string) *conf.Config {
+		return &conf.Config{
+			Transfers: map[string]*conf.TransferConfig{
+				"null": {
+					Name: "null",
+					Type: trans.TypeNull,
+				},
+			},
+			Routers: map[string]*conf.RouterConfig{
+				"r1": {
+					Name:      "r1",
+					Transfers: []string{"null"},
+				},
+			},
+			Servers: map[string]*conf.ServerConfig{
+				serverName: {
+					Name:    serverName,
+					Command: "echo hello",
+					Routers: []string{"r1"},
+				},
+			},
+		}
+	}
+
+	tailer1, err1 := starter.StartLogtail(makeConfig("s1"))
+	assert.Nil(t, err1)
+	assert.NotNil(t, tailer1)
+
+	tailer2, err2 := starter.StartLogtail(makeConfig("s2"))
+	assert.Nil(t, err2)
+	assert.NotNil(t, tailer2)
+
+	<-time.After(200 * time.Millisecond)
+
+	// Stop tailer1, tailer2 should remain unaffected
+	tailer1.Stop()
+
+	<-time.After(200 * time.Millisecond)
+
+	// tailer2 should still have its server
+	assert.NotNil(t, tailer2.Servers["s2"])
+
+	tailer2.Stop()
 }
 
 func testCommandConfig(commands string) *conf.Config {

@@ -15,43 +15,18 @@
  * limitations under the License.
  */
 
-package main
+package webapi
 
 import (
-	"flag"
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+	"encoding/json"
+	"net/http"
 
-	"github.com/vogo/logtail/internal/starter"
 	"github.com/vogo/logtail/internal/tail"
-	"github.com/vogo/logtail/internal/webapi"
-	"github.com/vogo/vogo/vlog"
 )
 
-func main() {
-	tailer, err := starter.Start()
-	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err)
-		flag.PrintDefaults()
-		os.Exit(1)
-	}
+func routeToStats(runner *tail.Tailer, response http.ResponseWriter) {
+	stats := runner.CollectRouterStats()
 
-	webapi.StartWebAPI(tailer)
-
-	handleSignal(tailer)
-}
-
-func handleSignal(tailer *tail.Tailer) {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	sig := <-signalChan
-	vlog.Infof("signal: %v", sig)
-
-	tailer.Stop()
-
-	// wait all goroutines stopping
-	<-time.After(time.Second)
+	response.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(response).Encode(stats)
 }

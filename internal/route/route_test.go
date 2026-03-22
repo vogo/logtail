@@ -20,9 +20,11 @@ package route_test
 import (
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vogo/gorun"
+	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
 	"github.com/vogo/logtail/internal/route"
 	"github.com/vogo/logtail/internal/trans"
@@ -52,4 +54,201 @@ func TestRoute(t *testing.T) {
 	err := router.Route([]byte(testLogMessage))
 
 	assert.Nil(t, err)
+}
+
+func TestReceiveDropCounting(t *testing.T) {
+	t.Parallel()
+
+	const bufferSize = 1
+	const totalMessages = 100
+
+	runner := gorun.New()
+
+	router := &route.Router{
+		Lock:         sync.Mutex{},
+		Runner:       runner,
+		ID:           "drop-test",
+		Name:         "drop-test",
+		Source:       "test",
+		Channel:      make(chan []byte, bufferSize),
+		BufferSize:   bufferSize,
+		BlockingMode: false,
+	}
+
+	// Send messages rapidly without consuming
+	for i := 0; i < totalMessages; i++ {
+		router.Receive([]byte("msg"))
+	}
+
+	// Drain the channel to count delivered messages
+	close(router.Channel)
+
+	var delivered int64
+	for range router.Channel {
+		delivered++
+	}
+
+	dropped := router.DroppedMessages()
+	assert.Equal(t, int64(totalMessages), delivered+dropped)
+	assert.Greater(t, dropped, int64(0))
+}
+
+func TestReceiveBlockingMode(t *testing.T) {
+	t.Parallel()
+
+	const bufferSize = 1
+
+	runner := gorun.New()
+
+	router := &route.Router{
+		Lock:         sync.Mutex{},
+		Runner:       runner,
+		ID:           "blocking-test",
+		Name:         "blocking-test",
+		Source:       "test",
+		Channel:      make(chan []byte, bufferSize),
+		BufferSize:   bufferSize,
+		BlockingMode: true,
+	}
+
+	// Fill the channel
+	router.Channel <- []byte("fill")
+
+	// Receive in a goroutine -- should block since channel is full
+	done := make(chan struct{})
+
+	go func() {
+		router.Receive([]byte("blocked"))
+		close(done)
+	}()
+
+	// Verify it blocks for a short period
+	select {
+	case <-done:
+		t.Fatal("Receive should have blocked but returned immediately")
+	case <-time.After(50 * time.Millisecond):
+		// expected: still blocked
+	}
+
+	// Consume from the channel to unblock
+	<-router.Channel
+
+	// Now the goroutine should complete
+	select {
+	case <-done:
+		// success
+	case <-time.After(time.Second):
+		t.Fatal("Receive did not unblock after consuming from channel")
+	}
+
+	// No drops in blocking mode
+	assert.Equal(t, int64(0), router.DroppedMessages())
+}
+
+func TestBlockingModeRespectsStop(t *testing.T) {
+	t.Parallel()
+
+	const bufferSize = 1
+
+	runner := gorun.New()
+
+	router := &route.Router{
+		Lock:         sync.Mutex{},
+		Runner:       runner.NewChild(),
+		ID:           "stop-test",
+		Name:         "stop-test",
+		Source:       "test",
+		Channel:      make(chan []byte, bufferSize),
+		BufferSize:   bufferSize,
+		BlockingMode: true,
+	}
+
+	// Fill the channel
+	router.Channel <- []byte("fill")
+
+	// Receive in a goroutine -- should block since channel is full
+	done := make(chan struct{})
+
+	go func() {
+		router.Receive([]byte("blocked"))
+		close(done)
+	}()
+
+	// Verify it blocks
+	select {
+	case <-done:
+		t.Fatal("Receive should have blocked but returned immediately")
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	// Stop the runner -- should unblock Receive
+	router.Stop()
+
+	select {
+	case <-done:
+		// success
+	case <-time.After(time.Second):
+		t.Fatal("Receive did not unblock after runner stop")
+	}
+}
+
+func TestConfigurableBufferSize(t *testing.T) {
+	t.Parallel()
+
+	runner := gorun.New()
+	transferMatcher := func(_ []string) []trans.Transfer { return nil }
+
+	// Test custom buffer size
+	routerConfig := &conf.RouterConfig{
+		Name:       "custom-buf",
+		BufferSize: 64,
+	}
+
+	router := route.BuildRouter(runner, routerConfig, transferMatcher, "buf-test", "source")
+	assert.Equal(t, 64, router.BufferSize)
+	assert.Equal(t, 64, cap(router.Channel))
+
+	router.Stop()
+
+	// Test default buffer size when zero
+	routerConfig2 := &conf.RouterConfig{
+		Name:       "default-buf",
+		BufferSize: 0,
+	}
+
+	router2 := route.BuildRouter(runner, routerConfig2, transferMatcher, "buf-test-2", "source")
+	assert.Equal(t, route.DefaultChannelBufferSize, router2.BufferSize)
+	assert.Equal(t, route.DefaultChannelBufferSize, cap(router2.Channel))
+
+	router2.Stop()
+
+	// Test default buffer size when negative
+	routerConfig3 := &conf.RouterConfig{
+		Name:       "neg-buf",
+		BufferSize: -1,
+	}
+
+	router3 := route.BuildRouter(runner, routerConfig3, transferMatcher, "buf-test-3", "source")
+	assert.Equal(t, route.DefaultChannelBufferSize, router3.BufferSize)
+
+	router3.Stop()
+}
+
+func TestBuildRouterBlockingMode(t *testing.T) {
+	t.Parallel()
+
+	runner := gorun.New()
+	transferMatcher := func(_ []string) []trans.Transfer { return nil }
+
+	routerConfig := &conf.RouterConfig{
+		Name:         "blocking",
+		BlockingMode: true,
+		BufferSize:   8,
+	}
+
+	router := route.BuildRouter(runner, routerConfig, transferMatcher, "block-test", "source")
+	assert.True(t, router.BlockingMode)
+	assert.Equal(t, 8, router.BufferSize)
+
+	router.Stop()
 }

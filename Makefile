@@ -13,7 +13,7 @@ check: license-check
 		golangci-lint run
 
 test:
-		go test -v ./... -coverprofile=coverage.txt -covermode=atomic
+		go test -v ./... -coverprofile=coverage.out -covermode=atomic
 
 clean-dist:
 	mkdir -p dist

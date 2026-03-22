@@ -19,6 +19,7 @@ package route
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/vogo/gorun"
 	"github.com/vogo/logtail/internal/conf"
@@ -32,14 +33,17 @@ const DefaultChannelBufferSize = 16
 type RoutersBuilder func() *[]Router
 
 type Router struct {
-	Lock      sync.Mutex
-	Runner    *gorun.Runner
-	ID        string
-	Name      string
-	Source    string
-	Channel   chan []byte
-	Matchers  []match.Matcher
-	Transfers []trans.Transfer
+	Lock         sync.Mutex
+	Runner       *gorun.Runner
+	ID           string
+	Name         string
+	Source       string
+	Channel      chan []byte
+	Matchers     []match.Matcher
+	Transfers    []trans.Transfer
+	DropCount    atomic.Int64
+	BufferSize   int
+	BlockingMode bool
 }
 
 func BuildRouter(workerRunner *gorun.Runner,
@@ -52,15 +56,22 @@ func BuildRouter(workerRunner *gorun.Runner,
 		panic(err)
 	}
 
+	bufferSize := routerConfig.BufferSize
+	if bufferSize <= 0 {
+		bufferSize = DefaultChannelBufferSize
+	}
+
 	router := &Router{
-		ID:        routerID,
-		Name:      routerConfig.Name,
-		Source:    source,
-		Lock:      sync.Mutex{},
-		Runner:    workerRunner.NewChild(),
-		Channel:   make(chan []byte, DefaultChannelBufferSize),
-		Matchers:  matchers,
-		Transfers: transfersFunc(routerConfig.Transfers),
+		ID:           routerID,
+		Name:         routerConfig.Name,
+		Source:       source,
+		Lock:         sync.Mutex{},
+		Runner:       workerRunner.NewChild(),
+		Channel:      make(chan []byte, bufferSize),
+		Matchers:     matchers,
+		Transfers:    transfersFunc(routerConfig.Transfers),
+		BufferSize:   bufferSize,
+		BlockingMode: routerConfig.BlockingMode,
 	}
 
 	return router
@@ -110,12 +121,26 @@ func (r *Router) Receive(data []byte) {
 		_ = recover()
 	}()
 
-	select {
-	case <-r.Runner.C:
-		return
-	case r.Channel <- data:
-	default:
+	if r.BlockingMode {
+		select {
+		case <-r.Runner.C:
+			return
+		case r.Channel <- data:
+		}
+	} else {
+		select {
+		case <-r.Runner.C:
+			return
+		case r.Channel <- data:
+		default:
+			r.DropCount.Add(1)
+		}
 	}
+}
+
+// DroppedMessages returns the cumulative count of dropped messages.
+func (r *Router) DroppedMessages() int64 {
+	return r.DropCount.Load()
 }
 
 func (r *Router) Matches(bytes []byte) bool {

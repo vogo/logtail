@@ -32,6 +32,8 @@ func routeToManage(runner *tail.Tailer, request *http.Request, response http.Res
 		routeToRouter(runner, request, response, leftRouter)
 	case "server":
 		routeToServer(runner, request, response, leftRouter)
+	case "stats":
+		routeToStats(runner, response)
 	default:
 		routeToNotFound(response)
 	}

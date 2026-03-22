@@ -28,11 +28,6 @@ import (
 	"github.com/vogo/vogo/vlog"
 )
 
-// DefaultTailer the default tailer.
-//
-//nolint:gochecknoglobals // ignore this
-var DefaultTailer *Tailer
-
 // Tailer the logtail tailer.
 type Tailer struct {
 	lock      sync.Mutex
@@ -76,6 +71,41 @@ func (t *Tailer) Start() error {
 	}
 
 	return nil
+}
+
+// RouterStats holds pipeline statistics for a single router.
+type RouterStats struct {
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Source       string `json:"source"`
+	DropCount    int64  `json:"drop_count"`
+	BufferSize   int    `json:"buffer_size"`
+	BlockingMode bool   `json:"blocking_mode"`
+}
+
+// CollectRouterStats returns pipeline statistics for all active routers.
+func (t *Tailer) CollectRouterStats() []RouterStats {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	stats := make([]RouterStats, 0)
+
+	for _, server := range t.Servers {
+		for _, worker := range server.Workers {
+			for _, router := range worker.Routers {
+				stats = append(stats, RouterStats{
+					ID:           router.ID,
+					Name:         router.Name,
+					Source:       router.Source,
+					DropCount:    router.DroppedMessages(),
+					BufferSize:   router.BufferSize,
+					BlockingMode: router.BlockingMode,
+				})
+			}
+		}
+	}
+
+	return stats
 }
 
 // Stop the runner.

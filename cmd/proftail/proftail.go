@@ -18,6 +18,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -27,29 +29,35 @@ import (
 	"time"
 
 	"github.com/vogo/logtail/internal/starter"
+	"github.com/vogo/logtail/internal/tail"
 	"github.com/vogo/logtail/internal/webapi"
 	"github.com/vogo/vogo/vlog"
 )
 
 func main() {
-	runner := starter.Start()
+	tailer, err := starter.Start()
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err)
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
 
-	webapi.StartWebAPI(runner)
+	webapi.StartWebAPI(tailer)
 
 	go func() {
 		log.Println(http.ListenAndServe(":6060", nil))
 	}()
 
-	handleSignal()
+	handleSignal(tailer)
 }
 
-func handleSignal() {
+func handleSignal(tailer *tail.Tailer) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	sig := <-signalChan
 	vlog.Infof("signal: %v", sig)
 
-	_ = starter.StopLogtail()
+	tailer.Stop()
 
 	// wait all goroutines stopping
 	<-time.After(time.Second)
