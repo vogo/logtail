@@ -48,9 +48,6 @@ func TestWorkerWrite_EmptyData(t *testing.T) {
 func TestWorkerWrite_SingleLine(t *testing.T) {
 	t.Parallel()
 
-	var received [][]byte
-
-	mu := sync.Mutex{}
 	runner := gorun.New()
 
 	router := &route.Router{
@@ -65,24 +62,19 @@ func TestWorkerWrite_SingleLine(t *testing.T) {
 	w.Runner = runner
 	w.Routers["test-router"] = router
 
-	go func() {
-		for data := range router.Channel {
-			mu.Lock()
-			received = append(received, data)
-			mu.Unlock()
-		}
-	}()
-
 	n, err := w.Write([]byte("hello\n"))
 	assert.NoError(t, err)
 	assert.Equal(t, 6, n)
 
-	router.Stop()
+	// Read directly from channel — data should already be buffered
+	select {
+	case data := <-router.Channel:
+		assert.Equal(t, "hello\n", string(data))
+	default:
+		t.Fatal("expected data in router channel")
+	}
 
-	mu.Lock()
-	assert.Len(t, received, 1)
-	assert.Equal(t, "hello\n", string(received[0]))
-	mu.Unlock()
+	router.Stop()
 }
 
 func TestWorkerStopRouters(t *testing.T) {
