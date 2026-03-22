@@ -81,5 +81,8 @@ jobs:
       - name: Go Test
         run: make test
 
+      - name: Integration Test
+        run: make integration
+
       - name: Coverage
         run: bash <(curl -s https://codecov.io/bash)
