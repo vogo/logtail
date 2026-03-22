@@ -85,4 +85,6 @@ jobs:
         run: make integration
 
       - name: Coverage
-        run: bash <(curl -s https://codecov.io/bash)
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.out
