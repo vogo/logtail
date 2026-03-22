@@ -23,5 +23,9 @@ func SetCmdSysProcAttr(cmd *exec.Cmd) {
 }
 
 func KillCmd(cmd *exec.Cmd) error {
+	if cmd.Process == nil {
+		return nil
+	}
+
 	return cmd.Process.Kill()
 }
