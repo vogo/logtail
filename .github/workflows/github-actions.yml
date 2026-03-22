@@ -84,7 +84,8 @@ jobs:
       - name: Integration Test
         run: make integration
 
-      - name: Coverage
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.out
