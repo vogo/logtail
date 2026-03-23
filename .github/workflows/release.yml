@@ -19,15 +19,70 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v1.7.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate version format
+        run: |
+          if [[ ! "${{ inputs.version }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: version must match pattern vX.Y.Z (e.g. v1.7.0)"
+            exit 1
+          fi
+
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.0'
+
+      - name: Install tools
+        run: |
+          go install golang.org/x/tools/cmd/goimports@latest
+          go install mvdan.cc/gofumpt@latest
+          go install github.com/vogo/license-header-checker/cmd/license-header-checker@latest
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Build
+        run: make build
+
+      - name: Integration Test
+        run: make integration
+
+  tag:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Create and push tag
+        run: |
+          git tag ${{ inputs.version }}
+          git push origin ${{ inputs.version }}
+
   release:
+    needs: tag
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -54,7 +109,7 @@ jobs:
         with:
           go-version: '1.25.0'
 
-      - name: Build
+      - name: Build binary
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
@@ -65,7 +120,7 @@ jobs:
             BINARY=logtail.exe
           fi
           go build -trimpath -ldflags="-s -w" -o "${BINARY}" logtail.go
-          ARCHIVE="logtail-${GITHUB_REF_NAME}-${GOOS}-${GOARCH}"
+          ARCHIVE="logtail-${{ inputs.version }}-${GOOS}-${GOARCH}"
           if [ "$GOOS" = "windows" ]; then
             zip "${ARCHIVE}.zip" "${BINARY}"
           else
@@ -75,6 +130,7 @@ jobs:
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.version }}
           files: |
             logtail-*.tar.gz
             logtail-*.zip
