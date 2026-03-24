@@ -65,7 +65,7 @@ func (cm *ContainsMatcher) Match(bytes []byte) bool {
 	//nolint:varnamelen //ignore this
 	j := -1
 
-	for i := 0; i < length; i++ {
+	for i := range length {
 		for j > -1 && cm.pattern[j+1] != bytes[i] {
 			j = cm.kmp[j]
 		}

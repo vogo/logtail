@@ -79,7 +79,7 @@ func TestHTTPClientConnectionReuse(t *testing.T) {
 	wh := trans.NewWebhookTransfer("test", server.URL, "", trans.HTTPTransferOptions{})
 	defer func() { _ = wh.Stop() }()
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		err := wh.Trans("src", []byte("hello"))
 		require.NoError(t, err)
 	}

@@ -31,7 +31,7 @@ func TestRateLimiterAllowWithinBurst(t *testing.T) {
 	defer rl.Stop()
 
 	// Should allow burst of 5
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		assert.True(t, rl.Allow(), "should allow request %d within burst", i)
 	}
 }
@@ -43,7 +43,7 @@ func TestRateLimiterDenyBeyondBurst(t *testing.T) {
 	defer rl.Stop()
 
 	// Exhaust burst
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		assert.True(t, rl.Allow())
 	}
 
@@ -99,7 +99,7 @@ func TestRateLimiterStop(t *testing.T) {
 	// After stop, Allow should still work (just no more refills)
 	// Consume remaining tokens
 	allowed := 0
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		if rl.Allow() {
 			allowed++
 		}

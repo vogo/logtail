@@ -1,8 +1,7 @@
-version := v1.6.0
-
 format:
 		goimports -w -l .
 		gofmt -w .
+		go fix ./...
 		gofumpt -w .
 
 license-check:
@@ -21,12 +20,6 @@ integration:
 clean-dist:
 	mkdir -p dist
 	rm -f dist/*.zip
-
-package: package-linux
-	cd dist && GOOS=darwin go build ../logtail.go && zip logtail-$(version)-mac.zip logtail && rm -f logtail
-
-package-linux: clean-dist
-	cd dist && GOOS=linux go build ../logtail.go && zip logtail-$(version)-linux.zip logtail && rm -f logtail
 
 build: format check test
 

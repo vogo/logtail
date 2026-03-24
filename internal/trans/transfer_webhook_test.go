@@ -199,7 +199,7 @@ func TestWebhookTransferBackwardCompatibility(t *testing.T) {
 	wh := trans.NewWebhookTransfer("wh-compat", server.URL, "", trans.HTTPTransferOptions{})
 	defer func() { _ = wh.Stop() }()
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		require.NoError(t, wh.Trans("src", []byte("msg")))
 	}
 

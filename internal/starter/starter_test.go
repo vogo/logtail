@@ -41,7 +41,7 @@ func initFireData() {
 
 	var longText string
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		longText += baseText
 	}
 
@@ -143,7 +143,7 @@ func TestServer(t *testing.T) {
 
 	server := tailer.Servers[config.Servers[serverID].Name]
 
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		fireServer(server)
 	}
 

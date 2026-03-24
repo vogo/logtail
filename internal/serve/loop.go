@@ -47,8 +47,8 @@ func (s *Server) StartCommandGenLoop(gen string) {
 				// create a new chan everytime
 				s.workerError = make(chan error)
 
-				cmds := bytes.Split(commands, []byte{'\n'})
-				for _, cmd := range cmds {
+				cmds := bytes.SplitSeq(commands, []byte{'\n'})
+				for cmd := range cmds {
 					s.AddWorker(string(cmd), true)
 				}
 

@@ -19,6 +19,7 @@ package tail
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/vogo/vlog"
@@ -72,10 +73,8 @@ func (t *Tailer) DeleteRouter(name string) error {
 
 func (t *Tailer) IsRouterUsing(name string) bool {
 	for _, server := range t.Config.Servers {
-		for _, router := range server.Routers {
-			if router == name {
-				return true
-			}
+		if slices.Contains(server.Routers, name) {
+			return true
 		}
 	}
 

@@ -19,6 +19,7 @@ package tail
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/vogo/logtail/internal/conf"
@@ -115,10 +116,8 @@ func (t *Tailer) RemoveTransfer(name string) error {
 
 func (t *Tailer) IsTransferUsing(name string) bool {
 	for _, router := range t.Config.Routers {
-		for i := range router.Transfers {
-			if router.Transfers[i] == name {
-				return true
-			}
+		if slices.Contains(router.Transfers, name) {
+			return true
 		}
 	}
 

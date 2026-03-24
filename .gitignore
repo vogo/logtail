@@ -1,6 +1,7 @@
 .idea
 .vscode
 .claude
+/logtail
 /doc/changes
 
 server.crt

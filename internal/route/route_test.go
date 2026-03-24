@@ -76,7 +76,7 @@ func TestReceiveDropCounting(t *testing.T) {
 	}
 
 	// Send messages rapidly without consuming
-	for i := 0; i < totalMessages; i++ {
+	for range totalMessages {
 		router.Receive([]byte("msg"))
 	}
 

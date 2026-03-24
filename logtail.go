@@ -35,7 +35,7 @@ func main() {
 	tailer, err := starter.Start()
 	if err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
-		flag.PrintDefaults()
+		flag.Usage()
 		os.Exit(1)
 	}
 

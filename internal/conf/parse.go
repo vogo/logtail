@@ -19,6 +19,7 @@ package conf
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -38,13 +39,51 @@ func ParseConfig() (config *Config, parseErr error) {
 	}()
 
 	var (
-		file          = flag.String("file", "", "config file")
-		port          = flag.Int("port", 0, "tail port")
-		command       = flag.String("cmd", "", "tail command")
-		matchContains = flag.String("match-contains", "", "a containing string")
-		dingURL       = flag.String("ding-url", "", "dingding url")
-		webhookURL    = flag.String("webhook-url", "", "webhook url")
+		file          = flag.String("file", "", "path to the config file (JSON or YAML format)")
+		port          = flag.Int("port", 0, "HTTP port for the web API and websocket log streaming")
+		command       = flag.String("cmd", "", "shell command to tail output from")
+		matchContains = flag.String("match-contains", "", "filter log lines containing this string")
+		dingURL       = flag.String("ding-url", "", "DingTalk webhook URL for sending matched log lines")
+		webhookURL    = flag.String("webhook-url", "", "webhook URL for sending matched log lines via HTTP POST")
 	)
+
+	flag.Usage = func() {
+		_, _ = fmt.Fprintf(flag.CommandLine.Output(), `logtail - a log tailing utility with filtering and forwarding
+
+Usage:
+  logtail [options]
+
+Options:
+`)
+		flag.PrintDefaults()
+		_, _ = fmt.Fprintf(flag.CommandLine.Output(), `
+Examples:
+  # Tail a command output to console
+  logtail -cmd "tail -f /var/log/syslog"
+
+  # Tail with a filter for lines containing "ERROR"
+  logtail -cmd "tail -f /var/log/app.log" -match-contains "ERROR"
+
+  # Tail and forward matched lines to a webhook
+  logtail -cmd "tail -f /var/log/app.log" -match-contains "ERROR" -webhook-url "http://localhost:8080/hook"
+
+  # Tail and send alerts to DingTalk
+  logtail -cmd "tail -f /var/log/app.log" -match-contains "FATAL" -ding-url "https://oapi.dingtalk.com/robot/send?access_token=xxx"
+
+  # Start with a config file for advanced setup (multiple servers, routers, transfers)
+  logtail -file /path/to/config.yaml
+
+  # Start with web API on a specific port
+  logtail -cmd "tail -f /var/log/app.log" -port 54321
+
+  # Use default config file (~/.logtail.json) with web API port
+  logtail -port 54321
+
+Config file:
+  If no -file or -cmd is specified, logtail looks for ~/.logtail.json as the default config.
+  The config file supports JSON and YAML formats with servers, routers, matchers, and transfers.
+`)
+	}
 
 	flag.Parse()
 
