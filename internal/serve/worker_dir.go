@@ -30,7 +30,17 @@ import (
 
 // startDirWorkers Start Workers using file config.
 func (s *Server) startDirWorkers(config *conf.FileConfig) {
-	watcher, err := fwatch.New(config.Method, fileInactiveDeadline, fileSilenceDeadline)
+	opts := []fwatch.Option{
+		fwatch.WithMethod(config.Method),
+		fwatch.WithInactiveDuration(fileInactiveDeadline),
+		fwatch.WithSilenceDuration(fileSilenceDeadline),
+	}
+
+	if config.DirFileCountLimit > 0 {
+		opts = append(opts, fwatch.WithDirFileCountLimit(config.DirFileCountLimit))
+	}
+
+	watcher, err := fwatch.New(opts...)
 	if err != nil {
 		vlog.Fatal(err)
 	}
@@ -43,10 +53,6 @@ func (s *Server) startDirWorkers(config *conf.FileConfig) {
 			(config.Suffix == "" || strings.HasSuffix(name, config.Suffix))
 	}
 
-	if config.DirFileCountLimit > 0 {
-		watcher.SetDirFileCountLimit(config.DirFileCountLimit)
-	}
-
 	vlog.Infof("server [%s] StartLoop watch directory: %s", s.ID, config.Path)
 
 	if err = watcher.WatchDir(config.Path, config.Recursive, matcher); err != nil {
@@ -57,7 +63,7 @@ func (s *Server) startDirWorkers(config *conf.FileConfig) {
 // file inactive deadline, default one hour.
 const fileInactiveDeadline = time.Hour
 
-// file inactive deadline, default one day.
+// file silence deadline, default one day.
 const fileSilenceDeadline = time.Hour * 24
 
 func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) {
@@ -74,7 +80,7 @@ func (s *Server) startDirWatchWorkers(path string, watcher *fwatch.FileWatcher) 
 		case err := <-s.workerError:
 			// only log worker error
 			vlog.Errorf("server [%s] receive worker error: %+v", s.ID, err)
-		case <-watcher.Runner.C:
+		case <-watcher.Done():
 			return
 		case <-s.Runner.C:
 			return

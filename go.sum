@@ -1,5 +1,7 @@
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S9k=
+github.com/fsnotify/fsnotify v1.9.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
 github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=
 github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
@@ -7,17 +9,12 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.7.1 h1:5TQK59W5E3v0r2duFAb7P95B6hEeOyEnHRa8MjYSMTY=
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/vogo/fsnotify v1.4.10-0.20210606062753-a470c8d404e0 h1:shwCWdzShrGvCk9bhicXFMPCPbxE+EqzJtMKd3Lbrn4=
-github.com/vogo/fsnotify v1.4.10-0.20210606062753-a470c8d404e0/go.mod h1:eNmmuMP+7CDRMeHrX0U8GN3rAY4Ar7GprPWoW0iuBYI=
-github.com/vogo/fwatch v1.3.0 h1:piQG35JjdCvSsbvEyN9nir6/FTSAhrkHDPwt0pba5Tg=
-github.com/vogo/fwatch v1.3.0/go.mod h1:Is1BRsMB5Lt13l0FZOR0gEN3uXYE4iEq5//jmv8WfEI=
+github.com/vogo/fwatch v1.6.1 h1:8PGxOaQ+E2iFJDq8VjaE/rVAHjvfoDNitgVWDYgPQCo=
+github.com/vogo/fwatch v1.6.1/go.mod h1:lIZh/JdMXeR7RkWzdgFHdVjV52GY39UisOPlsmTluHk=
 github.com/vogo/gorun v1.1.0 h1:i/8HhmNyjMa79bFn1ZHGTO3KyiWQcZPBsFGpvgkcap8=
 github.com/vogo/gorun v1.1.0/go.mod h1:MyOjF/DbZSz40GQ5657Ou9NEfNlUbMhvpXjDvh4L8OY=
-github.com/vogo/logger v1.5.1 h1:voyVY69TpM/x1lml4LYy4jMe5z0kDh5jW1oatcikajM=
-github.com/vogo/logger v1.5.1/go.mod h1:9U+qupncHpWpt4ptlxFm9bvDb9EjbGIA+cY/tYtW4Kg=
 github.com/vogo/vogo v0.0.0-20260219094625-1e3cccd1958b h1:91VTJx9BMOIf4L2BQDhtxjVyQM7Mv9q9GjipSL6C1Ms=
 github.com/vogo/vogo v0.0.0-20260219094625-1e3cccd1958b/go.mod h1:VRv2Yyfl28FU6qRzzDvPP+eqqLhcqNrxQ5YGhknSvvk=
-golang.org/x/sys v0.0.0-20210603125802-9665404d3644/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.42.0 h1:omrd2nAlyT5ESRdCLYdm3+fMfNFE/+Rf4bDIQImRJeo=
 golang.org/x/sys v0.42.0/go.mod h1:4GL1E5IUh+htKOUEOaiffhrAeqysfVGipDYzABqnCmw=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
