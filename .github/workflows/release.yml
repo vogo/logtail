@@ -30,7 +30,7 @@ permissions:
   contents: write
 
 jobs:
-  validate:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Validate version format
@@ -69,68 +69,36 @@ jobs:
       - name: Integration Test
         run: make integration
 
-  tag:
-    needs: validate
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
+      - name: Build release binaries
+        run: |
+          mkdir -p dist
+          platforms=("linux/amd64" "linux/arm64" "darwin/amd64" "darwin/arm64" "windows/amd64" "windows/arm64")
+          for platform in "${platforms[@]}"; do
+            GOOS="${platform%/*}"
+            GOARCH="${platform#*/}"
+            BINARY=logtail
+            if [ "$GOOS" = "windows" ]; then
+              BINARY=logtail.exe
+            fi
+            CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" go build -trimpath -ldflags="-s -w" -o "${BINARY}" logtail.go
+            ARCHIVE="dist/logtail-${{ inputs.version }}-${GOOS}-${GOARCH}"
+            if [ "$GOOS" = "windows" ]; then
+              zip "${ARCHIVE}.zip" "${BINARY}"
+            else
+              tar czf "${ARCHIVE}.tar.gz" "${BINARY}"
+            fi
+            rm -f "${BINARY}"
+          done
 
       - name: Create and push tag
         run: |
-          git tag ${{ inputs.version }}
-          git push origin ${{ inputs.version }}
-
-  release:
-    needs: tag
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - goos: linux
-            goarch: amd64
-          - goos: linux
-            goarch: arm64
-          - goos: darwin
-            goarch: amd64
-          - goos: darwin
-            goarch: arm64
-          - goos: windows
-            goarch: amd64
-          - goos: windows
-            goarch: arm64
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25.0'
-
-      - name: Build binary
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: '0'
-        run: |
-          BINARY=logtail
-          if [ "$GOOS" = "windows" ]; then
-            BINARY=logtail.exe
-          fi
-          go build -trimpath -ldflags="-s -w" -o "${BINARY}" logtail.go
-          ARCHIVE="logtail-${{ inputs.version }}-${GOOS}-${GOARCH}"
-          if [ "$GOOS" = "windows" ]; then
-            zip "${ARCHIVE}.zip" "${BINARY}"
-          else
-            tar czf "${ARCHIVE}.tar.gz" "${BINARY}"
-          fi
+          git tag "${{ inputs.version }}"
+          git push origin "${{ inputs.version }}"
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.version }}
           files: |
-            logtail-*.tar.gz
-            logtail-*.zip
+            dist/logtail-*.tar.gz
+            dist/logtail-*.zip
