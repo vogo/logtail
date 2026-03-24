@@ -70,9 +70,7 @@ func TestMultiServer(t *testing.T) {
 	configPath := helper.WriteConfig(t, dir, config)
 	proc := helper.RunLogtail(t, binary, "-file", configPath)
 
-	time.Sleep(2 * time.Second)
+	helper.WaitForStdoutContains(t, proc, "server1-error", 10*time.Second)
+	helper.WaitForStdoutContains(t, proc, "server2-warning", 10*time.Second)
 	proc.Stop()
-
-	helper.AssertStdoutContains(t, proc, "server1-error")
-	helper.AssertStdoutContains(t, proc, "server2-warning")
 }

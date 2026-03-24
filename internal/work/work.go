@@ -23,11 +23,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vogo/gorun"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
 	"github.com/vogo/logtail/internal/route"
 	"github.com/vogo/logtail/internal/trans"
+	"github.com/vogo/vogo/vsync/vrun"
 )
 
 const (
@@ -46,7 +46,7 @@ type Worker struct {
 	buf     []byte
 	Format  *match.Format
 
-	Runner            *gorun.Runner
+	Runner            *vrun.Runner
 	TransfersFunc     trans.TransferMatcher
 	MergingWorker     *Worker
 	Routers           map[string]*route.Router

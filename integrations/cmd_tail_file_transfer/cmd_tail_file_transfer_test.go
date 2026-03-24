@@ -61,10 +61,8 @@ func TestCmdTailFileTransfer(t *testing.T) {
 	configPath := helper.WriteConfig(t, dir, config)
 	proc := helper.RunLogtail(t, binary, "-file", configPath)
 
-	time.Sleep(3 * time.Second)
+	filePath := helper.WaitForFileWithPrefix(t, outputDir, "file-out-", 10*time.Second)
 	proc.Stop()
-
-	filePath := helper.AssertFileExists(t, outputDir, "file-out-")
 	helper.AssertFileContains(t, filePath, "line1")
 	helper.AssertFileContains(t, filePath, "line2")
 	helper.AssertFileContains(t, filePath, "line3")

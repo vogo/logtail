@@ -21,11 +21,11 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/vogo/gorun"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
 	"github.com/vogo/logtail/internal/trans"
 	"github.com/vogo/vogo/vlog"
+	"github.com/vogo/vogo/vsync/vrun"
 )
 
 const DefaultChannelBufferSize = 16
@@ -34,7 +34,7 @@ type RoutersBuilder func() *[]Router
 
 type Router struct {
 	Lock         sync.Mutex
-	Runner       *gorun.Runner
+	Runner       *vrun.Runner
 	ID           string
 	Name         string
 	Source       string
@@ -46,7 +46,7 @@ type Router struct {
 	BlockingMode bool
 }
 
-func BuildRouter(workerRunner *gorun.Runner,
+func BuildRouter(workerRunner *vrun.Runner,
 	routerConfig *conf.RouterConfig,
 	transfersFunc trans.TransferMatcher,
 	routerID string, source string,

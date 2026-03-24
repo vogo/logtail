@@ -61,10 +61,9 @@ func TestFormatSplit(t *testing.T) {
 	configPath := helper.WriteConfig(t, dir, config)
 	proc := helper.RunLogtail(t, binary, "-file", configPath)
 
-	time.Sleep(2 * time.Second)
+	helper.WaitForStdoutContains(t, proc, "something failed", 10*time.Second)
+	helper.WaitForStdoutContains(t, proc, "stack trace line 1", 10*time.Second)
 	proc.Stop()
 
-	helper.AssertStdoutContains(t, proc, "something failed")
-	helper.AssertStdoutContains(t, proc, "stack trace line 1")
 	helper.AssertStdoutNotContains(t, proc, "all good")
 }

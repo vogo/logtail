@@ -223,6 +223,29 @@ func (p *LogtailProcess) ExitCode() int {
 	return p.cmd.ProcessState.ExitCode()
 }
 
+// WaitForStdoutContains polls proc.Stdout() until it contains the expected substring or timeout expires.
+func WaitForStdoutContains(t *testing.T, proc *LogtailProcess, expected string, timeout time.Duration) {
+	t.Helper()
+
+	deadline := time.After(timeout)
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		if strings.Contains(proc.Stdout(), expected) {
+			return
+		}
+
+		select {
+		case <-deadline:
+			t.Errorf("timed out waiting for stdout to contain %q, got:\n%s", expected, proc.Stdout())
+
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
 // AssertStdoutContains asserts proc.Stdout() contains the expected substring.
 func AssertStdoutContains(t *testing.T, proc *LogtailProcess, expected string) {
 	t.Helper()
@@ -319,6 +342,35 @@ func AssertFileExists(t *testing.T, dir string, prefix string) string {
 	t.Fatalf("no file with prefix %q found in %s", prefix, dir)
 
 	return ""
+}
+
+// WaitForFileWithPrefix polls until a file with the given prefix appears in dir or timeout expires.
+// Returns the path of the first matching file.
+func WaitForFileWithPrefix(t *testing.T, dir string, prefix string, timeout time.Duration) string {
+	t.Helper()
+
+	deadline := time.After(timeout)
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		entries, err := os.ReadDir(dir)
+		if err == nil {
+			for _, entry := range entries {
+				if strings.HasPrefix(entry.Name(), prefix) {
+					return filepath.Join(dir, entry.Name())
+				}
+			}
+		}
+
+		select {
+		case <-deadline:
+			t.Fatalf("no file with prefix %q found in %s within %s", prefix, dir, timeout)
+
+			return ""
+		case <-ticker.C:
+		}
+	}
 }
 
 // WaitForFile polls every 100ms until the file exists or timeout expires.

@@ -23,11 +23,11 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vogo/gorun"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/match"
 	"github.com/vogo/logtail/internal/route"
 	"github.com/vogo/logtail/internal/trans"
+	"github.com/vogo/vogo/vsync/vrun"
 )
 
 func TestRoute(t *testing.T) {
@@ -35,7 +35,7 @@ func TestRoute(t *testing.T) {
 
 	router := &route.Router{
 		Lock:    sync.Mutex{},
-		Runner:  gorun.New(),
+		Runner:  vrun.New(),
 		ID:      "test-router",
 		Name:    "test-router",
 		Source:  "",
@@ -62,7 +62,7 @@ func TestReceiveDropCounting(t *testing.T) {
 	const bufferSize = 1
 	const totalMessages = 100
 
-	runner := gorun.New()
+	runner := vrun.New()
 
 	router := &route.Router{
 		Lock:         sync.Mutex{},
@@ -98,7 +98,7 @@ func TestReceiveBlockingMode(t *testing.T) {
 
 	const bufferSize = 1
 
-	runner := gorun.New()
+	runner := vrun.New()
 
 	router := &route.Router{
 		Lock:         sync.Mutex{},
@@ -150,7 +150,7 @@ func TestBlockingModeRespectsStop(t *testing.T) {
 
 	const bufferSize = 1
 
-	runner := gorun.New()
+	runner := vrun.New()
 
 	router := &route.Router{
 		Lock:         sync.Mutex{},
@@ -195,7 +195,7 @@ func TestBlockingModeRespectsStop(t *testing.T) {
 func TestConfigurableBufferSize(t *testing.T) {
 	t.Parallel()
 
-	runner := gorun.New()
+	runner := vrun.New()
 	transferMatcher := func(_ []string) []trans.Transfer { return nil }
 
 	// Test custom buffer size
@@ -237,7 +237,7 @@ func TestConfigurableBufferSize(t *testing.T) {
 func TestBuildRouterBlockingMode(t *testing.T) {
 	t.Parallel()
 
-	runner := gorun.New()
+	runner := vrun.New()
 	transferMatcher := func(_ []string) []trans.Transfer { return nil }
 
 	routerConfig := &conf.RouterConfig{

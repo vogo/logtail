@@ -28,7 +28,7 @@ package: package-linux
 package-linux: clean-dist
 	cd dist && GOOS=linux go build ../logtail.go && zip logtail-$(version)-linux.zip logtail && rm -f logtail
 
-build: format check test package
+build: format check test
 
 linux-tools:
 	GOOS=linux go build -o dist/pstop cmd/pstop/*.go

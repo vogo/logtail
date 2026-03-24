@@ -23,10 +23,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vogo/gorun"
 	"github.com/vogo/logtail/internal/match"
 	"github.com/vogo/logtail/internal/route"
 	"github.com/vogo/logtail/internal/trans"
+	"github.com/vogo/vogo/vsync/vrun"
 )
 
 func TestStartLoop_RoutesData(t *testing.T) {
@@ -48,7 +48,7 @@ func TestStartLoop_RoutesData(t *testing.T) {
 		},
 	}
 
-	runner := gorun.New()
+	runner := vrun.New()
 
 	router := &route.Router{
 		Lock:      sync.Mutex{},
@@ -76,7 +76,7 @@ func TestStartLoop_RoutesData(t *testing.T) {
 func TestStartLoop_StopsOnNilData(t *testing.T) {
 	t.Parallel()
 
-	runner := gorun.New()
+	runner := vrun.New()
 
 	router := &route.Router{
 		Lock:    sync.Mutex{},

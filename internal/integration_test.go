@@ -28,13 +28,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vogo/gorun"
 	"github.com/vogo/logtail/internal/conf"
 	"github.com/vogo/logtail/internal/route"
 	"github.com/vogo/logtail/internal/starter"
 	"github.com/vogo/logtail/internal/tail"
 	"github.com/vogo/logtail/internal/trans"
 	"github.com/vogo/logtail/internal/webapi"
+	"github.com/vogo/vogo/vsync/vrun"
 )
 
 // ----- Integration Test: Multi-instance isolation -----
@@ -171,7 +171,7 @@ func TestIntegrationDropCounterUnderLoad(t *testing.T) {
 	const bufferSize = 1
 	const totalMessages = 100
 
-	runner := gorun.New()
+	runner := vrun.New()
 
 	router := &route.Router{
 		Lock:         sync.Mutex{},
@@ -217,7 +217,7 @@ func TestIntegrationBlockingMode(t *testing.T) {
 
 	const bufferSize = 1
 
-	runner := gorun.New()
+	runner := vrun.New()
 
 	router := &route.Router{
 		Lock:         sync.Mutex{},
@@ -274,7 +274,7 @@ func TestIntegrationBlockingModeRespectsStop(t *testing.T) {
 
 	const bufferSize = 1
 
-	parentRunner := gorun.New()
+	parentRunner := vrun.New()
 
 	router := &route.Router{
 		Lock:         sync.Mutex{},
@@ -481,7 +481,7 @@ func TestIntegrationYAMLBackwardCompatibility(t *testing.T) {
 		"BlockingMode should default to false in unmarshaled config")
 
 	// When BuildRouter uses these defaults, it should apply DefaultChannelBufferSize.
-	runner := gorun.New()
+	runner := vrun.New()
 	transferMatcher := func(_ []string) []trans.Transfer { return nil }
 
 	router := route.BuildRouter(runner, routerCfg, transferMatcher, "yaml-test", "src")

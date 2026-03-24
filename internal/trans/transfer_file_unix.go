@@ -26,16 +26,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/vogo/gorun"
 	"github.com/vogo/vogo/vio/vioutil"
 	"github.com/vogo/vogo/vlog"
+	"github.com/vogo/vogo/vsync/vrun"
 )
 
 const DefaultChannelBufferSize = 16
 
 type FileTransfer struct {
 	id           string
-	runner       *gorun.Runner
+	runner       *vrun.Runner
 	dir          string
 	buffer       chan [][]byte
 	writeSize    int
@@ -51,7 +51,7 @@ func (ft *FileTransfer) Name() string {
 func NewFileTransfer(id, dir string) *FileTransfer {
 	return &FileTransfer{
 		id:     id,
-		runner: gorun.New(),
+		runner: vrun.New(),
 		dir:    dir,
 	}
 }

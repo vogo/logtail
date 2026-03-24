@@ -11,8 +11,6 @@ github.com/stretchr/testify v1.7.1 h1:5TQK59W5E3v0r2duFAb7P95B6hEeOyEnHRa8MjYSMT
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/vogo/fwatch v1.6.1 h1:8PGxOaQ+E2iFJDq8VjaE/rVAHjvfoDNitgVWDYgPQCo=
 github.com/vogo/fwatch v1.6.1/go.mod h1:lIZh/JdMXeR7RkWzdgFHdVjV52GY39UisOPlsmTluHk=
-github.com/vogo/gorun v1.1.0 h1:i/8HhmNyjMa79bFn1ZHGTO3KyiWQcZPBsFGpvgkcap8=
-github.com/vogo/gorun v1.1.0/go.mod h1:MyOjF/DbZSz40GQ5657Ou9NEfNlUbMhvpXjDvh4L8OY=
 github.com/vogo/vogo v0.0.0-20260219094625-1e3cccd1958b h1:91VTJx9BMOIf4L2BQDhtxjVyQM7Mv9q9GjipSL6C1Ms=
 github.com/vogo/vogo v0.0.0-20260219094625-1e3cccd1958b/go.mod h1:VRv2Yyfl28FU6qRzzDvPP+eqqLhcqNrxQ5YGhknSvvk=
 golang.org/x/sys v0.42.0 h1:omrd2nAlyT5ESRdCLYdm3+fMfNFE/+Rf4bDIQImRJeo=

@@ -22,9 +22,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vogo/gorun"
 	"github.com/vogo/logtail/internal/route"
 	"github.com/vogo/logtail/internal/work"
+	"github.com/vogo/vogo/vsync/vrun"
 )
 
 func TestNewRawWorker(t *testing.T) {
@@ -48,7 +48,7 @@ func TestWorkerWrite_EmptyData(t *testing.T) {
 func TestWorkerWrite_SingleLine(t *testing.T) {
 	t.Parallel()
 
-	runner := gorun.New()
+	runner := vrun.New()
 
 	router := &route.Router{
 		Lock:    sync.Mutex{},
@@ -80,7 +80,7 @@ func TestWorkerWrite_SingleLine(t *testing.T) {
 func TestWorkerStopRouters(t *testing.T) {
 	t.Parallel()
 
-	runner := gorun.New()
+	runner := vrun.New()
 
 	router := &route.Router{
 		Lock:    sync.Mutex{},

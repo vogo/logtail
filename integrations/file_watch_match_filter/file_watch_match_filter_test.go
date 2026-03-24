@@ -69,10 +69,9 @@ func TestFileWatchMatchFilter(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 	helper.AppendToFile(t, logPath, "2024-01-01 INFO all-ok\n2024-01-01 ERROR something-broke\n")
-	time.Sleep(2 * time.Second)
 
+	helper.WaitForStdoutContains(t, proc, "something-broke", 10*time.Second)
 	proc.Stop()
 
-	helper.AssertStdoutContains(t, proc, "something-broke")
 	helper.AssertStdoutNotContains(t, proc, "all-ok")
 }

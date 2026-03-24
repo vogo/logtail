@@ -64,9 +64,7 @@ func TestFileWatchConsole(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 	helper.AppendToFile(t, logPath, "new-appended-line\n")
-	time.Sleep(2 * time.Second)
 
+	helper.WaitForStdoutContains(t, proc, "new-appended-line", 10*time.Second)
 	proc.Stop()
-
-	helper.AssertStdoutContains(t, proc, "new-appended-line")
 }

@@ -59,10 +59,9 @@ func TestCmdTailMatchFilter(t *testing.T) {
 	configPath := helper.WriteConfig(t, dir, config)
 	proc := helper.RunLogtail(t, binary, "-file", configPath)
 
-	time.Sleep(2 * time.Second)
+	helper.WaitForStdoutContains(t, proc, "real-error", 10*time.Second)
 	proc.Stop()
 
-	helper.AssertStdoutContains(t, proc, "real-error")
 	helper.AssertStdoutNotContains(t, proc, "normal-info")
 	helper.AssertStdoutNotContains(t, proc, "skip-this")
 }

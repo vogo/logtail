@@ -53,8 +53,6 @@ func TestCmdTailConsole(t *testing.T) {
 	configPath := helper.WriteConfig(t, dir, config)
 	proc := helper.RunLogtail(t, binary, "-file", configPath)
 
-	time.Sleep(3 * time.Second)
+	helper.WaitForStdoutContains(t, proc, "hello logtail", 10*time.Second)
 	proc.Stop()
-
-	helper.AssertStdoutContains(t, proc, "hello logtail")
 }
